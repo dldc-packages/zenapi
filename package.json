@@ -3,6 +3,14 @@
   "version": "0.0.0",
   "description": "A pure TS alternative to GraphQL",
   "keywords": [],
+  "homepage": "https://github.com/dldc-packages/zenapi#readme",
+  "bugs": {
+    "url": "https://github.com/dldc-packages/zenapi/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dldc-packages/zenapi.git"
+  },
   "license": "MIT",
   "author": "Etienne Dldc <e.deladonchamps@gmail.com>",
   "sideEffects": false,
@@ -32,8 +40,7 @@
     "typecheck": "tsc",
     "typecheck:watch": "tsc --watch"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^20.4.2",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
