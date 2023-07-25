@@ -1,0 +1,75 @@
+{
+  "name": "@dldc/zenapi",
+  "version": "0.0.0",
+  "description": "A pure TS alternative to GraphQL",
+  "keywords": [],
+  "license": "MIT",
+  "author": "Etienne Dldc <e.deladonchamps@gmail.com>",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/mod.mjs",
+      "require": "./dist/mod.js",
+      "types": "./dist/mod.d.ts"
+    }
+  },
+  "main": "./dist/mod.js",
+  "module": "./dist/mod.mjs",
+  "types": "./dist/mod.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rimraf dist && tsup --format cjs,esm src/mod.ts --dts src/mod.ts",
+    "build:watch": "tsup --watch --format cjs,esm src/mod.ts --dts src/mod.ts",
+    "changelog": "auto-changelog --stdout --hide-credit true --commit-limit false -u --template https://raw.githubusercontent.com/release-it/release-it/main/templates/changelog-compact.hbs",
+    "lint": "prettier . --check && eslint . && tsc --noEmit",
+    "lint:fix": "prettier . --write . && eslint . --fix",
+    "release": "release-it --only-version",
+    "test": "pnpm run lint && vitest run --coverage",
+    "test:run": "vitest run",
+    "test:watch": "vitest --watch",
+    "typecheck": "tsc",
+    "typecheck:watch": "tsc --watch"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.2",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitest/coverage-v8": "^0.33.0",
+    "auto-changelog": "^2.4.0",
+    "eslint": "^8.45.0",
+    "eslint-config-prettier": "^8.8.0",
+    "prettier": "^3.0.0",
+    "release-it": "^16.1.2",
+    "rimraf": "^5.0.1",
+    "tsup": "^7.1.0",
+    "typescript": "^5.1.6",
+    "vitest": "^0.33.0"
+  },
+  "packageManager": "pnpm@8.6.1",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "release-it": {
+    "hooks": {
+      "before:init": [
+        "pnpm run build",
+        "pnpm test"
+      ]
+    },
+    "npm": {
+      "publish": true
+    },
+    "git": {
+      "changelog": "pnpm run --silent changelog"
+    },
+    "github": {
+      "release": true,
+      "web": true
+    }
+  }
+}
