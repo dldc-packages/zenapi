@@ -8,6 +8,6 @@ export type {
   ZenTypeRecord,
   ZenTypeUnion,
 } from './ZenType.types';
+export { engine, resolve } from './engine';
 export { implem, respond } from './implem';
-export { queryBuilder } from './queryBuilder';
-export { createResolver } from './resolver';
+export { query } from './query';

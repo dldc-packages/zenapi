@@ -55,19 +55,22 @@ export const storageType = record({
   description: string(),
 });
 
-const pageInput = {
-  pageSize: FormiField.optionalNumber(),
-  page: FormiField.optionalNumber(),
-};
-
 export const workspaceType = record({
   id: string(),
   name: string(),
   tenant: string(),
-  storages: func(pageInput, list(storageType)),
+  storages: list(storageType),
 });
+
+const workspaceInput = {
+  id: FormiField.optionalString(),
+  tenant: FormiField.optionalString(),
+};
+
+export const workspace = func(workspaceInput, workspaceType);
 
 export const schema = record({
   auth,
-  workspaces: func(pageInput, list(workspaceType)),
+  workspaces: list(workspaceType),
+  workspace,
 });

@@ -1,31 +1,32 @@
 import type { TFormiFieldTree } from '@dldc/formi';
 import type {
-  ResolvedType,
   TypesRecord,
-  ZenType,
   ZenTypeAny,
+  ZenTypeBoolean,
   ZenTypeEnumeration,
   ZenTypeFunc,
-  ZenTypeKind,
   ZenTypeList,
+  ZenTypeNil,
+  ZenTypeNumber,
   ZenTypeRecord,
+  ZenTypeString,
   ZenTypeUnion,
 } from './ZenType.types';
 import { OUTPUT, RESOLVE } from './ZenType.types';
 
-export function nil(): ZenType<'nil', null, null> {
+export function nil(): ZenTypeNil {
   return createType('nil');
 }
 
-export function string(): ZenType<'string', string, string> {
+export function string(): ZenTypeString {
   return createType('string');
 }
 
-export function number(): ZenType<'number', number, number> {
+export function number(): ZenTypeNumber {
   return createType('number');
 }
 
-export function boolean(): ZenType<'boolean', boolean, boolean> {
+export function boolean(): ZenTypeBoolean {
   return createType('boolean');
 }
 
@@ -45,6 +46,10 @@ export function union<Types extends readonly ZenTypeAny[]>(union: Types): ZenTyp
   return { ...createType('union'), union };
 }
 
+export function optional<Type extends ZenTypeAny>(type: Type): ZenTypeUnion<[Type, ZenTypeNil]> {
+  return union([type, nil()]);
+}
+
 export function func<Fields extends TFormiFieldTree, Result extends ZenTypeAny>(
   fields: Fields,
   result: Result,
@@ -52,11 +57,8 @@ export function func<Fields extends TFormiFieldTree, Result extends ZenTypeAny>(
   return { ...createType('func'), fields, result };
 }
 
-function createType<Kind extends ZenTypeKind, Output, Resolve>(kind: Kind): ZenType<Kind, Output, Resolve> {
-  const type: ZenType<Kind, Output, Resolve> = { kind, [OUTPUT]: null as any, [RESOLVE]: null as any, resolve };
-  return type;
-
-  function resolve(value: Resolve): ResolvedType {
-    return { type, value };
-  }
+function createType<Kind extends string, Output, Resolve>(
+  kind: Kind,
+): { kind: Kind; [OUTPUT]: Output; [RESOLVE]: Resolve } {
+  return { kind, [OUTPUT]: null as any, [RESOLVE]: null as any };
 }

@@ -1,11 +1,9 @@
-import { createResolver, implem, respond } from '../../src/mod';
+import { engine, implem, resolve, respond } from '../../src/mod';
 import { authLogin, meType, meUserPasswordType, meWorspacesType, schema } from './schema';
 
 const authLoginImplem = implem(authLogin, ({ ctx, input }) => {
   // implement stuff
-
   console.log(input.email);
-
   // if input is invalid
   // issues.add(fields.email, { kind: 'EmailUnknown' });
   // return issues;
@@ -18,10 +16,13 @@ const authLoginImplem = implem(authLogin, ({ ctx, input }) => {
     // next ctx
     ctx,
     // resolved types
-    meType.resolve({ id: '', name: '' }),
-    meUserPasswordType.resolve('****'),
-    meWorspacesType.resolve([]),
+    resolve(meType, { id: '', name: '' }),
+    resolve(meUserPasswordType, '****'),
   );
 });
 
-export const resolver = createResolver(schema, authLoginImplem);
+const meWorspacesTypeImplem = implem(meWorspacesType, ({ ctx }) => {
+  return respond(ctx, resolve(meWorspacesType, []));
+});
+
+export const apiEngine = engine(schema, authLoginImplem, meWorspacesTypeImplem);
