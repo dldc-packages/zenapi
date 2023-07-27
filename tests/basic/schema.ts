@@ -1,5 +1,4 @@
-import { FormiField } from '@dldc/formi';
-import { enumeration, func, list, nil, record, string } from '../../src/ZenType';
+import { enumeration, func, list, nil, record, string } from '../../src/mod';
 
 export const workspaceUserRoleType = enumeration(['admin', 'user']);
 
@@ -27,22 +26,22 @@ export const authRequestType = record({
   otpId: string(),
 });
 
-const loginInput = {
-  email: FormiField.string(),
-  otpId: FormiField.string(),
-  otp: FormiField.string(),
-};
+// const loginInput = {
+//   email: FormiField.string(),
+//   otpId: FormiField.string(),
+//   otp: FormiField.string(),
+// };
 
-export const authLogin = func(loginInput, meType);
+export const authLogin = func<{ email: string; otpId: string; otp: string }, typeof meType>(meType);
 
 export const authLogout = nil();
 
-const requestOtpInput = {
-  tenant: FormiField.optionalString(),
-  email: FormiField.string(),
-};
+// const requestOtpInput = {
+//   tenant: FormiField.optionalString(),
+//   email: FormiField.string(),
+// };
 
-export const authRequestOtp = func(requestOtpInput, authRequestType);
+export const authRequestOtp = func<{ tenant?: string; email: string }, typeof authRequestType>(authRequestType);
 
 export const auth = record({
   login: authLogin,
@@ -62,15 +61,23 @@ export const workspaceType = record({
   storages: list(storageType),
 });
 
-const workspaceInput = {
-  id: FormiField.optionalString(),
-  tenant: FormiField.optionalString(),
-};
+// const workspaceInput = {
+//   id: FormiField.optionalString(),
+//   tenant: FormiField.optionalString(),
+// };
+// const workspaceInput = {} as { id?: string; tenant?: string };
 
-export const workspace = func(workspaceInput, workspaceType);
+export const workspaceByTenant = func<string, typeof workspaceType>(workspaceType);
+export const workspaceById = func<string, typeof workspaceType>(workspaceType);
+
+const version = string();
 
 export const schema = record({
+  version,
   auth,
   workspaces: list(workspaceType),
-  workspace,
+  workspace: record({
+    byTenant: workspaceByTenant,
+    byId: workspaceById,
+  }),
 });

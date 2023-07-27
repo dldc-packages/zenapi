@@ -1,32 +1,32 @@
-import type { TFormiFieldTreeValue } from '@dldc/formi';
-import type { ZenApiContext } from './ZenApiContext';
-import type { ResolvedType, ZenTypeAny, ZenTypeFunc } from './ZenType.types';
+import type { ApiContext } from './context';
+import type { IModelResolved } from './engine';
+import type { TModelAny } from './model';
 
 const IMPLEM = Symbol('IMPLEM');
 type IMPLEM = typeof IMPLEM;
 
-export interface ZenImplementation {
+export interface IImplementation {
   readonly [IMPLEM]: true;
 }
 
-export function respond(ctx: ZenApiContext, ...resolved: ResolvedType[]): ImplemFnResponse {
+export function respond(ctx: ApiContext, ...resolved: IModelResolved[]): IImplemFnResponse {
   return { ctx, resolved };
 }
 
-export interface ImplemFnResponse {
-  ctx: ZenApiContext;
-  resolved: ResolvedType[];
+export interface IImplemFnResponse {
+  ctx: ApiContext;
+  resolved: IModelResolved[];
 }
 
-export type ImplemFnData<Type extends ZenTypeAny> = {
-  ctx: ZenApiContext;
-  input: Type extends ZenTypeFunc<infer Fields, any> ? TFormiFieldTreeValue<Fields> : never;
+export type IImplemFnData<Model extends TModelAny> = {
+  ctx: ApiContext;
+  input: unknown; // Moded extends IModel<infer Fields, any> ? TFormiFieldTreeValue<Fields> : never;
 };
 
-export type ImplemFn<Type extends ZenTypeAny> = (
-  data: ImplemFnData<Type>,
-) => Promise<ImplemFnResponse> | ImplemFnResponse;
+export type IImplemFn<Model extends TModelAny> = (
+  data: IImplemFnData<Model>,
+) => Promise<IImplemFnResponse> | IImplemFnResponse;
 
-export function implem<Type extends ZenTypeAny>(type: Type, implenFn: ImplemFn<Type>): ZenImplementation {
+export function implem<Model extends TModelAny>(model: Model, implenFn: IImplemFn<Model>): IImplementation {
   throw new Error('Not implemented');
 }

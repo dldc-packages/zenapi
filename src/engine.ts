@@ -1,16 +1,25 @@
-import type { ResolvedType, ZenTypeAny, ZenTypeResolve } from './ZenType.types';
-import type { ZenImplementation } from './implem';
+import type { IImplementation } from './implem';
+import type { TModelAny, TModelValue } from './model';
 
-export interface Engine {
+export interface IEngine {
   run: (query: FormData) => Promise<unknown>; // TODO: return type
 }
 
-export function engine(schema: ZenTypeAny, ...implems: ZenImplementation[]): Engine {
+export function engine(schema: TModelAny, ...implems: IImplementation[]): IEngine {
   return { run };
 
   async function run(query: FormData) {}
 }
 
-export function resolve<Type extends ZenTypeAny>(type: Type, value: ZenTypeResolve<Type>): ResolvedType {
-  return { type, value };
+export const RESOLVED = Symbol('RESOLVED');
+export type RESOLVED = typeof RESOLVED;
+
+export interface IModelResolved {
+  readonly [RESOLVED]: true;
+  model: TModelAny;
+  value: any;
+}
+
+export function resolve<Model extends TModelAny>(model: Model, value: TModelValue<Model>): IModelResolved {
+  return { [RESOLVED]: true, model, value };
 }
