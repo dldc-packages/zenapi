@@ -70,7 +70,7 @@ export const workspaceType = record({
 export const workspaceByTenant = func<string, typeof workspaceType>(workspaceType);
 export const workspaceById = func<string, typeof workspaceType>(workspaceType);
 
-const version = string();
+export const version = string();
 
 export const schema = record({
   version,

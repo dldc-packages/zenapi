@@ -1,5 +1,5 @@
 import { engine, implem, resolve, respond } from '../../src/mod';
-import { authLogin, meType, meUserPasswordType, meWorspacesType, schema } from './schema';
+import { authLogin, meType, meUserPasswordType, meWorspacesType, schema, version } from './schema';
 
 const authLoginImplem = implem(authLogin, ({ ctx, input }) => {
   // implement stuff
@@ -21,8 +21,12 @@ const authLoginImplem = implem(authLogin, ({ ctx, input }) => {
   );
 });
 
+const versionImplem = implem(version, ({ ctx }) => {
+  return respond(ctx, resolve(version, '1.0.0'));
+});
+
 const meWorspacesTypeImplem = implem(meWorspacesType, ({ ctx }) => {
   return respond(ctx, resolve(meWorspacesType, []));
 });
 
-export const apiEngine = engine(schema, authLoginImplem, meWorspacesTypeImplem);
+export const apiEngine = engine(schema, authLoginImplem, meWorspacesTypeImplem, versionImplem);

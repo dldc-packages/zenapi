@@ -72,11 +72,3 @@ test('query multiple', () => {
     ],
   });
 });
-
-// const q3 = query(schema, (s) => ({
-//   first: s.workspace.json({ tenant: 'first', id: null }, ({ id, name, tenant }) => ({ id, name, tenant })),
-//   second: s.workspace.json({ tenant: 'first', id: null }, ({ id, name, tenant }) => ({ id, name, tenant })),
-//   third: s.workspace.json({ tenant: 'first', id: null }, ({ id, name, tenant }) => ({ id, name, tenant })),
-// }));
-
-// console.log(q3);

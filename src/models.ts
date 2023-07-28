@@ -1,4 +1,4 @@
-import type { IModel, TModelAny, TModelValue, TQueryBuilder } from './model';
+import type { IModel, TModelAny, TModelProvided, TModelValue, TQueryBuilder } from './model';
 import { VALUE } from './model';
 import type { IQuery, TQuerySelect, TQuerySelectResult } from './query';
 import { unwrapQuerySelect, wrapQuery as wrapDef, wrapQuery } from './query';
@@ -9,8 +9,11 @@ export function string(): IModel<string, string, IQuery<string>> {
     builder(parentDef): IQuery<string> {
       return wrapDef<string>(parentDef);
     },
-    resolve(provided: string): string {
+    provide(provided: string): string {
       throw new Error('Not implemented');
+    },
+    children(def) {
+      return [];
     },
   };
 }
@@ -21,8 +24,11 @@ export function number(): IModel<number, number, IQuery<number>> {
     builder(parentDef): IQuery<number> {
       return wrapDef<number>(parentDef);
     },
-    resolve(provided: number): number {
+    provide(provided: number): number {
       throw new Error('Not implemented');
+    },
+    children(def) {
+      return [];
     },
   };
 }
@@ -33,8 +39,11 @@ export function boolean(): IModel<boolean, boolean, IQuery<boolean>> {
     builder(parentDef): IQuery<boolean> {
       return wrapDef<boolean>(parentDef);
     },
-    resolve(provided: boolean): boolean {
+    provide(provided: boolean): boolean {
       throw new Error('Not implemented');
+    },
+    children(def) {
+      return [];
     },
   };
 }
@@ -45,8 +54,11 @@ export function nil(): IModel<null, null, IQuery<null>> {
     builder(parentDef): IQuery<null> {
       return wrapDef<null>(parentDef);
     },
-    resolve(provided: null): null {
+    provide(provided: null): null {
       throw new Error('Not implemented');
+    },
+    children(def) {
+      return [];
     },
   };
 }
@@ -59,7 +71,7 @@ export function record<Children extends TModelsRecord>(
   fields: Children,
 ): IModel<
   { [K in keyof Children]: TModelValue<Children[K]> },
-  { [K in keyof Children]?: TModelValue<Children[K]> },
+  { [K in keyof Children]?: TModelProvided<Children[K]> },
   TRecordQueryBuilder<Children>
 > {
   return {
@@ -71,8 +83,11 @@ export function record<Children extends TModelsRecord>(
       }
       return result as any;
     },
-    resolve(provided) {
+    provide(provided) {
       throw new Error('Not implemented');
+    },
+    children(def) {
+      return [];
     },
   };
 }
@@ -88,7 +103,7 @@ export interface IListQueryBuilder<Children extends TModelAny> {
 
 export function list<Child extends TModelAny>(
   child: Child,
-): IModel<TModelValue<Child>[], TModelValue<Child>[], IListQueryBuilder<Child>> {
+): IModel<TModelValue<Child>[], TModelProvided<Child>[], IListQueryBuilder<Child>> {
   return {
     [VALUE]: null as any,
     builder(parentDef): IListQueryBuilder<Child> {
@@ -108,8 +123,11 @@ export function list<Child extends TModelAny>(
         },
       };
     },
-    resolve(provided) {
+    provide(provided) {
       throw new Error('Not implemented');
+    },
+    children(def) {
+      return [];
     },
   };
 }
@@ -121,7 +139,7 @@ export type TFuncQueryBuilder<Input, Result extends TModelAny> = <Q extends TQue
 
 export function func<Input, Result extends TModelAny>(
   result: Result,
-): IModel<TModelValue<Result>, TModelValue<Result>, TFuncQueryBuilder<Input, Result>> {
+): IModel<TModelValue<Result>, TModelProvided<Result>, TFuncQueryBuilder<Input, Result>> {
   return {
     [VALUE]: null as any,
     builder(parentDef): TFuncQueryBuilder<Input, Result> {
@@ -131,8 +149,11 @@ export function func<Input, Result extends TModelAny>(
         return wrapQuery(unwrapQuerySelect(withInput, selected));
       };
     },
-    resolve(provided) {
+    provide(provided) {
       throw new Error('Not implemented');
+    },
+    children(def) {
+      return [];
     },
   };
 }
@@ -145,8 +166,11 @@ export function enumeration<Values extends readonly string[]>(
     builder(parentDef) {
       return wrapDef<Values[number]>(parentDef);
     },
-    resolve(provided) {
+    provide(provided) {
       throw new Error('Not implemented');
+    },
+    children(def) {
+      return [];
     },
   };
 }
