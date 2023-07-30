@@ -1,66 +1,48 @@
 import type { IModel, TModelAny, TModelProvided, TModelValue, TQueryBuilder } from './model';
-import { VALUE } from './model';
-import type { IQuery, TQuerySelect, TQuerySelectResult } from './query';
-import { unwrapQuerySelect, wrapQuery as wrapDef, wrapQuery } from './query';
+import { model } from './model';
+import type { IQuery, TQueryAny, TQueryDef, TQueryResult } from './query';
+import { createQuery } from './query';
 
-export function string(): IModel<string, string, IQuery<string>> {
-  return {
-    [VALUE]: null as any,
+export function string(): IModel<string, string, IQuery<string>, undefined> {
+  return model({
+    name: 'string',
     builder(parentDef): IQuery<string> {
-      return wrapDef<string>(parentDef);
+      return createQuery<string>(parentDef);
     },
-    provide(provided: string): string {
-      throw new Error('Not implemented');
+    resolve({ value }) {
+      if (typeof value !== 'string') {
+        throw new Error('Expected string');
+      }
+      return value;
     },
-    children(def) {
-      return [];
-    },
-  };
+  });
 }
 
-export function number(): IModel<number, number, IQuery<number>> {
-  return {
-    [VALUE]: null as any,
+export function number(): IModel<number, number, IQuery<number>, undefined> {
+  return model({
+    name: 'number',
     builder(parentDef): IQuery<number> {
-      return wrapDef<number>(parentDef);
+      return createQuery<number>(parentDef);
     },
-    provide(provided: number): number {
-      throw new Error('Not implemented');
-    },
-    children(def) {
-      return [];
-    },
-  };
+  });
 }
 
-export function boolean(): IModel<boolean, boolean, IQuery<boolean>> {
-  return {
-    [VALUE]: null as any,
+export function boolean(): IModel<boolean, boolean, IQuery<boolean>, undefined> {
+  return model({
+    name: 'boolean',
     builder(parentDef): IQuery<boolean> {
-      return wrapDef<boolean>(parentDef);
+      return createQuery<boolean>(parentDef);
     },
-    provide(provided: boolean): boolean {
-      throw new Error('Not implemented');
-    },
-    children(def) {
-      return [];
-    },
-  };
+  });
 }
 
-export function nil(): IModel<null, null, IQuery<null>> {
-  return {
-    [VALUE]: null as any,
+export function nil(): IModel<null, null, IQuery<null>, undefined> {
+  return model({
+    name: 'null',
     builder(parentDef): IQuery<null> {
-      return wrapDef<null>(parentDef);
+      return createQuery<null>(parentDef);
     },
-    provide(provided: null): null {
-      throw new Error('Not implemented');
-    },
-    children(def) {
-      return [];
-    },
-  };
+  });
 }
 
 export type TModelsRecord = Record<string, TModelAny>;
@@ -72,10 +54,11 @@ export function record<Children extends TModelsRecord>(
 ): IModel<
   { [K in keyof Children]: TModelValue<Children[K]> },
   { [K in keyof Children]?: TModelProvided<Children[K]> },
-  TRecordQueryBuilder<Children>
+  TRecordQueryBuilder<Children>,
+  string
 > {
-  return {
-    [VALUE]: null as any,
+  return model({
+    name: 'record',
     builder(parentDef) {
       const result: Record<string, any> = {};
       for (const [key, child] of Object.entries(fields)) {
@@ -83,94 +66,97 @@ export function record<Children extends TModelsRecord>(
       }
       return result as any;
     },
-    provide(provided) {
-      throw new Error('Not implemented');
+    resolve({ ctx, def: key, defRest, resolve, value }) {
+      if (key in fields === false) {
+        throw new Error(`Unknown field ${key}`);
+      }
+      return resolve(ctx, fields[key], defRest, value?.[key]);
     },
-    children(def) {
-      return [];
-    },
-  };
+  });
 }
 
 export interface IListQueryBuilder<Children extends TModelAny> {
-  all<Q extends TQuerySelect>(fn: (sub: TQueryBuilder<Children>) => Q): IQuery<TQuerySelectResult<Q>[]>;
-  first<Q extends TQuerySelect>(fn: (sub: TQueryBuilder<Children>) => Q): IQuery<TQuerySelectResult<Q>>;
-  paginate<Q extends TQuerySelect>(
+  all<Q extends TQueryAny>(fn: (sub: TQueryBuilder<Children>) => Q): IQuery<TQueryResult<Q>[]>;
+  first<Q extends TQueryAny>(fn: (sub: TQueryBuilder<Children>) => Q): IQuery<TQueryResult<Q>>;
+  paginate<Q extends TQueryAny>(
     page: number | { page: number; pageSize: number },
     fn: (sub: TQueryBuilder<Children>) => Q,
-  ): IQuery<TQuerySelectResult<Q>[]>;
+  ): IQuery<TQueryResult<Q>[]>;
 }
+
+export type TListDef =
+  | { type: 'all'; select: TQueryDef }
+  | { type: 'first'; select: TQueryDef }
+  | {
+      type: 'paginate';
+      page: number | { page: number; pageSize: number };
+      select: TQueryDef;
+    };
 
 export function list<Child extends TModelAny>(
   child: Child,
-): IModel<TModelValue<Child>[], TModelProvided<Child>[], IListQueryBuilder<Child>> {
-  return {
-    [VALUE]: null as any,
+): IModel<TModelValue<Child>[], TModelProvided<Child>[], IListQueryBuilder<Child>, TListDef> {
+  return model({
+    name: 'list',
     builder(parentDef): IListQueryBuilder<Child> {
       return {
         all(fn) {
           const inner = fn(child.builder([]));
-          const selected = unwrapQuerySelect([...parentDef, 'all'], inner);
-          return wrapQuery(selected);
+          return createQuery([...parentDef, { type: 'all', select: inner.def }]);
         },
         first(fn) {
-          throw new Error('Not implemented');
+          const inner = fn(child.builder([]));
+          return createQuery([...parentDef, { type: 'first', select: inner.def }]);
         },
         paginate(page, fn) {
           const inner = fn(child.builder([]));
-          const selected = unwrapQuerySelect([...parentDef, page], inner);
-          return wrapQuery(selected);
+          return createQuery([...parentDef, { type: 'paginate', page, select: inner.def }]);
         },
       };
     },
-    provide(provided) {
+    resolve() {
       throw new Error('Not implemented');
     },
-    children(def) {
-      return [];
-    },
-  };
+  });
 }
 
-export type TFuncQueryBuilder<Input, Result extends TModelAny> = <Q extends TQuerySelect>(
+export type TInputQueryBuilder<Input, Result extends TModelAny> = <Q extends TQueryAny>(
   data: Input,
   fn: (sub: TQueryBuilder<Result>) => Q,
-) => IQuery<TQuerySelectResult<Q>>;
+) => IQuery<TQueryResult<Q>>;
 
-export function func<Input, Result extends TModelAny>(
+export interface IInputDef<Input> {
+  input: Input;
+  select: TQueryDef;
+}
+
+export function input<Input, Result extends TModelAny>(
   result: Result,
-): IModel<TModelValue<Result>, TModelProvided<Result>, TFuncQueryBuilder<Input, Result>> {
-  return {
-    [VALUE]: null as any,
-    builder(parentDef): TFuncQueryBuilder<Input, Result> {
+): IModel<TModelValue<Result>, TModelProvided<Result>, TInputQueryBuilder<Input, Result>, IInputDef<Input>> {
+  return model({
+    name: 'input',
+    builder(parentDef): TInputQueryBuilder<Input, Result> {
       return (data, select) => {
-        const withInput = [...parentDef, data];
-        const selected = select(result.builder([]));
-        return wrapQuery(unwrapQuerySelect(withInput, selected));
+        const sub = select(result.builder([]));
+        return createQuery([...parentDef, { input: data, select: sub.def }]);
       };
     },
-    provide(provided) {
-      throw new Error('Not implemented');
+    resolve({ ctx, def, resolve, value }) {
+      return resolve(ctx, result, def.select, value);
     },
-    children(def) {
-      return [];
-    },
-  };
+  });
 }
 
 export function enumeration<Values extends readonly string[]>(
   values: Values,
-): IModel<Values[number], Values[number], IQuery<Values[number]>> {
-  return {
-    [VALUE]: null as any,
+): IModel<Values[number], Values[number], IQuery<Values[number]>, undefined> {
+  return model({
+    name: 'enumeration',
     builder(parentDef) {
-      return wrapDef<Values[number]>(parentDef);
+      return createQuery<Values[number]>(parentDef);
     },
-    provide(provided) {
+    resolve() {
       throw new Error('Not implemented');
     },
-    children(def) {
-      return [];
-    },
-  };
+  });
 }

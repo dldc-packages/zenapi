@@ -1,6 +1,9 @@
+import { ApiContext } from './context';
 import type { IImplementation, TImplemFn } from './implem';
+import { extractImpleResult, withCtx } from './implem';
 import type { TModelAny, TModelProvided } from './model';
-import type { TQueryDef } from './query';
+import type { TModelQueryDef } from './query';
+import { isInternalQueryDefObject, type TQueryDef } from './query';
 
 export interface IEngine {
   run: (queryDef: TQueryDef) => Promise<unknown>; // TODO: return type
@@ -18,15 +21,44 @@ export function engine(schema: TModelAny, ...implems: IImplementation[]): IEngin
   return { run };
 
   async function run(queryDef: TQueryDef) {
-    const result = await resolveModel(schema, queryDef);
-
-    console.log('run', queryDef);
-    throw new Error('Not implemented');
+    const ctx = ApiContext.create();
+    return await resolveInternal(ctx, schema, queryDef, undefined);
   }
 
-  async function resolveModel(model: TModelAny, def: TQueryDef) {
-    const [current, ...rest] = def;
+  async function resolveInternal(ctx: ApiContext, model: TModelAny, def: TQueryDef, value: any): Promise<any> {
+    const [current, ...defRest] = def;
+    if (isInternalQueryDefObject(current)) {
+      const [_, select] = current;
+      const result: Record<string, any> = {};
+      for (const [key, subDef] of Object.entries(select)) {
+        result[key] = await resolveInternal(ctx, model, subDef, value);
+      }
+      return result;
+    }
+    if (Array.isArray(current)) {
+      throw new Error('Unexpected array in query def');
+    }
+    const [nextCtx, valueResolved] = await resolveValue(ctx, value, model, current);
+    if (!model.resolve) {
+      throw new Error(`Could not resolve`);
+    }
+    return model.resolve({ ctx: nextCtx, def: current, defRest, resolve: resolveInternal, value: valueResolved });
+  }
+
+  async function resolveValue(
+    ctx: ApiContext,
+    value: any,
+    model: TModelAny,
+    def: TModelQueryDef,
+  ): Promise<[ApiContext, any]> {
+    if (value !== undefined) {
+      return [ctx, value];
+    }
     const implemFn = implemsByModel.get(model);
+    if (!implemFn) {
+      return [ctx, undefined];
+    }
+    return extractImpleResult(ctx, await implemFn({ ctx, def, withCtx }));
   }
 }
 

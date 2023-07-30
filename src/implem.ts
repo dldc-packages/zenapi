@@ -1,6 +1,5 @@
 import type { ApiContext } from './context';
-import type { IModelResolved } from './engine';
-import type { TModelAny } from './model';
+import type { TModelAny, TModelDef, TModelProvided } from './model';
 
 const IMPLEM = Symbol('IMPLEM');
 type IMPLEM = typeof IMPLEM;
@@ -11,24 +10,39 @@ export interface IImplementation {
   readonly implemFn: TImplemFn<TModelAny>;
 }
 
-export function respond(ctx: ApiContext, ...resolved: IModelResolved[]): IImplemFnResponse {
-  return { ctx, resolved };
+interface IProvidedWithCtx<Value> {
+  readonly [IMPLEM]: true;
+  readonly provided: Value;
+  readonly ctx: ApiContext;
 }
 
-export interface IImplemFnResponse {
-  ctx: ApiContext;
-  resolved: IModelResolved[];
+export function withCtx<Value>(ctx: ApiContext, value: Value): IProvidedWithCtx<Value> {
+  return {
+    [IMPLEM]: true,
+    provided: value,
+    ctx,
+  };
 }
+
+export type TImplemFnResponse<Model extends TModelAny> = IProvidedWithCtx<Model> | TModelProvided<Model>;
 
 export interface IImplemFnData<Model extends TModelAny> {
   ctx: ApiContext;
-  input: unknown; // Moded extends IModel<infer Fields, any> ? TFormiFieldTreeValue<Fields> : never;
+  def: TModelDef<Model>;
+  withCtx: (ctx: ApiContext, value: TModelProvided<Model>) => IProvidedWithCtx<TModelProvided<Model>>;
 }
 
 export type TImplemFn<Model extends TModelAny> = (
   data: IImplemFnData<Model>,
-) => Promise<IImplemFnResponse> | IImplemFnResponse;
+) => Promise<TImplemFnResponse<Model>> | TImplemFnResponse<Model>;
 
 export function implem<Model extends TModelAny>(model: Model, implenFn: TImplemFn<Model>): IImplementation {
-  return { [IMPLEM]: true, model, implemFn: implenFn };
+  return { [IMPLEM]: true, model, implemFn: implenFn as any };
+}
+
+export function extractImpleResult(ctx: ApiContext, result: any): [nextCtx: ApiContext, value: any] {
+  if (result && typeof result === 'object' && IMPLEM in result) {
+    return [result.ctx, result.provided];
+  }
+  return [ctx, result];
 }

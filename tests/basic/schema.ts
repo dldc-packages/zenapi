@@ -1,4 +1,4 @@
-import { enumeration, func, list, nil, record, string } from '../../src/mod';
+import { enumeration, input, list, nil, record, string } from '../../src/mod';
 
 export const workspaceUserRoleType = enumeration(['admin', 'user']);
 
@@ -26,22 +26,11 @@ export const authRequestType = record({
   otpId: string(),
 });
 
-// const loginInput = {
-//   email: FormiField.string(),
-//   otpId: FormiField.string(),
-//   otp: FormiField.string(),
-// };
-
-export const authLogin = func<{ email: string; otpId: string; otp: string }, typeof meType>(meType);
+export const authLogin = input<{ email: string; otpId: string; otp: string }, typeof meType>(meType);
 
 export const authLogout = nil();
 
-// const requestOtpInput = {
-//   tenant: FormiField.optionalString(),
-//   email: FormiField.string(),
-// };
-
-export const authRequestOtp = func<{ tenant?: string; email: string }, typeof authRequestType>(authRequestType);
+export const authRequestOtp = input<{ tenant?: string; email: string }, typeof authRequestType>(authRequestType);
 
 export const auth = record({
   login: authLogin,
@@ -61,14 +50,8 @@ export const workspaceType = record({
   storages: list(storageType),
 });
 
-// const workspaceInput = {
-//   id: FormiField.optionalString(),
-//   tenant: FormiField.optionalString(),
-// };
-// const workspaceInput = {} as { id?: string; tenant?: string };
-
-export const workspaceByTenant = func<string, typeof workspaceType>(workspaceType);
-export const workspaceById = func<string, typeof workspaceType>(workspaceType);
+export const workspaceByTenant = input<string, typeof workspaceType>(workspaceType);
+export const workspaceById = input<string, typeof workspaceType>(workspaceType);
 
 export const version = string();
 
