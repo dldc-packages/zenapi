@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@dldc/erreur':
+    specifier: ^3.0.8
+    version: 3.0.8
   '@dldc/formi':
     specifier: ^1.0.0
     version: 1.0.0(react-dom@18.2.0)(react@18.2.0)(zod@3.21.4)

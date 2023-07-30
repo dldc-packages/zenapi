@@ -1,65 +1,65 @@
-import { enumeration, input, list, nil, record, string } from '../../src/mod';
+import { schema } from '../../src/mod';
 
-export const workspaceUserRoleType = enumeration(['admin', 'user']);
+export const workspaceUserRoleType = schema.enum(['admin', 'user']);
 
-export const meWorkspaceType = record({
-  id: string(),
-  name: string(),
-  tenant: string(),
+export const meWorkspaceType = schema.record({
+  id: schema.string(),
+  name: schema.string(),
+  tenant: schema.string(),
   role: workspaceUserRoleType,
 });
 
-export const meWorspacesType = list(meWorkspaceType);
+export const meWorspacesType = schema.list(meWorkspaceType);
 
-export const meUserPasswordType = string();
+export const meUserPasswordType = schema.string();
 
-export const meType = record({
-  id: string(),
-  name: string(),
-  email: string(),
+export const meType = schema.record({
+  id: schema.string(),
+  name: schema.string(),
+  email: schema.string(),
   password: meUserPasswordType,
   workspaces: meWorspacesType,
 });
 
-export const authRequestType = record({
-  email: string(),
-  otpId: string(),
+export const authRequestType = schema.record({
+  email: schema.string(),
+  otpId: schema.string(),
 });
 
-export const authLogin = input<{ email: string; otpId: string; otp: string }, typeof meType>(meType);
+export const authLogin = schema.input<{ email: string; otpId: string; otp: string }, typeof meType>(meType);
 
-export const authLogout = nil();
+export const authLogout = schema.nil();
 
-export const authRequestOtp = input<{ tenant?: string; email: string }, typeof authRequestType>(authRequestType);
+export const authRequestOtp = schema.input<{ tenant?: string; email: string }, typeof authRequestType>(authRequestType);
 
-export const auth = record({
+export const auth = schema.record({
   login: authLogin,
   logout: authLogout,
   requestOtp: authRequestOtp,
 });
 
-export const storageType = record({
-  id: string(),
-  description: string(),
+export const storageType = schema.record({
+  id: schema.string(),
+  description: schema.string(),
 });
 
-export const workspaceType = record({
-  id: string(),
-  name: string(),
-  tenant: string(),
-  storages: list(storageType),
+export const workspaceType = schema.record({
+  id: schema.string(),
+  name: schema.string(),
+  tenant: schema.string(),
+  storages: schema.list(storageType),
 });
 
-export const workspaceByTenant = input<string, typeof workspaceType>(workspaceType);
-export const workspaceById = input<string, typeof workspaceType>(workspaceType);
+export const workspaceByTenant = schema.input<string, typeof workspaceType>(workspaceType);
+export const workspaceById = schema.input<string, typeof workspaceType>(workspaceType);
 
-export const version = string();
+export const version = schema.string();
 
-export const schema = record({
+export const appSchema = schema.record({
   version,
   auth,
-  workspaces: list(workspaceType),
-  workspace: record({
+  workspaces: schema.list(workspaceType),
+  workspace: schema.record({
     byTenant: workspaceByTenant,
     byId: workspaceById,
   }),

@@ -1,46 +1,127 @@
+import { InvalidQuery, InvalidResolvedValue, UnresolvedValue } from './erreur';
 import type { IModel, TModelAny, TModelProvided, TModelValue, TQueryBuilder } from './model';
 import { model } from './model';
 import type { IQuery, TQueryAny, TQueryDef, TQueryResult } from './query';
 import { createQuery } from './query';
 
-export function string(): IModel<string, string, IQuery<string>, undefined> {
+export const schema = {
+  string,
+  number,
+  boolean,
+  nil,
+  nullable,
+  record,
+  list,
+  input,
+  enum: enumeration,
+} as const;
+
+function string(): IModel<string, string, IQuery<string>, undefined> {
   return model({
     name: 'string',
     builder(parentDef): IQuery<string> {
       return createQuery<string>(parentDef);
     },
     resolve({ value }) {
+      if (value === undefined) {
+        throw UnresolvedValue.create();
+      }
       if (typeof value !== 'string') {
-        throw new Error('Expected string');
+        throw InvalidResolvedValue.create();
       }
       return value;
     },
   });
 }
 
-export function number(): IModel<number, number, IQuery<number>, undefined> {
+function number(): IModel<number, number, IQuery<number>, undefined> {
   return model({
     name: 'number',
     builder(parentDef): IQuery<number> {
       return createQuery<number>(parentDef);
     },
+    resolve({ value }) {
+      if (value === undefined) {
+        throw UnresolvedValue.create();
+      }
+      if (typeof value !== 'number') {
+        throw InvalidResolvedValue.create();
+      }
+      return value;
+    },
   });
 }
 
-export function boolean(): IModel<boolean, boolean, IQuery<boolean>, undefined> {
+function boolean(): IModel<boolean, boolean, IQuery<boolean>, undefined> {
   return model({
     name: 'boolean',
     builder(parentDef): IQuery<boolean> {
       return createQuery<boolean>(parentDef);
     },
+    resolve({ value }) {
+      if (value === undefined) {
+        throw UnresolvedValue.create();
+      }
+      if (typeof value !== 'boolean') {
+        throw InvalidResolvedValue.create();
+      }
+      return value;
+    },
   });
 }
 
-export function nil(): IModel<null, null, IQuery<null>, undefined> {
+function nil(): IModel<null, null, IQuery<null>, undefined> {
   return model({
     name: 'null',
     builder(parentDef): IQuery<null> {
       return createQuery<null>(parentDef);
+    },
+    resolve({ value }) {
+      if (value === undefined) {
+        throw UnresolvedValue.create();
+      }
+      if (value !== 'null') {
+        throw InvalidResolvedValue.create();
+      }
+      return value;
+    },
+  });
+}
+
+function nullable<Child extends TModelAny>(
+  inner: Child,
+): IModel<TModelValue<Child> | null, TModelProvided<Child> | null, TQueryBuilder<Child>, undefined> {
+  return model({
+    name: 'nullable',
+    builder(parentDef) {
+      return inner.builder(parentDef);
+    },
+    resolve({ value, resolve, ctx, def, defRest }) {
+      if (value === null) {
+        return null;
+      }
+      return resolve(ctx, inner, [def, ...defRest], value);
+    },
+  });
+}
+
+function enumeration<Values extends readonly string[]>(
+  values: Values,
+): IModel<Values[number], Values[number], IQuery<Values[number]>, undefined> {
+  return model({
+    name: 'enumeration',
+    builder(parentDef) {
+      return createQuery<Values[number]>(parentDef);
+    },
+    resolve({ value }) {
+      if (value === undefined) {
+        throw UnresolvedValue.create();
+      }
+      if (!values.includes(value)) {
+        throw InvalidResolvedValue.create();
+        // throw new Error(`Invalid enum ${value}`);
+      }
+      return value;
     },
   });
 }
@@ -49,7 +130,7 @@ export type TModelsRecord = Record<string, TModelAny>;
 
 export type TRecordQueryBuilder<Fields extends TModelsRecord> = { [K in keyof Fields]: TQueryBuilder<Fields[K]> };
 
-export function record<Children extends TModelsRecord>(
+function record<Children extends TModelsRecord>(
   fields: Children,
 ): IModel<
   { [K in keyof Children]: TModelValue<Children[K]> },
@@ -68,7 +149,8 @@ export function record<Children extends TModelsRecord>(
     },
     resolve({ ctx, def: key, defRest, resolve, value }) {
       if (key in fields === false) {
-        throw new Error(`Unknown field ${key}`);
+        throw InvalidQuery.create();
+        // throw new Error(`Unknown field ${key}`);
       }
       return resolve(ctx, fields[key], defRest, value?.[key]);
     },
@@ -93,7 +175,7 @@ export type TListDef =
       select: TQueryDef;
     };
 
-export function list<Child extends TModelAny>(
+function list<Child extends TModelAny>(
   child: Child,
 ): IModel<TModelValue<Child>[], TModelProvided<Child>[], IListQueryBuilder<Child>, TListDef> {
   return model({
@@ -130,7 +212,7 @@ export interface IInputDef<Input> {
   select: TQueryDef;
 }
 
-export function input<Input, Result extends TModelAny>(
+function input<Input, Result extends TModelAny>(
   result: Result,
 ): IModel<TModelValue<Result>, TModelProvided<Result>, TInputQueryBuilder<Input, Result>, IInputDef<Input>> {
   return model({
@@ -143,20 +225,6 @@ export function input<Input, Result extends TModelAny>(
     },
     resolve({ ctx, def, resolve, value }) {
       return resolve(ctx, result, def.select, value);
-    },
-  });
-}
-
-export function enumeration<Values extends readonly string[]>(
-  values: Values,
-): IModel<Values[number], Values[number], IQuery<Values[number]>, undefined> {
-  return model({
-    name: 'enumeration',
-    builder(parentDef) {
-      return createQuery<Values[number]>(parentDef);
-    },
-    resolve() {
-      throw new Error('Not implemented');
     },
   });
 }

@@ -1,25 +1,21 @@
 import { expect, test } from 'vitest';
 import { query } from '../src/mod';
-import { schema } from './basic/schema';
+import { appSchema } from './basic/schema';
 
 test('query version', () => {
-  const q1 = query(schema, (s) => s.version);
+  const q1 = query(appSchema, (s) => s.version);
 
-  expect(q1).toMatchObject({
-    def: ['version'],
-  });
+  expect(q1).toMatchObject({ def: ['version'] });
 });
 
 test('query object', () => {
-  const q1 = query(schema, (s) => query.object({ currentVersion: s.version }));
+  const q1 = query(appSchema, (s) => query.object({ currentVersion: s.version }));
 
-  expect(q1).toMatchObject({
-    def: [['object', { currentVersion: ['version'] }]],
-  });
+  expect(q1).toMatchObject({ def: [['object', { currentVersion: ['version'] }]] });
 });
 
 test('query connexion', () => {
-  const q1 = query(schema, (s) =>
+  const q1 = query(appSchema, (s) =>
     query.object({
       connexion: s.auth.login({ email: 'a', otp: 'b', otpId: 'c' }, ({ id, name, email }) =>
         query.object({ id, name, email }),
@@ -47,7 +43,7 @@ test('query connexion', () => {
 });
 
 test('query nested', () => {
-  const q1 = query(schema, (s) =>
+  const q1 = query(appSchema, (s) =>
     s.workspaces.paginate(3, ({ id, name, storages }) =>
       query.object({
         id,
@@ -82,7 +78,7 @@ test('query nested', () => {
 });
 
 test('query multiple', () => {
-  const q1 = query(schema, (s) =>
+  const q1 = query(appSchema, (s) =>
     query.object({
       first: s.workspace.byTenant('first', ({ id, name, tenant }) => query.object({ id, name, tenant })),
       second: s.workspace.byTenant('second', ({ id, name, tenant }) => query.object({ id, name, tenant })),
