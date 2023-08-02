@@ -1,5 +1,5 @@
 import { engine, implem } from '../../src/mod';
-import { appSchema, authLogin, meWorspacesType, version } from './schema';
+import { appSchema, authLogin, maybeMe, meWorspacesType, version } from './schema';
 
 const authLoginImplem = implem(authLogin, ({ def }) => {
   return {
@@ -17,4 +17,8 @@ const meWorspacesTypeImplem = implem(meWorspacesType, () => {
   throw new Error('Not implemented');
 });
 
-export const appEngine = engine(appSchema, authLoginImplem, meWorspacesTypeImplem, versionImplem);
+const maybeMeImple = implem(maybeMe, () => {
+  return null;
+});
+
+export const appEngine = engine(appSchema, authLoginImplem, meWorspacesTypeImplem, versionImplem, maybeMeImple);

@@ -111,3 +111,17 @@ test('query multiple', () => {
     ],
   });
 });
+
+test('nullable', () => {
+  const q1 = query(appSchema, (s) => s.me(({ id, name, email }) => query.object({ id, name, email })));
+
+  expect(q1).toMatchObject({
+    def: ['me', { nullable: [['object', { email: ['email'], id: ['id'], name: ['name'] }]] }],
+  });
+
+  const q2 = query(appSchema, (s) => s.me((m) => m.displayName((m) => m)));
+
+  expect(q2).toMatchObject({
+    def: ['me', { nullable: ['displayName', { nullable: [] }] }],
+  });
+});

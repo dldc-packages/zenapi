@@ -1,7 +1,7 @@
 import { InvalidQuery, InvalidResolvedValue, UnresolvedValue } from './erreur';
 import type { IModel, TModelAny, TModelProvided, TModelValue, TQueryBuilder } from './model';
 import { model } from './model';
-import type { IQuery, TQueryAny, TQueryDef, TQueryResult } from './query';
+import type { IQuery, RESULT, TQueryAny, TQueryDef, TQueryResult } from './query';
 import { createQuery } from './query';
 
 export const schema = {
@@ -10,10 +10,10 @@ export const schema = {
   boolean,
   nil,
   nullable,
-  record,
+  object: objectMod,
   list,
   input,
-  enum: enumeration,
+  enum: enumMod,
   date,
 } as const;
 
@@ -107,24 +107,38 @@ function nil(): IModel<null, null, IQuery<null>, undefined> {
   });
 }
 
+export type TNullableQuery<Q extends TQueryAny> = IQuery<Q[RESULT] | null>;
+
+export type TNullableQueryBuilder<Child extends TModelAny> = <Q extends TQueryAny>(
+  fn: (inner: TQueryBuilder<Child>) => Q,
+) => TNullableQuery<Q>;
+
 function nullable<Child extends TModelAny>(
   inner: Child,
-): IModel<TModelValue<Child> | null, TModelProvided<Child> | null, TQueryBuilder<Child>, undefined> {
+): IModel<
+  TModelValue<Child> | null,
+  TModelProvided<Child> | null,
+  TNullableQueryBuilder<Child>,
+  { nullable: TQueryDef }
+> {
   return model({
     name: 'nullable',
-    builder(parentDef) {
-      return inner.builder(parentDef);
+    builder(parentDef): TNullableQueryBuilder<Child> {
+      return (fn) => {
+        const sub = fn(inner.builder([]));
+        return createQuery([...parentDef, { nullable: sub.def }]);
+      };
     },
-    resolve({ value, resolve, ctx, def, defRest }) {
+    resolve({ value, resolve, ctx, def }) {
       if (value === null) {
         return null;
       }
-      return resolve(ctx, inner, [def, ...defRest], value);
+      return resolve(ctx, inner, def.nullable, value);
     },
   });
 }
 
-function enumeration<Values extends readonly string[]>(
+function enumMod<Values extends readonly string[]>(
   values: Values,
 ): IModel<Values[number], Values[number], IQuery<Values[number]>, undefined> {
   return model({
@@ -149,7 +163,7 @@ export type TModelsRecord = Record<string, TModelAny>;
 
 export type TRecordQueryBuilder<Fields extends TModelsRecord> = { [K in keyof Fields]: TQueryBuilder<Fields[K]> };
 
-function record<Children extends TModelsRecord>(
+function objectMod<Children extends TModelsRecord>(
   fields: Children,
 ): IModel<
   { [K in keyof Children]: TModelValue<Children[K]> },

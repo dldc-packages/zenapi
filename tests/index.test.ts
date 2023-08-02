@@ -38,3 +38,11 @@ test('resolve connexion', async () => {
     },
   });
 });
+
+test.only('nullable', async () => {
+  const q1 = query(appSchema, (s) => s.me(({ id, name, email }) => query.object({ id, name, email })));
+
+  const res = await appEngine.run(q1.def);
+
+  expect(res).toEqual(null);
+});
