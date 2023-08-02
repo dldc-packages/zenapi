@@ -14,6 +14,7 @@ export const schema = {
   list,
   input,
   enum: enumeration,
+  date,
 } as const;
 
 function string(): IModel<string, string, IQuery<string>, undefined> {
@@ -27,6 +28,24 @@ function string(): IModel<string, string, IQuery<string>, undefined> {
         throw UnresolvedValue.create();
       }
       if (typeof value !== 'string') {
+        throw InvalidResolvedValue.create();
+      }
+      return value;
+    },
+  });
+}
+
+function date(): IModel<Date, Date, IQuery<Date>, undefined> {
+  return model({
+    name: 'date',
+    builder(parentDef): IQuery<Date> {
+      return createQuery<Date>(parentDef);
+    },
+    resolve({ value }) {
+      if (value === undefined) {
+        throw UnresolvedValue.create();
+      }
+      if (!(value instanceof Date)) {
         throw InvalidResolvedValue.create();
       }
       return value;
