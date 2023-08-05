@@ -15,6 +15,7 @@ export const schema = {
   input,
   enum: enumMod,
   date,
+  json,
 } as const;
 
 function string(): IModel<string, string, IQuery<string>, undefined> {
@@ -83,6 +84,21 @@ function boolean(): IModel<boolean, boolean, IQuery<boolean>, undefined> {
       }
       if (typeof value !== 'boolean') {
         throw InvalidResolvedValue.create();
+      }
+      return value;
+    },
+  });
+}
+
+function json<Data>(): IModel<Data, Data, IQuery<Data>, undefined> {
+  return model({
+    name: 'json',
+    builder(parentDef): IQuery<Data> {
+      return createQuery<Data>(parentDef);
+    },
+    resolve({ value }) {
+      if (value === undefined) {
+        throw UnresolvedValue.create();
       }
       return value;
     },
@@ -261,3 +277,15 @@ function input<Input, Result extends TModelAny>(
     },
   });
 }
+
+// export function errorBoundary<Child extends TModelAny, ErrorChild extends TModelAny>(
+//   inner: Child,
+//   error: ErrorChild,
+// ): IModel<
+//   TModelValue<Child> | null,
+//   TModelProvided<Child> | null,
+//   TNullableQueryBuilder<Child>,
+//   { nullable: TQueryDef }
+// > {
+
+// }
