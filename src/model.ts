@@ -1,18 +1,14 @@
 import type { ApiContext } from './context';
 import type { TModelQueryDef, TQueryDef } from './query';
 
-export const VALUE = Symbol('VALUE');
 export const DEF = Symbol('DEF');
 
-export type TModelAny = IModel<any, any, any, any>;
+export type TModelAny = IModel<any, any, any>;
 
-export type TModelValue<Model extends TModelAny> = Model[typeof VALUE];
-export type TModelProvided<Model extends TModelAny> = Model extends IModel<any, infer Provided, any, any>
-  ? Provided
-  : never;
+export type TModelProvided<Model extends TModelAny> = Model extends IModel<infer Provided, any, any> ? Provided : never;
 export type TModelDef<Model extends TModelAny> = Model[typeof DEF];
 
-export type TQueryBuilder<Model extends TModelAny> = Model extends IModel<any, any, infer QueryBuilder, any>
+export type TQueryBuilder<Model extends TModelAny> = Model extends IModel<any, infer QueryBuilder, any>
   ? QueryBuilder
   : never;
 
@@ -26,16 +22,15 @@ export interface IResolveParams<Provided, Def extends TModelQueryDef> {
   resolve: TResolveModel;
 }
 
-export interface IModel<Value, Provided, QueryBuilder, Def extends TModelQueryDef> {
-  readonly [VALUE]: Value;
+export interface IModel<Provided, QueryBuilder, Def extends TModelQueryDef> {
   readonly [DEF]: Def;
   readonly name: string;
   readonly builder: (parentDef: TQueryDef) => QueryBuilder;
   readonly resolve?: (params: IResolveParams<Provided, Def>) => any;
 }
 
-export function model<Value, Provided, QueryBuilder, Def extends TModelQueryDef>(
-  mod: Omit<IModel<Value, Provided, QueryBuilder, Def>, typeof VALUE | typeof DEF>,
-): IModel<Value, Provided, QueryBuilder, Def> {
+export function model<Provided, QueryBuilder, Def extends TModelQueryDef>(
+  mod: Omit<IModel<Provided, QueryBuilder, Def>, typeof DEF>,
+): IModel<Provided, QueryBuilder, Def> {
   return mod as any;
 }

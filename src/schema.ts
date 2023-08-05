@@ -1,5 +1,5 @@
 import { InvalidQuery, InvalidResolvedValue, UnresolvedValue } from './erreur';
-import type { IModel, TModelAny, TModelProvided, TModelValue, TQueryBuilder } from './model';
+import type { IModel, TModelAny, TModelProvided, TQueryBuilder } from './model';
 import { model } from './model';
 import type { IQuery, RESULT, TQueryAny, TQueryDef, TQueryResult } from './query';
 import { createQuery } from './query';
@@ -18,7 +18,7 @@ export const schema = {
   json,
 } as const;
 
-function string(): IModel<string, string, IQuery<string>, undefined> {
+function string(): IModel<string, IQuery<string>, undefined> {
   return model({
     name: 'string',
     builder(parentDef): IQuery<string> {
@@ -36,7 +36,7 @@ function string(): IModel<string, string, IQuery<string>, undefined> {
   });
 }
 
-function date(): IModel<Date, Date, IQuery<Date>, undefined> {
+function date(): IModel<Date, IQuery<Date>, undefined> {
   return model({
     name: 'date',
     builder(parentDef): IQuery<Date> {
@@ -54,7 +54,7 @@ function date(): IModel<Date, Date, IQuery<Date>, undefined> {
   });
 }
 
-function number(): IModel<number, number, IQuery<number>, undefined> {
+function number(): IModel<number, IQuery<number>, undefined> {
   return model({
     name: 'number',
     builder(parentDef): IQuery<number> {
@@ -72,7 +72,7 @@ function number(): IModel<number, number, IQuery<number>, undefined> {
   });
 }
 
-function boolean(): IModel<boolean, boolean, IQuery<boolean>, undefined> {
+function boolean(): IModel<boolean, IQuery<boolean>, undefined> {
   return model({
     name: 'boolean',
     builder(parentDef): IQuery<boolean> {
@@ -90,7 +90,7 @@ function boolean(): IModel<boolean, boolean, IQuery<boolean>, undefined> {
   });
 }
 
-function json<Data>(): IModel<Data, Data, IQuery<Data>, undefined> {
+function json<Data>(): IModel<Data, IQuery<Data>, undefined> {
   return model({
     name: 'json',
     builder(parentDef): IQuery<Data> {
@@ -105,7 +105,7 @@ function json<Data>(): IModel<Data, Data, IQuery<Data>, undefined> {
   });
 }
 
-function nil(): IModel<null, null, IQuery<null>, undefined> {
+function nil(): IModel<null, IQuery<null>, undefined> {
   return model({
     name: 'null',
     builder(parentDef): IQuery<null> {
@@ -131,12 +131,7 @@ export type TNullableQueryBuilder<Child extends TModelAny> = <Q extends TQueryAn
 
 function nullable<Child extends TModelAny>(
   inner: Child,
-): IModel<
-  TModelValue<Child> | null,
-  TModelProvided<Child> | null,
-  TNullableQueryBuilder<Child>,
-  { nullable: TQueryDef }
-> {
+): IModel<TModelProvided<Child> | null, TNullableQueryBuilder<Child>, { nullable: TQueryDef }> {
   return model({
     name: 'nullable',
     builder(parentDef): TNullableQueryBuilder<Child> {
@@ -156,7 +151,7 @@ function nullable<Child extends TModelAny>(
 
 function enumMod<Values extends readonly string[]>(
   values: Values,
-): IModel<Values[number], Values[number], IQuery<Values[number]>, undefined> {
+): IModel<Values[number], IQuery<Values[number]>, undefined> {
   return model({
     name: 'enumeration',
     builder(parentDef) {
@@ -181,12 +176,7 @@ export type TRecordQueryBuilder<Fields extends TModelsRecord> = { [K in keyof Fi
 
 function objectMod<Children extends TModelsRecord>(
   fields: Children,
-): IModel<
-  { [K in keyof Children]: TModelValue<Children[K]> },
-  { [K in keyof Children]?: TModelProvided<Children[K]> },
-  TRecordQueryBuilder<Children>,
-  string
-> {
+): IModel<{ [K in keyof Children]?: TModelProvided<Children[K]> }, TRecordQueryBuilder<Children>, string> {
   return model({
     name: 'record',
     builder(parentDef) {
@@ -226,7 +216,7 @@ export type TListDef =
 
 function list<Child extends TModelAny>(
   child: Child,
-): IModel<TModelValue<Child>[], TModelProvided<Child>[], IListQueryBuilder<Child>, TListDef> {
+): IModel<TModelProvided<Child>[], IListQueryBuilder<Child>, TListDef> {
   return model({
     name: 'list',
     builder(parentDef): IListQueryBuilder<Child> {
@@ -263,7 +253,7 @@ export interface IInputDef<Input> {
 
 function input<Input, Result extends TModelAny>(
   result: Result,
-): IModel<TModelValue<Result>, TModelProvided<Result>, TInputQueryBuilder<Input, Result>, IInputDef<Input>> {
+): IModel<TModelProvided<Result>, TInputQueryBuilder<Input, Result>, IInputDef<Input>> {
   return model({
     name: 'input',
     builder(parentDef): TInputQueryBuilder<Input, Result> {
