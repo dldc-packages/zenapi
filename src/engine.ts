@@ -1,15 +1,25 @@
+import { isAbstractQueryDef, type TAbstractAny } from './abstract';
+import { abstracts as baseAbstracts } from './base/abstracts';
 import { ApiContext } from './context';
 import type { IImplementation, TImplemFn } from './implem';
 import { extractImpleResult, withCtx } from './implem';
 import type { TModelAny, TModelProvided } from './model';
 import type { TModelQueryDef } from './query';
-import { isInternalQueryDefObject, type TQueryDef } from './query';
+import { type TQueryDef } from './query';
 
 export interface IEngine {
   run: (queryDef: TQueryDef) => Promise<unknown>; // TODO: return type
 }
 
-export function engine(schema: TModelAny, ...implems: IImplementation[]): IEngine {
+export interface IEngineOptions {
+  schema: TModelAny;
+  implems: IImplementation[];
+  abstracts?: TAbstractAny[];
+}
+
+const DEFAULT_ABSTRACTS = [baseAbstracts.object];
+
+export function engine({ implems, schema, abstracts = DEFAULT_ABSTRACTS }: IEngineOptions): IEngine {
   const implemsByModel = new Map<TModelAny, TImplemFn<TModelAny>>();
   for (const implem of implems) {
     if (implemsByModel.has(implem.model)) {
@@ -27,13 +37,13 @@ export function engine(schema: TModelAny, ...implems: IImplementation[]): IEngin
 
   async function resolveInternal(ctx: ApiContext, model: TModelAny, def: TQueryDef, value: any): Promise<any> {
     const [current, ...defRest] = def;
-    if (isInternalQueryDefObject(current)) {
-      const [_, select] = current;
-      const result: Record<string, any> = {};
-      for (const [key, subDef] of Object.entries(select)) {
-        result[key] = await resolveInternal(ctx, model, subDef, value);
+    if (isAbstractQueryDef(current)) {
+      const [name, def] = current;
+      const abstract = abstracts.find((ab) => ab.name === name);
+      if (!abstract) {
+        throw new Error(`Could not resolve abstract ${name}`);
       }
-      return result;
+      return abstract.resolve({ ctx, def, defRest, model, resolve: resolveInternal, value });
     }
     if (Array.isArray(current)) {
       throw new Error('Unexpected array in query def');

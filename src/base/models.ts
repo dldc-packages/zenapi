@@ -1,10 +1,10 @@
-import { InvalidQuery, InvalidResolvedValue, UnresolvedValue } from './erreur';
-import type { IModel, TModelAny, TModelProvided, TQueryBuilder } from './model';
-import { model } from './model';
-import type { IQuery, RESULT, TQueryAny, TQueryDef, TQueryResult } from './query';
-import { createQuery } from './query';
+import { InvalidQuery, InvalidResolvedValue, UnresolvedValue } from '../erreur';
+import type { IModel, TModelAny, TModelProvided, TQueryBuilder } from '../model';
+import { defineModel } from '../model';
+import type { IQuery, RESULT, TQueryAny, TQueryDef, TQueryResult } from '../query';
+import { createQuery } from '../query';
 
-export const schema = {
+export const models = {
   string,
   number,
   boolean,
@@ -19,7 +19,7 @@ export const schema = {
 } as const;
 
 function string(): IModel<string, IQuery<string>, undefined> {
-  return model({
+  return defineModel({
     name: 'string',
     builder(parentDef): IQuery<string> {
       return createQuery<string>(parentDef);
@@ -37,7 +37,7 @@ function string(): IModel<string, IQuery<string>, undefined> {
 }
 
 function date(): IModel<Date, IQuery<Date>, undefined> {
-  return model({
+  return defineModel({
     name: 'date',
     builder(parentDef): IQuery<Date> {
       return createQuery<Date>(parentDef);
@@ -55,7 +55,7 @@ function date(): IModel<Date, IQuery<Date>, undefined> {
 }
 
 function number(): IModel<number, IQuery<number>, undefined> {
-  return model({
+  return defineModel({
     name: 'number',
     builder(parentDef): IQuery<number> {
       return createQuery<number>(parentDef);
@@ -73,7 +73,7 @@ function number(): IModel<number, IQuery<number>, undefined> {
 }
 
 function boolean(): IModel<boolean, IQuery<boolean>, undefined> {
-  return model({
+  return defineModel({
     name: 'boolean',
     builder(parentDef): IQuery<boolean> {
       return createQuery<boolean>(parentDef);
@@ -91,7 +91,7 @@ function boolean(): IModel<boolean, IQuery<boolean>, undefined> {
 }
 
 function json<Data>(): IModel<Data, IQuery<Data>, undefined> {
-  return model({
+  return defineModel({
     name: 'json',
     builder(parentDef): IQuery<Data> {
       return createQuery<Data>(parentDef);
@@ -106,7 +106,7 @@ function json<Data>(): IModel<Data, IQuery<Data>, undefined> {
 }
 
 function nil(): IModel<null, IQuery<null>, undefined> {
-  return model({
+  return defineModel({
     name: 'null',
     builder(parentDef): IQuery<null> {
       return createQuery<null>(parentDef);
@@ -125,24 +125,36 @@ function nil(): IModel<null, IQuery<null>, undefined> {
 
 export type TNullableQuery<Q extends TQueryAny> = IQuery<Q[RESULT] | null>;
 
-export type TNullableQueryBuilder<Child extends TModelAny> = <Q extends TQueryAny>(
-  fn: (inner: TQueryBuilder<Child>) => Q,
-) => TNullableQuery<Q>;
+export interface INullableQueryBuilder<Child extends TModelAny> {
+  <Q extends TQueryAny>(fn: (inner: TQueryBuilder<Child>) => Q): TNullableQuery<Q>;
+  defined: TQueryBuilder<Child>;
+}
 
 function nullable<Child extends TModelAny>(
   inner: Child,
-): IModel<TModelProvided<Child> | null, TNullableQueryBuilder<Child>, { nullable: TQueryDef }> {
-  return model({
+): IModel<TModelProvided<Child> | null, INullableQueryBuilder<Child>, { nullable: TQueryDef | false }> {
+  return defineModel({
     name: 'nullable',
-    builder(parentDef): TNullableQueryBuilder<Child> {
-      return (fn) => {
-        const sub = fn(inner.builder([]));
-        return createQuery([...parentDef, { nullable: sub.def }]);
-      };
+    builder(parentDef): INullableQueryBuilder<Child> {
+      return Object.assign(
+        (fn: (inner: TQueryBuilder<Child>) => TQueryAny) => {
+          const sub = fn(inner.builder([]));
+          return createQuery([...parentDef, { nullable: sub.def }]);
+        },
+        {
+          defined: inner.builder([...parentDef, { nullable: false }]),
+        },
+      );
     },
-    resolve({ value, resolve, ctx, def }) {
+    resolve({ value, resolve, ctx, def, defRest }) {
       if (value === null) {
+        if (def.nullable === false) {
+          throw new Error('Unexpected nullable');
+        }
         return null;
+      }
+      if (def.nullable === false) {
+        return resolve(ctx, inner, defRest, value);
       }
       return resolve(ctx, inner, def.nullable, value);
     },
@@ -152,7 +164,7 @@ function nullable<Child extends TModelAny>(
 function enumMod<Values extends readonly string[]>(
   values: Values,
 ): IModel<Values[number], IQuery<Values[number]>, undefined> {
-  return model({
+  return defineModel({
     name: 'enumeration',
     builder(parentDef) {
       return createQuery<Values[number]>(parentDef);
@@ -172,19 +184,34 @@ function enumMod<Values extends readonly string[]>(
 
 export type TModelsRecord = Record<string, TModelAny>;
 
-export type TRecordQueryBuilder<Fields extends TModelsRecord> = { [K in keyof Fields]: TQueryBuilder<Fields[K]> };
+export type TRecordQueryBuilderInner<Fields extends TModelsRecord> = { [K in keyof Fields]: TQueryBuilder<Fields[K]> };
 
-function objectMod<Children extends TModelsRecord>(
-  fields: Children,
-): IModel<{ [K in keyof Children]?: TModelProvided<Children[K]> }, TRecordQueryBuilder<Children>, string> {
-  return model({
-    name: 'record',
+export interface IRecordQueryBuilder<Fields extends TModelsRecord> {
+  (): TRecordQueryBuilderInner<Fields>;
+  <Q extends TQueryAny>(fn: (inner: TRecordQueryBuilderInner<Fields>) => Q): Q;
+}
+
+function objectMod<Fields extends TModelsRecord>(
+  fields: Fields,
+): IModel<{ [K in keyof Fields]?: TModelProvided<Fields[K]> }, IRecordQueryBuilder<Fields>, string> {
+  return defineModel({
+    name: 'object',
     builder(parentDef) {
-      const result: Record<string, any> = {};
-      for (const [key, child] of Object.entries(fields)) {
-        result[key] = child.builder([...parentDef, key]);
-      }
-      return result as any;
+      return ((fn?: (inner: TRecordQueryBuilderInner<Fields>) => TQueryAny) => {
+        if (!fn) {
+          const inner: Record<string, any> = {};
+          for (const [key, child] of Object.entries(fields)) {
+            inner[key] = child.builder([...parentDef, key]);
+          }
+          return inner;
+        }
+        const inner: Record<string, any> = {};
+        for (const [key, child] of Object.entries(fields)) {
+          inner[key] = child.builder([key]);
+        }
+        const q = fn(inner as TRecordQueryBuilderInner<Fields>);
+        return createQuery([...parentDef, ...q.def]);
+      }) as any;
     },
     resolve({ ctx, def: key, defRest, resolve, value }) {
       if (key in fields === false) {
@@ -217,7 +244,7 @@ export type TListDef =
 function list<Child extends TModelAny>(
   child: Child,
 ): IModel<TModelProvided<Child>[], IListQueryBuilder<Child>, TListDef> {
-  return model({
+  return defineModel({
     name: 'list',
     builder(parentDef): IListQueryBuilder<Child> {
       return {
@@ -254,7 +281,7 @@ export interface IInputDef<Input> {
 function input<Input, Result extends TModelAny>(
   result: Result,
 ): IModel<TModelProvided<Result>, TInputQueryBuilder<Input, Result>, IInputDef<Input>> {
-  return model({
+  return defineModel({
     name: 'input',
     builder(parentDef): TInputQueryBuilder<Input, Result> {
       return (data, select) => {
@@ -267,15 +294,3 @@ function input<Input, Result extends TModelAny>(
     },
   });
 }
-
-// export function errorBoundary<Child extends TModelAny, ErrorChild extends TModelAny>(
-//   inner: Child,
-//   error: ErrorChild,
-// ): IModel<
-//   TModelValue<Child> | null,
-//   TModelProvided<Child> | null,
-//   TNullableQueryBuilder<Child>,
-//   { nullable: TQueryDef }
-// > {
-
-// }

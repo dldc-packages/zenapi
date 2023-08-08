@@ -1,5 +1,18 @@
+export { abstracts, obj, type TAbstractObjectDef, type TQueryRecord, type TQueryRecordResult } from './base/abstracts';
+export {
+  models,
+  type IInputDef,
+  type IListQueryBuilder,
+  type INullableQueryBuilder,
+  type IRecordQueryBuilder,
+  type TInputQueryBuilder,
+  type TListDef,
+  type TModelsRecord,
+  type TNullableQuery,
+  type TRecordQueryBuilderInner,
+} from './base/models';
 export { ApiContext } from './context';
-export { engine, resolve, type IEngine, type IModelResolved } from './engine';
+export { engine, resolve, type IEngine, type IEngineOptions, type IModelResolved } from './engine';
 export { InvalidQuery, InvalidResolvedValue, UnresolvedValue } from './erreur';
 export {
   extractImpleResult,
@@ -14,21 +27,10 @@ export {
   createQuery,
   query,
   type IQuery,
-  type TInternalQueryDefObject,
+  type TAbstractQueryDef,
   type TModelQueryDef,
   type TQueryAny,
   type TQueryDef,
   type TQueryDefItem,
   type TQueryResult,
-  type TQuerySelect,
-  type TQuerySelectResult,
 } from './query';
-export {
-  schema,
-  type IInputDef,
-  type IListQueryBuilder,
-  type TInputQueryBuilder,
-  type TListDef,
-  type TModelsRecord,
-  type TRecordQueryBuilder,
-} from './schema';

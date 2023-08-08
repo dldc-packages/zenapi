@@ -1,69 +1,75 @@
-import { schema } from '../../src/mod';
+import { models } from '../../src/mod';
 
-export const workspaceUserRoleType = schema.enum(['admin', 'user']);
+export const workspaceUserRoleType = models.enum(['admin', 'user']);
 
-export const meWorkspaceType = schema.object({
-  id: schema.string(),
-  name: schema.string(),
-  tenant: schema.string(),
+export const meWorkspaceType = models.object({
+  id: models.string(),
+  name: models.string(),
+  tenant: models.string(),
   role: workspaceUserRoleType,
 });
 
-export const meWorspacesType = schema.list(meWorkspaceType);
+export const settingsTypes = models.object({
+  appName: models.string(),
+  appVersion: models.json<{ major: number; minor: number }>(),
+});
 
-export const meUserPasswordType = schema.string();
+export const meWorspacesType = models.list(meWorkspaceType);
 
-export const meType = schema.object({
-  id: schema.string(),
-  name: schema.string(),
-  email: schema.string(),
-  displayName: schema.nullable(schema.string()),
+export const meUserPasswordType = models.string();
+
+export const meType = models.object({
+  id: models.string(),
+  name: models.string(),
+  email: models.string(),
+  displayName: models.nullable(models.string()),
   password: meUserPasswordType,
   workspaces: meWorspacesType,
 });
 
-export const authRequestType = schema.object({
-  email: schema.string(),
-  otpId: schema.string(),
+export const authRequestType = models.object({
+  email: models.string(),
+  otpId: models.string(),
 });
 
-export const authLogin = schema.input<{ email: string; otpId: string; otp: string }, typeof meType>(meType);
+export const authLogin = models.input<{ email: string; otpId: string; otp: string }, typeof meType>(meType);
 
-export const authLogout = schema.number();
+export const authLogout = models.number();
 
-export const authRequestOtp = schema.input<{ tenant?: string; email: string }, typeof authRequestType>(authRequestType);
+export const authRequestOtp = models.input<{ tenant?: string; email: string }, typeof authRequestType>(authRequestType);
 
-export const auth = schema.object({
+export const auth = models.object({
   login: authLogin,
   logout: authLogout,
   requestOtp: authRequestOtp,
 });
 
-export const storageType = schema.object({
-  id: schema.string(),
-  description: schema.string(),
+export const storageType = models.object({
+  id: models.string(),
+  description: models.string(),
 });
 
-export const workspaceType = schema.object({
-  id: schema.string(),
-  name: schema.string(),
-  tenant: schema.string(),
-  storages: schema.list(storageType),
+export const workspaceType = models.object({
+  id: models.string(),
+  name: models.string(),
+  tenant: models.string(),
+  storages: models.list(storageType),
 });
 
-export const workspaceByTenant = schema.input<string, typeof workspaceType>(workspaceType);
-export const workspaceById = schema.input<string, typeof workspaceType>(workspaceType);
+export const workspaceByTenant = models.input<string, typeof workspaceType>(workspaceType);
+export const workspaceById = models.input<string, typeof workspaceType>(workspaceType);
 
-export const version = schema.string();
+export const version = models.string();
 
-export const maybeMe = schema.nullable(meType);
+export const maybeMe = models.nullable(meType);
 
-export const appSchema = schema.object({
+export const appSchema = models.object({
   version,
+  settings: settingsTypes,
   auth,
   me: maybeMe,
-  workspaces: schema.list(workspaceType),
-  workspace: schema.object({
+  workspaces: models.list(workspaceType),
+  workspace: models.object({
     byTenant: workspaceByTenant,
     byId: workspaceById,
   }),

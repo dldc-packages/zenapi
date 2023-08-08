@@ -1,25 +1,61 @@
 import { expect, test } from 'vitest';
-import { query } from '../src/mod';
+import { abstracts, obj, query } from '../src/mod';
 import { appSchema } from './basic/schema';
 
 test('query version', () => {
-  const q1 = query(appSchema, (s) => s.version);
+  const q1 = query(appSchema)((s) => s.version);
 
   expect(q1).toMatchObject({ def: ['version'] });
 });
 
 test('query object', () => {
-  const q1 = query(appSchema, (s) => query.object({ currentVersion: s.version }));
+  const q1 = query(appSchema)((s) => obj({ currentVersion: s.version }));
 
   expect(q1).toMatchObject({ def: [['object', { currentVersion: ['version'] }]] });
 });
 
+test('query multiple settings (resolve multiple times)', () => {
+  const q = query(appSchema)((s) =>
+    obj({
+      name: s.settings().appName,
+      version: s.settings().appVersion,
+    }),
+  );
+
+  expect(q).toMatchObject({
+    def: [
+      [
+        'object',
+        {
+          name: ['settings', 'appName'],
+          version: ['settings', 'appVersion'],
+        },
+      ],
+    ],
+  });
+});
+
+test('query multiple inside settings (resolve only once)', () => {
+  const q = query(appSchema)((s) =>
+    s.settings((settings) =>
+      obj({
+        name: settings.appName,
+        version: settings.appVersion,
+      }),
+    ),
+  );
+
+  expect(q).toMatchObject({
+    def: ['settings', ['object', { name: ['appName'], version: ['appVersion'] }]],
+  });
+});
+
 test('query connexion', () => {
-  const q1 = query(appSchema, (s) =>
-    query.object({
-      connexion: s.auth.login({ email: 'a', otp: 'b', otpId: 'c' }, ({ id, name, email }) =>
-        query.object({ id, name, email }),
-      ),
+  const q1 = query(appSchema)((s) =>
+    obj({
+      connexion: s
+        .auth()
+        .login({ email: 'a', otp: 'b', otpId: 'c' }, (me) => me(({ id, name, email }) => obj({ id, name, email }))),
     }),
   );
 
@@ -43,13 +79,15 @@ test('query connexion', () => {
 });
 
 test('query nested', () => {
-  const q1 = query(appSchema, (s) =>
-    s.workspaces.paginate(3, ({ id, name, storages }) =>
-      query.object({
-        id,
-        name,
-        storages: storages.all(({ id, description }) => query.object({ id, description })),
-      }),
+  const q1 = query(appSchema)((s) =>
+    s.workspaces.paginate(3, (workspace) =>
+      workspace(({ id, name, storages }) =>
+        obj({
+          id,
+          name,
+          storages: storages.all((storage) => storage(({ id, description }) => obj({ id, description }))),
+        }),
+      ),
     ),
   );
 
@@ -78,11 +116,17 @@ test('query nested', () => {
 });
 
 test('query multiple', () => {
-  const q1 = query(appSchema, (s) =>
-    query.object({
-      first: s.workspace.byTenant('first', ({ id, name, tenant }) => query.object({ id, name, tenant })),
-      second: s.workspace.byTenant('second', ({ id, name, tenant }) => query.object({ id, name, tenant })),
-      third: s.workspace.byTenant('third', ({ id, name, tenant }) => query.object({ id, name, tenant })),
+  const q1 = query(appSchema)((s) =>
+    obj({
+      first: s
+        .workspace()
+        .byTenant('first', (workspace) => workspace(({ id, name, tenant }) => obj({ id, name, tenant }))),
+      second: s
+        .workspace()
+        .byTenant('second', (workspace) => workspace(({ id, name, tenant }) => obj({ id, name, tenant }))),
+      third: s
+        .workspace()
+        .byTenant('third', (workspace) => workspace(({ id, name, tenant }) => obj({ id, name, tenant }))),
     }),
   );
 
@@ -113,15 +157,39 @@ test('query multiple', () => {
 });
 
 test('nullable', () => {
-  const q1 = query(appSchema, (s) => s.me(({ id, name, email }) => query.object({ id, name, email })));
+  const q1 = query(appSchema)((s) => s.me((me) => me(({ id, name, email }) => obj({ id, name, email }))));
 
   expect(q1).toMatchObject({
     def: ['me', { nullable: [['object', { email: ['email'], id: ['id'], name: ['name'] }]] }],
   });
 
-  const q2 = query(appSchema, (s) => s.me((m) => m.displayName((m) => m)));
+  const q2 = query(appSchema)((s) => s.me((me) => me().displayName.defined));
 
   expect(q2).toMatchObject({
-    def: ['me', { nullable: ['displayName', { nullable: [] }] }],
+    def: ['me', { nullable: ['displayName', { nullable: false }] }],
+  });
+});
+
+test('errorBoundary abstract', () => {
+  const q = query(appSchema)((s) =>
+    obj({
+      foo: abstracts.errorBoundary.create(s.me.defined(({ id, name, email }) => obj({ id, name, email }))),
+    }),
+  );
+
+  expect(q).toMatchObject({
+    def: [
+      [
+        'object',
+        {
+          foo: [
+            [
+              'errorBoundary',
+              ['me', { nullable: false }, ['object', { email: ['email'], id: ['id'], name: ['name'] }]],
+            ],
+          ],
+        },
+      ],
+    ],
   });
 });

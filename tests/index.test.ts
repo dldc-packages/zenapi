@@ -1,10 +1,10 @@
 import { expect, test } from 'vitest';
-import { query } from '../src/mod';
+import { obj, query } from '../src/mod';
 import { appEngine } from './basic/engine';
 import { appSchema } from './basic/schema';
 
 test('resolve version', async () => {
-  const q1 = query(appSchema, (s) => s.version);
+  const q1 = query(appSchema)((s) => s.version);
 
   const res = await appEngine.run(q1.def);
 
@@ -12,7 +12,7 @@ test('resolve version', async () => {
 });
 
 test('resolve version in object', async () => {
-  const q1 = query(appSchema, (s) => query.object({ currentVersion: s.version }));
+  const q1 = query(appSchema)((s) => obj({ currentVersion: s.version }));
 
   const res = await appEngine.run(q1.def);
 
@@ -20,11 +20,11 @@ test('resolve version in object', async () => {
 });
 
 test('resolve connexion', async () => {
-  const q1 = query(appSchema, (s) =>
-    query.object({
-      connexion: s.auth.login({ email: 'a', otp: 'b', otpId: 'c' }, ({ id, name, email }) =>
-        query.object({ id, name, email }),
-      ),
+  const q1 = query(appSchema)((s) =>
+    obj({
+      connexion: s
+        .auth()
+        .login({ email: 'a', otp: 'b', otpId: 'c' }, (me) => me(({ id, name, email }) => obj({ id, name, email }))),
     }),
   );
 
@@ -40,7 +40,7 @@ test('resolve connexion', async () => {
 });
 
 test.only('nullable', async () => {
-  const q1 = query(appSchema, (s) => s.me(({ id, name, email }) => query.object({ id, name, email })));
+  const q1 = query(appSchema)((s) => s.me((me) => me(({ id, name, email }) => obj({ id, name, email }))));
 
   const res = await appEngine.run(q1.def);
 

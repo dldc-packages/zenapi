@@ -15,13 +15,14 @@ export type TQueryBuilder<Model extends TModelAny> = Model extends IModel<any, i
 export type TResolveModel = (ctx: ApiContext, model: TModelAny, def: TQueryDef, value: any | null) => Promise<any>;
 
 export interface IResolveParams<Provided, Def extends TModelQueryDef> {
-  ctx: ApiContext;
-  value: Provided | undefined;
-  def: Def;
-  defRest: TQueryDef;
-  resolve: TResolveModel;
+  readonly ctx: ApiContext;
+  readonly value: Provided | undefined;
+  readonly def: Def;
+  readonly defRest: TQueryDef;
+  readonly resolve: TResolveModel;
 }
 
+// TODO add error
 export interface IModel<Provided, QueryBuilder, Def extends TModelQueryDef> {
   readonly [DEF]: Def;
   readonly name: string;
@@ -29,8 +30,9 @@ export interface IModel<Provided, QueryBuilder, Def extends TModelQueryDef> {
   readonly resolve?: (params: IResolveParams<Provided, Def>) => any;
 }
 
-export function model<Provided, QueryBuilder, Def extends TModelQueryDef>(
+export function defineModel<Provided, QueryBuilder, Def extends TModelQueryDef>(
   mod: Omit<IModel<Provided, QueryBuilder, Def>, typeof DEF>,
 ): IModel<Provided, QueryBuilder, Def> {
+  Object.assign(mod, { [DEF]: null as any });
   return mod as any;
 }

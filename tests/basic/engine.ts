@@ -21,4 +21,7 @@ const maybeMeImple = implem(maybeMe, () => {
   return null;
 });
 
-export const appEngine = engine(appSchema, authLoginImplem, meWorspacesTypeImplem, versionImplem, maybeMeImple);
+export const appEngine = engine({
+  schema: appSchema,
+  implems: [authLoginImplem, meWorspacesTypeImplem, versionImplem, maybeMeImple],
+});
