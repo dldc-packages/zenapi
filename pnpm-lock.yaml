@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@dldc/erreur':
-    specifier: ^3.0.8
-    version: 3.0.8
+    specifier: ^3.1.0
+    version: 3.1.0
   '@dldc/formi':
     specifier: ^1.0.0
     version: 1.0.0(react-dom@18.2.0)(react@18.2.0)(zod@3.21.4)
@@ -96,8 +96,8 @@ packages:
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
     dev: true
 
-  /@dldc/erreur@3.0.8:
-    resolution: {integrity: sha512-H51xM7LPWAU9faq33cyhukvMtHfZMqEjoiyzUTyUIFGwF52xY/qxwjQVMm38Osj4GrAE3sDcS4aXg7TfZu4RMA==}
+  /@dldc/erreur@3.1.0:
+    resolution: {integrity: sha512-Ek9nsDvrFzGuF+gqfiAtXZUQ+D5Rtp4GPCjR8/Cw3cGaKrKSg88DSUPwNgW2tw/XqHkotxvmv/BhjBcUKh44jA==}
     dependencies:
       '@dldc/stack': 3.1.4
     dev: false
@@ -109,7 +109,7 @@ packages:
       react-dom: '>=17'
       zod: ^3.21.0
     dependencies:
-      '@dldc/erreur': 3.0.8
+      '@dldc/erreur': 3.1.0
       '@dldc/pubsub': 5.2.2
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -119,7 +119,7 @@ packages:
   /@dldc/pubsub@5.2.2:
     resolution: {integrity: sha512-gLHuFwN6QGIU71EBvb99YikOZt0PX2R6vB/vIi41pAw4qryYZg2DRuZoRsHzY0dVA4cyHW0OL/0780YV7hRoNw==}
     dependencies:
-      '@dldc/erreur': 3.0.8
+      '@dldc/erreur': 3.1.0
     dev: false
 
   /@dldc/stack@3.1.4:
