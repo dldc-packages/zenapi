@@ -1,5 +1,5 @@
 import type { ApiContext } from './context';
-import type { TModelAny, TModelDef, TModelProvided } from './model';
+import type { TModelAny, TModelDef, TModelValue } from './model';
 
 const IMPLEM = Symbol('IMPLEM');
 type IMPLEM = typeof IMPLEM;
@@ -10,30 +10,35 @@ export interface IImplementation {
   readonly implemFn: TImplemFn<TModelAny>;
 }
 
-interface IProvidedWithCtx<Value> {
+interface IValueWithCtx<Value> {
   readonly [IMPLEM]: true;
-  readonly provided: Value;
+  readonly value: Value;
   readonly ctx: ApiContext;
 }
 
-export function withCtx<Value>(ctx: ApiContext, value: Value): IProvidedWithCtx<Value> {
+export function withCtx<Value>(ctx: ApiContext, value: Value): IValueWithCtx<Value> {
   return {
     [IMPLEM]: true,
-    provided: value,
+    value: value,
     ctx,
   };
 }
 
-export type TImplemFnResponse<Model extends TModelAny> = IProvidedWithCtx<Model> | TModelProvided<Model>;
+export type TImplemFnResponse<Model extends TModelAny> = IValueWithCtx<Model> | TModelValue<Model>;
 
-export interface IImplemFnData<Model extends TModelAny> {
+export interface IImplemParams<Model extends TModelAny> {
   ctx: ApiContext;
   def: TModelDef<Model>;
-  withCtx: (ctx: ApiContext, value: TModelProvided<Model>) => IProvidedWithCtx<TModelProvided<Model>>;
+  withCtx: TWithCtx<Model>;
 }
 
+export type TWithCtx<Model extends TModelAny> = (
+  ctx: ApiContext,
+  value: TModelValue<Model>,
+) => IValueWithCtx<TModelValue<Model>>;
+
 export type TImplemFn<Model extends TModelAny> = (
-  data: IImplemFnData<Model>,
+  data: IImplemParams<Model>,
 ) => Promise<TImplemFnResponse<Model>> | TImplemFnResponse<Model>;
 
 export function implem<Model extends TModelAny>(model: Model, implenFn: TImplemFn<Model>): IImplementation {
@@ -42,7 +47,8 @@ export function implem<Model extends TModelAny>(model: Model, implenFn: TImplemF
 
 export function extractImpleResult(ctx: ApiContext, result: any): [nextCtx: ApiContext, value: any] {
   if (result && typeof result === 'object' && IMPLEM in result) {
-    return [result.ctx, result.provided];
+    const resWithCtx = result as IValueWithCtx<any>;
+    return [resWithCtx.ctx, resWithCtx.value];
   }
   return [ctx, result];
 }

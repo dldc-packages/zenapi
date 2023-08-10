@@ -1,38 +1,43 @@
 import type { ApiContext } from './context';
-import type { TModelQueryDef, TQueryDef } from './query';
+import type { TQueryDef, TQueryDefModel } from './query';
 
 export const DEF = Symbol('DEF');
 
+export type TPath = readonly (string | number)[];
+
 export type TModelAny = IModel<any, any, any>;
 
-export type TModelProvided<Model extends TModelAny> = Model extends IModel<infer Provided, any, any> ? Provided : never;
+export type TModelValue<Model extends TModelAny> = Model extends IModel<infer Value, any, any> ? Value : never;
 export type TModelDef<Model extends TModelAny> = Model[typeof DEF];
+export type TQueryBuilder<Model extends TModelAny> = ReturnType<Model['builder']>;
 
-export type TQueryBuilder<Model extends TModelAny> = Model extends IModel<any, infer QueryBuilder, any>
-  ? QueryBuilder
-  : never;
+export type TResolveNext = (
+  ctx: ApiContext,
+  model: TModelAny,
+  path: TPath,
+  def: TQueryDef,
+  value: any | null,
+) => Promise<any>;
 
-export type TResolveModel = (ctx: ApiContext, model: TModelAny, def: TQueryDef, value: any | null) => Promise<any>;
-
-export interface IResolveParams<Provided, Def extends TModelQueryDef> {
+export interface IResolveParams<Value, Def extends TQueryDefModel> {
+  readonly path: TPath;
   readonly ctx: ApiContext;
-  readonly value: Provided | undefined;
+  readonly value: Value | undefined;
   readonly def: Def;
   readonly defRest: TQueryDef;
-  readonly resolve: TResolveModel;
+  readonly resolve: TResolveNext;
 }
 
-// TODO add error
-export interface IModel<Provided, QueryBuilder, Def extends TModelQueryDef> {
+export interface IModel<Value, QueryBuilder, Def extends TQueryDefModel> {
   readonly [DEF]: Def;
   readonly name: string;
   readonly builder: (parentDef: TQueryDef) => QueryBuilder;
-  readonly resolve?: (params: IResolveParams<Provided, Def>) => any;
+  readonly resolve?: (params: IResolveParams<Value, Def>) => any;
 }
 
-export function defineModel<Provided, QueryBuilder, Def extends TModelQueryDef>(
-  mod: Omit<IModel<Provided, QueryBuilder, Def>, typeof DEF>,
-): IModel<Provided, QueryBuilder, Def> {
+export function defineModel<Value, QueryBuilder, Def extends TQueryDefModel>(
+  mod: Omit<IModel<Value, QueryBuilder, Def>, typeof DEF>,
+): IModel<Value, QueryBuilder, Def> {
   Object.assign(mod, { [DEF]: null as any });
   return mod as any;
 }

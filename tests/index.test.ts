@@ -4,9 +4,9 @@ import { appEngine } from './basic/engine';
 import { appSchema } from './basic/schema';
 
 test('resolve version', async () => {
-  const q1 = query(appSchema)((s) => s.version);
+  const q = query(appSchema)((s) => s.version);
 
-  const res = await appEngine.run(q1.def);
+  const res = await appEngine.run(q);
 
   expect(res).toEqual('1.0.0');
 });
@@ -14,13 +14,13 @@ test('resolve version', async () => {
 test('resolve version in object', async () => {
   const q1 = query(appSchema)((s) => obj({ currentVersion: s.version }));
 
-  const res = await appEngine.run(q1.def);
+  const res = await appEngine.run(q1);
 
   expect(res).toEqual({ currentVersion: '1.0.0' });
 });
 
 test('resolve connexion', async () => {
-  const q1 = query(appSchema)((s) =>
+  const q = query(appSchema)((s) =>
     obj({
       connexion: s
         .auth()
@@ -28,7 +28,7 @@ test('resolve connexion', async () => {
     }),
   );
 
-  const res = await appEngine.run(q1.def);
+  const res = await appEngine.run(q);
 
   expect(res).toEqual({
     connexion: {
@@ -39,10 +39,10 @@ test('resolve connexion', async () => {
   });
 });
 
-test.only('nullable', async () => {
-  const q1 = query(appSchema)((s) => s.me((me) => me(({ id, name, email }) => obj({ id, name, email }))));
+test('nullable', async () => {
+  const q = query(appSchema)((s) => s.me((me) => me(({ id, name, email }) => obj({ id, name, email }))));
 
-  const res = await appEngine.run(q1.def);
+  const res = await appEngine.run(q);
 
   expect(res).toEqual(null);
 });

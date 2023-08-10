@@ -1,5 +1,5 @@
-import { InvalidQuery, InvalidResolvedValue, UnresolvedValue } from '../erreur';
-import type { IModel, TModelAny, TModelProvided, TQueryBuilder } from '../model';
+import { InvalidQuery, InvalidResolvedValue, UnexpectedNullable, UnresolvedValue } from '../erreur';
+import type { IModel, TModelAny, TModelValue, TQueryBuilder } from '../model';
 import { defineModel } from '../model';
 import type { IQuery, RESULT, TQueryAny, TQueryDef, TQueryResult } from '../query';
 import { createQuery } from '../query';
@@ -123,44 +123,6 @@ function nil(): IModel<null, IQuery<null>, undefined> {
   });
 }
 
-export type TNullableQuery<Q extends TQueryAny> = IQuery<Q[RESULT] | null>;
-
-export interface INullableQueryBuilder<Child extends TModelAny> {
-  <Q extends TQueryAny>(fn: (inner: TQueryBuilder<Child>) => Q): TNullableQuery<Q>;
-  defined: TQueryBuilder<Child>;
-}
-
-function nullable<Child extends TModelAny>(
-  inner: Child,
-): IModel<TModelProvided<Child> | null, INullableQueryBuilder<Child>, { nullable: TQueryDef | false }> {
-  return defineModel({
-    name: 'nullable',
-    builder(parentDef): INullableQueryBuilder<Child> {
-      return Object.assign(
-        (fn: (inner: TQueryBuilder<Child>) => TQueryAny) => {
-          const sub = fn(inner.builder([]));
-          return createQuery([...parentDef, { nullable: sub.def }]);
-        },
-        {
-          defined: inner.builder([...parentDef, { nullable: false }]),
-        },
-      );
-    },
-    resolve({ value, resolve, ctx, def, defRest }) {
-      if (value === null) {
-        if (def.nullable === false) {
-          throw new Error('Unexpected nullable');
-        }
-        return null;
-      }
-      if (def.nullable === false) {
-        return resolve(ctx, inner, defRest, value);
-      }
-      return resolve(ctx, inner, def.nullable, value);
-    },
-  });
-}
-
 function enumMod<Values extends readonly string[]>(
   values: Values,
 ): IModel<Values[number], IQuery<Values[number]>, undefined> {
@@ -175,9 +137,48 @@ function enumMod<Values extends readonly string[]>(
       }
       if (!values.includes(value)) {
         throw InvalidResolvedValue.create();
-        // throw new Error(`Invalid enum ${value}`);
       }
       return value;
+    },
+  });
+}
+
+export type TNullableQuery<Q extends TQueryAny> = IQuery<Q[RESULT] | null>;
+
+export interface INullableQueryBuilder<Child extends TModelAny> {
+  <Q extends TQueryAny>(fn: (inner: TQueryBuilder<Child>) => Q): TNullableQuery<Q>;
+  defined: TQueryBuilder<Child>;
+}
+
+export type TNullableDef = { nullable: TQueryDef | false };
+
+function nullable<Child extends TModelAny>(
+  inner: Child,
+): IModel<TModelValue<Child> | null, INullableQueryBuilder<Child>, TNullableDef> {
+  return defineModel({
+    name: 'nullable',
+    builder(parentDef): INullableQueryBuilder<Child> {
+      return Object.assign(
+        (fn: (inner: TQueryBuilder<Child>) => TQueryAny) => {
+          const sub = fn(inner.builder([]));
+          return createQuery([...parentDef, { nullable: sub.def }]);
+        },
+        {
+          defined: inner.builder([...parentDef, { nullable: false }]),
+        },
+      );
+    },
+    resolve({ path, value, resolve, ctx, def, defRest }) {
+      if (value === null) {
+        if (def.nullable === false) {
+          throw UnexpectedNullable.create();
+        }
+        return null;
+      }
+      if (def.nullable === false) {
+        return resolve(ctx, inner, path, defRest, value);
+      }
+      return resolve(ctx, inner, [...path, 'nullable'], def.nullable, value);
     },
   });
 }
@@ -191,9 +192,11 @@ export interface IRecordQueryBuilder<Fields extends TModelsRecord> {
   <Q extends TQueryAny>(fn: (inner: TRecordQueryBuilderInner<Fields>) => Q): Q;
 }
 
+export type TObjectValue<Fields extends TModelsRecord> = { [K in keyof Fields]?: TModelValue<Fields[K]> };
+
 function objectMod<Fields extends TModelsRecord>(
   fields: Fields,
-): IModel<{ [K in keyof Fields]?: TModelProvided<Fields[K]> }, IRecordQueryBuilder<Fields>, string> {
+): IModel<TObjectValue<Fields>, IRecordQueryBuilder<Fields>, string> {
   return defineModel({
     name: 'object',
     builder(parentDef) {
@@ -213,12 +216,11 @@ function objectMod<Fields extends TModelsRecord>(
         return createQuery([...parentDef, ...q.def]);
       }) as any;
     },
-    resolve({ ctx, def: key, defRest, resolve, value }) {
+    resolve({ path, ctx, def: key, defRest, resolve, value }) {
       if (key in fields === false) {
         throw InvalidQuery.create();
-        // throw new Error(`Unknown field ${key}`);
       }
-      return resolve(ctx, fields[key], defRest, value?.[key]);
+      return resolve(ctx, fields[key], [...path, key], defRest, value?.[key]);
     },
   });
 }
@@ -241,9 +243,7 @@ export type TListDef =
       select: TQueryDef;
     };
 
-function list<Child extends TModelAny>(
-  child: Child,
-): IModel<TModelProvided<Child>[], IListQueryBuilder<Child>, TListDef> {
+function list<Child extends TModelAny>(child: Child): IModel<TModelValue<Child>[], IListQueryBuilder<Child>, TListDef> {
   return defineModel({
     name: 'list',
     builder(parentDef): IListQueryBuilder<Child> {
@@ -262,8 +262,8 @@ function list<Child extends TModelAny>(
         },
       };
     },
-    resolve() {
-      throw new Error('Not implemented');
+    resolve({}) {
+      throw InvalidQuery.create();
     },
   });
 }
@@ -280,7 +280,7 @@ export interface IInputDef<Input> {
 
 function input<Input, Result extends TModelAny>(
   result: Result,
-): IModel<TModelProvided<Result>, TInputQueryBuilder<Input, Result>, IInputDef<Input>> {
+): IModel<TModelValue<Result>, TInputQueryBuilder<Input, Result>, IInputDef<Input>> {
   return defineModel({
     name: 'input',
     builder(parentDef): TInputQueryBuilder<Input, Result> {
@@ -289,8 +289,8 @@ function input<Input, Result extends TModelAny>(
         return createQuery([...parentDef, { input: data, select: sub.def }]);
       };
     },
-    resolve({ ctx, def, resolve, value }) {
-      return resolve(ctx, result, def.select, value);
+    resolve({ ctx, def, resolve, value, path }) {
+      return resolve(ctx, result, [...path, 'input'], def.select, value);
     },
   });
 }

@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { abstracts, obj, query } from '../src/mod';
+import { errorBoundary, obj, query } from '../src/mod';
 import { appSchema } from './basic/schema';
 
 test('query version', () => {
@@ -156,6 +156,47 @@ test('query multiple', () => {
   });
 });
 
+test('query multiple (factored)', () => {
+  const q1 = query(appSchema)((s) =>
+    s.workspace((wokspace) =>
+      obj({
+        first: wokspace.byTenant('first', (workspace) =>
+          workspace(({ id, name, tenant }) => obj({ id, name, tenant })),
+        ),
+        second: wokspace.byTenant('second', (workspace) =>
+          workspace(({ id, name, tenant }) => obj({ id, name, tenant })),
+        ),
+        third: wokspace.byTenant('third', (workspace) =>
+          workspace(({ id, name, tenant }) => obj({ id, name, tenant })),
+        ),
+      }),
+    ),
+  );
+
+  expect(q1).toMatchObject({
+    def: [
+      'workspace',
+      [
+        'object',
+        {
+          first: [
+            'byTenant',
+            { input: 'first', select: [['object', { id: ['id'], name: ['name'], tenant: ['tenant'] }]] },
+          ],
+          second: [
+            'byTenant',
+            { input: 'second', select: [['object', { id: ['id'], name: ['name'], tenant: ['tenant'] }]] },
+          ],
+          third: [
+            'byTenant',
+            { input: 'third', select: [['object', { id: ['id'], name: ['name'], tenant: ['tenant'] }]] },
+          ],
+        },
+      ],
+    ],
+  });
+});
+
 test('nullable', () => {
   const q1 = query(appSchema)((s) => s.me((me) => me(({ id, name, email }) => obj({ id, name, email }))));
 
@@ -173,7 +214,7 @@ test('nullable', () => {
 test('errorBoundary abstract', () => {
   const q = query(appSchema)((s) =>
     obj({
-      foo: abstracts.errorBoundary.create(s.me.defined(({ id, name, email }) => obj({ id, name, email }))),
+      foo: errorBoundary(s.me.defined(({ id, name, email }) => obj({ id, name, email }))),
     }),
   );
 

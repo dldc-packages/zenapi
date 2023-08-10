@@ -4,11 +4,11 @@ export const RESULT = Symbol('RESULT');
 export type RESULT = typeof RESULT;
 
 // No array as they are reserved for query only def (like object)
-export type TModelQueryDef = Record<string, any> | string | number | boolean | null | undefined;
+export type TQueryDefModel = Record<string, any> | string | number | boolean | null | undefined;
 
-export type TAbstractQueryDef<Def> = readonly [string, Def];
+export type TQueryDefAbstract<Def> = readonly [string, Def];
 
-export type TQueryDefItem = TAbstractQueryDef<any> | TModelQueryDef;
+export type TQueryDefItem = TQueryDefAbstract<any> | TQueryDefModel;
 
 export type TQueryDef = readonly TQueryDefItem[];
 

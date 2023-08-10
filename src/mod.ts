@@ -1,4 +1,13 @@
-export { abstracts, obj, type TAbstractObjectDef, type TQueryRecord, type TQueryRecordResult } from './base/abstracts';
+export {
+  abstracts,
+  errorBoundary,
+  obj,
+  type TAbstractErrorBoundaryResult,
+  type TAbstractObjectDef,
+  type TQueryRecord,
+  type TQueryRecordResult,
+  type TSimplify,
+} from './base/abstracts';
 export {
   models,
   type IInputDef,
@@ -13,12 +22,11 @@ export {
 } from './base/models';
 export { ApiContext } from './context';
 export { engine, resolve, type IEngine, type IEngineOptions, type IModelResolved } from './engine';
-export { InvalidQuery, InvalidResolvedValue, UnresolvedValue } from './erreur';
 export {
   extractImpleResult,
   implem,
   withCtx,
-  type IImplemFnData,
+  type IImplemParams as IImplemFnData,
   type IImplementation,
   type TImplemFn,
   type TImplemFnResponse,
@@ -27,8 +35,8 @@ export {
   createQuery,
   query,
   type IQuery,
-  type TAbstractQueryDef,
-  type TModelQueryDef,
+  type TQueryDefAbstract as TAbstractQueryDef,
+  type TQueryDef as TModelQueryDef,
   type TQueryAny,
   type TQueryDef,
   type TQueryDefItem,
