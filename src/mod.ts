@@ -1,4 +1,12 @@
 export {
+  defineAbstract,
+  isAbstractQueryDef,
+  type CreateAny,
+  type IAbstract,
+  type IResolveAbstractParams,
+  type TAbstractAny,
+} from './abstract';
+export {
   abstracts,
   errorBoundary,
   obj,
@@ -31,6 +39,17 @@ export {
   type TImplemFn,
   type TImplemFnResponse,
 } from './implem';
+export {
+  defineModel,
+  type IModel,
+  type IResolveParams,
+  type TModelAny,
+  type TModelDef,
+  type TModelValue,
+  type TPath,
+  type TQueryBuilder,
+  type TResolveNext,
+} from './model';
 export {
   createQuery,
   query,
