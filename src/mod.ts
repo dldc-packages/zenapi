@@ -28,13 +28,21 @@ export {
   type TNullableQuery,
   type TRecordQueryBuilderInner,
 } from './base/models';
-export { ApiContext } from './context';
+export {
+  ApiContext,
+  Key,
+  type IKey,
+  type IKeyConsumer,
+  type IKeyProvider,
+  type TKeyProviderFn,
+  type TMaybeParam,
+} from './context';
 export { engine, resolve, type IEngine, type IEngineOptions, type IModelResolved } from './engine';
 export {
   extractImpleResult,
   implem,
   withCtx,
-  type IImplemParams as IImplemFnData,
+  type IImplemParams,
   type IImplementation,
   type TImplemFn,
   type TImplemFnResponse,
@@ -54,10 +62,9 @@ export {
   createQuery,
   query,
   type IQuery,
-  type TQueryDefAbstract as TAbstractQueryDef,
-  type TQueryDef as TModelQueryDef,
   type TQueryAny,
   type TQueryDef,
+  type TQueryDefAbstract,
   type TQueryDefItem,
   type TQueryResult,
 } from './query';
