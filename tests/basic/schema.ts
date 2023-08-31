@@ -1,75 +1,75 @@
-import { models } from '../../src/mod';
+import { entity } from '../../src/mod';
 
-export const workspaceUserRoleType = models.enum(['admin', 'user']);
+export const workspaceUserRoleType = entity.enum(['admin', 'user']);
 
-export const meWorkspaceType = models.object({
-  id: models.string(),
-  name: models.string(),
-  tenant: models.string(),
+export const meWorkspaceType = entity.object({
+  id: entity.string(),
+  name: entity.string(),
+  tenant: entity.string(),
   role: workspaceUserRoleType,
 });
 
-export const settingsTypes = models.object({
-  appName: models.string(),
-  appVersion: models.json<{ major: number; minor: number }>(),
+export const settingsTypes = entity.object({
+  appName: entity.string(),
+  appVersion: entity.json<{ major: number; minor: number }>(),
 });
 
-export const meWorspacesType = models.list(meWorkspaceType);
+export const meWorspacesType = entity.list(meWorkspaceType);
 
-export const meUserPasswordType = models.string();
+export const meUserPasswordType = entity.string();
 
-export const meType = models.object({
-  id: models.string(),
-  name: models.string(),
-  email: models.string(),
-  displayName: models.nullable(models.string()),
+export const meType = entity.object({
+  id: entity.string(),
+  name: entity.string(),
+  email: entity.string(),
+  displayName: entity.nullable(entity.string()),
   password: meUserPasswordType,
   workspaces: meWorspacesType,
 });
 
-export const authRequestType = models.object({
-  email: models.string(),
-  otpId: models.string(),
+export const authRequestType = entity.object({
+  email: entity.string(),
+  otpId: entity.string(),
 });
 
-export const authLogin = models.input<{ email: string; otpId: string; otp: string }, typeof meType>(meType);
+export const authLogin = entity.input<{ email: string; otpId: string; otp: string }, typeof meType>(meType);
 
-export const authLogout = models.number();
+export const authLogout = entity.number();
 
-export const authRequestOtp = models.input<{ tenant?: string; email: string }, typeof authRequestType>(authRequestType);
+export const authRequestOtp = entity.input<{ tenant?: string; email: string }, typeof authRequestType>(authRequestType);
 
-export const auth = models.object({
+export const auth = entity.object({
   login: authLogin,
   logout: authLogout,
   requestOtp: authRequestOtp,
 });
 
-export const storageType = models.object({
-  id: models.string(),
-  description: models.string(),
+export const storageType = entity.object({
+  id: entity.string(),
+  description: entity.string(),
 });
 
-export const workspaceType = models.object({
-  id: models.string(),
-  name: models.string(),
-  tenant: models.string(),
-  storages: models.list(storageType),
+export const workspaceType = entity.object({
+  id: entity.string(),
+  name: entity.string(),
+  tenant: entity.string(),
+  storages: entity.list(storageType),
 });
 
-export const workspaceByTenant = models.input<string, typeof workspaceType>(workspaceType);
-export const workspaceById = models.input<string, typeof workspaceType>(workspaceType);
+export const workspaceByTenant = entity.input<string, typeof workspaceType>(workspaceType);
+export const workspaceById = entity.input<string, typeof workspaceType>(workspaceType);
 
-export const version = models.string();
+export const version = entity.string();
 
-export const maybeMe = models.nullable(meType);
+export const maybeMe = entity.nullable(meType);
 
-export const appSchema = models.object({
+export const appSchema = entity.object({
   version,
   settings: settingsTypes,
   auth,
   me: maybeMe,
-  workspaces: models.list(workspaceType),
-  workspace: models.object({
+  workspaces: entity.list(workspaceType),
+  workspace: entity.object({
     byTenant: workspaceByTenant,
     byId: workspaceById,
   }),

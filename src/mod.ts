@@ -1,33 +1,31 @@
 export {
-  defineAbstract,
-  isAbstractQueryDef,
-  type CreateAny,
-  type IAbstract,
-  type IResolveAbstractParams,
-  type TAbstractAny,
-} from './abstract';
-export {
-  abstracts,
   errorBoundary,
   obj,
   type TAbstractErrorBoundaryResult,
-  type TAbstractObjectDef,
   type TQueryRecord,
   type TQueryRecordResult,
   type TSimplify,
-} from './base/abstracts';
+} from './base/abstract';
 export {
-  models,
-  type IInputDef,
+  entity,
   type IListQueryBuilder,
   type INullableQueryBuilder,
   type IRecordQueryBuilder,
   type TInputQueryBuilder,
-  type TListDef,
-  type TModelsRecord,
   type TNullableQuery,
+  type TObjectResolved,
   type TRecordQueryBuilderInner,
-} from './base/models';
+} from './base/entity';
+export { InputDataKey, abstractResolvers, typeResolvers } from './base/resolver';
+export {
+  abstracts,
+  types,
+  type IInputDef,
+  type TAbstractObjectDef,
+  type TEntityRecord,
+  type TListDef,
+  type TNullableDef,
+} from './base/type';
 export {
   ApiContext,
   Key,
@@ -37,34 +35,28 @@ export {
   type TKeyProviderFn,
   type TMaybeParam,
 } from './context';
-export { engine, resolve, type IEngine, type IEngineOptions, type IModelResolved } from './engine';
+export { engine, type IEngine, type IEngineOptions } from './engine';
 export {
-  extractImpleResult,
-  implem,
-  withCtx,
-  type IImplemParams,
-  type IImplementation,
-  type TImplemFn,
-  type TImplemFnResponse,
-} from './implem';
-export {
-  defineModel,
-  type IModel,
-  type IResolveParams,
-  type TModelAny,
-  type TModelDef,
-  type TModelValue,
+  defineEntity,
+  resolver,
+  type IEntity,
+  type IEntityResolver,
+  type TEntityAny,
+  type TEntityResolved,
+  type TEntityResolverFn,
   type TPath,
   type TQueryBuilder,
-  type TResolveNext,
-} from './model';
+} from './entity';
 export {
   createQuery,
   query,
-  type IQuery,
-  type TQueryAny,
-  type TQueryDef,
-  type TQueryDefAbstract,
-  type TQueryDefItem,
-  type TQueryResult,
+  queryReader,
+  type IQueryReader,
+  type ITypedQuery,
+  type TQuery,
+  type TQueryItem,
+  type TQueryItemAbstract,
+  type TQueryItemEntity,
+  type TTypedQueryAny,
+  type TTypedQueryResult,
 } from './query';

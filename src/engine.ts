@@ -1,98 +1,122 @@
-import { isAbstractQueryDef, type TAbstractAny } from './abstract';
-import { abstracts as baseAbstracts } from './base/abstracts';
+import { abstractResolvers as baseAbstractResolvers, typeResolvers as baseTypeResolvers } from './base/resolver';
 import { ApiContext } from './context';
-import { CouldNotResolve, DuplicateImplem, UnexpectedArrayInQueryDef, UnknownAbstract } from './erreur';
-import type { IImplementation, TImplemFn } from './implem';
-import { extractImpleResult, withCtx } from './implem';
-import type { TModelAny, TModelValue, TPath } from './model';
-import type { TQueryAny, TQueryDefModel, TQueryResult } from './query';
-import { type TQueryDef } from './query';
+import type { TPath } from './entity';
+import { type IEntityResolver, type TEntityAny, type TEntityResolverFn } from './entity';
+import { CannotResolveType, DuplicateResolver, UnknownAbstract } from './erreur';
+import type { IQueryReader, TTypedQueryAny, TTypedQueryResult } from './query';
+import { queryReader } from './query';
+import type {
+  IAbstractResolver,
+  IEntityTypeResolver,
+  TAbstractResolverFnAny,
+  TEntityTypeAny,
+  TTypeResolverFnAny,
+} from './types';
 
 export interface IEngine {
-  run: <Q extends TQueryAny>(query: Q) => Promise<TQueryResult<Q>>;
+  run: <Q extends TTypedQueryAny>(query: Q) => Promise<TTypedQueryResult<Q>>;
+}
+
+export interface IInternalResolveParams {
+  readonly ctx: ApiContext;
+  readonly query: IQueryReader;
+  readonly entity: TEntityAny;
+  readonly value: any;
 }
 
 export interface IEngineOptions {
-  schema: TModelAny;
-  implems: IImplementation[];
-  abstracts?: TAbstractAny[];
+  abstractResolvers?: IAbstractResolver[];
+  typeResolvers?: IEntityTypeResolver[];
+  schema: TEntityAny;
+  entityResolvers: IEntityResolver[];
 }
 
-export function engine({ implems, schema, abstracts = baseAbstracts }: IEngineOptions): IEngine {
-  const implemsByModel = new Map<TModelAny, TImplemFn<TModelAny>>();
-  for (const implem of implems) {
-    if (implemsByModel.has(implem.model)) {
-      throw DuplicateImplem.create(implems.indexOf(implem));
+export function engine({
+  abstractResolvers = Object.values(baseAbstractResolvers),
+  typeResolvers = Object.values(baseTypeResolvers),
+  entityResolvers,
+  schema,
+}: IEngineOptions): IEngine {
+  const resolverByAbstract = new Map<string, TAbstractResolverFnAny>();
+  for (const item of abstractResolvers) {
+    if (resolverByAbstract.has(item.abstract.name)) {
+      throw DuplicateResolver.create(abstractResolvers.indexOf(item));
     }
-    implemsByModel.set(implem.model, implem.implemFn);
+    resolverByAbstract.set(item.abstract.name, item.resolver);
+  }
+
+  const resolverByType = new Map<TEntityTypeAny, TTypeResolverFnAny>();
+  for (const item of typeResolvers) {
+    if (resolverByType.has(item.type)) {
+      throw DuplicateResolver.create(typeResolvers.indexOf(item));
+    }
+    resolverByType.set(item.type, item.resolver);
+  }
+
+  const resolverByEntity = new Map<TEntityAny, TEntityResolverFn<TEntityAny>>();
+  for (const item of entityResolvers) {
+    if (resolverByEntity.has(item.entity)) {
+      throw DuplicateResolver.create(entityResolvers.indexOf(item));
+    }
+    resolverByEntity.set(item.entity, item.resolver);
   }
 
   return { run };
 
-  async function run(query: TQueryAny) {
-    const ctx = ApiContext.create();
-    return await resolveInternal(ctx, schema, [], query.def, undefined);
+  async function run(query: TTypedQueryAny) {
+    const path: TPath = [];
+    const ctx = ApiContext.create(path, queryReader(query.query), internalResolve);
+    return await internalResolve(schema, ctx);
   }
 
-  async function resolveInternal(
-    ctx: ApiContext,
-    model: TModelAny,
-    path: TPath,
-    def: TQueryDef,
-    value: any,
-  ): Promise<any> {
-    const [current, ...defRest] = def;
-    if (isAbstractQueryDef(current)) {
-      const [name, def] = current;
-      const abstract = abstracts.find((ab) => ab.name === name);
-      if (!abstract) {
+  // { ctx, query, path, value, entity }: IInternalResolveParams
+  async function internalResolve(entity: TEntityAny, ctx: ApiContext, skipType: boolean = false): Promise<any> {
+    // abstract
+    const [abstract, nextQuery] = ctx.query.maybeReadAbstract();
+    if (abstract) {
+      const [name, data] = abstract;
+      const abstractResolver = resolverByAbstract.get(name);
+      if (!abstractResolver) {
         throw UnknownAbstract.create(name);
       }
-      return abstract.resolve({ path, ctx, def, defRest, model, resolve: resolveInternal, value });
+      return abstractResolver({
+        ctx,
+        data,
+        entity,
+        path: ctx.path,
+        query: nextQuery,
+        value: ctx.value,
+        resolve: internalResolve,
+      });
     }
-    if (Array.isArray(current)) {
-      throw UnexpectedArrayInQueryDef.create();
+
+    if (skipType) {
+      console.log('resolve entity', entity.name, ctx.value);
+      // resolve the actual entity
+      return await resolveEntity(entity, ctx.withQuery(nextQuery));
     }
-    const [nextCtx, valueResolved] = await resolveValue(ctx, value, model, current);
-    if (!model.resolve) {
-      throw CouldNotResolve.create(path);
-    }
-    return model.resolve({
-      path,
-      ctx: nextCtx,
-      def: current,
-      defRest,
-      resolve: resolveInternal,
-      value: valueResolved,
-    });
+
+    console.log('resolve type', entity.type.name, ctx.value);
+    return resolveType(entity, ctx);
   }
 
-  async function resolveValue(
-    ctx: ApiContext,
-    value: any,
-    model: TModelAny,
-    def: TQueryDefModel,
-  ): Promise<[ApiContext, any]> {
+  function resolveType(entity: TEntityAny, ctx: ApiContext): any {
+    const typeResolver = resolverByType.get(entity.type);
+    if (!typeResolver) {
+      throw CannotResolveType.create();
+    }
+    return typeResolver(ctx, entity, entity.typeData);
+  }
+
+  async function resolveEntity(entity: TEntityAny, ctx: ApiContext): Promise<unknown> {
+    const value = ctx.value;
     if (value !== undefined) {
-      return [ctx, value];
+      return value;
     }
-    const implemFn = implemsByModel.get(model);
-    if (!implemFn) {
-      return [ctx, undefined];
+    const resolver = resolverByEntity.get(entity);
+    if (!resolver) {
+      return undefined;
     }
-    return extractImpleResult(ctx, await implemFn({ ctx, def, withCtx }));
+    return await resolver(ctx);
   }
-}
-
-export const RESOLVED = Symbol('RESOLVED');
-export type RESOLVED = typeof RESOLVED;
-
-export interface IModelResolved {
-  readonly [RESOLVED]: true;
-  model: TModelAny;
-  value: any;
-}
-
-export function resolve<Model extends TModelAny>(model: Model, value: TModelValue<Model>): IModelResolved {
-  return { [RESOLVED]: true, model, value };
 }
