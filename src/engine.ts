@@ -3,7 +3,7 @@ import { ApiContext } from './context';
 import type { TPath } from './entity';
 import { type IEntityResolver, type TEntityAny, type TEntityResolverFn } from './entity';
 import { CannotResolveType, DuplicateResolver, UnknownAbstract } from './erreur';
-import type { IQueryReader, TTypedQueryAny, TTypedQueryResult } from './query';
+import type { TTypedQueryAny, TTypedQueryResult } from './query';
 import { queryReader } from './query';
 import type {
   IAbstractResolver,
@@ -15,13 +15,6 @@ import type {
 
 export interface IEngine {
   run: <Q extends TTypedQueryAny>(query: Q) => Promise<TTypedQueryResult<Q>>;
-}
-
-export interface IInternalResolveParams {
-  readonly ctx: ApiContext;
-  readonly query: IQueryReader;
-  readonly entity: TEntityAny;
-  readonly value: any;
 }
 
 export interface IEngineOptions {
