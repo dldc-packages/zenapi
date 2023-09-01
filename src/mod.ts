@@ -60,3 +60,21 @@ export {
   type TTypedQueryAny,
   type TTypedQueryResult,
 } from './query';
+export {
+  abstractResolver,
+  defineAbstract,
+  defineType,
+  typeResolver,
+  type IAbstract,
+  type IAbstractResolver,
+  type IAbstractResolverParams,
+  type IEntityType,
+  type IEntityTypeResolver,
+  type TAbstractAny,
+  type TAbstractResolverFn,
+  type TAbstractResolverFnAny,
+  type TEntityTypeAny,
+  type TResolveNext,
+  type TTypeResolverFn,
+  type TTypeResolverFnAny,
+} from './types';
