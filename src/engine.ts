@@ -1,115 +1,87 @@
-import { abstractResolvers as baseAbstractResolvers, typeResolvers as baseTypeResolvers } from './base/resolver';
+import { defaultResolvers } from './base/resolver';
 import { ApiContext } from './context';
-import type { TPath } from './entity';
-import { type IEntityResolver, type TEntityAny, type TEntityResolverFn } from './entity';
-import { CannotResolveType, DuplicateResolver, UnknownAbstract } from './erreur';
+import type { TInstanceAny, TPath } from './entity';
+import { INTERNAL, type TEntityAny } from './entity';
+import { DuplicateResolver, UnexpectedReach, UnknownAbstract } from './erreur';
 import type { TTypedQueryAny, TTypedQueryResult } from './query';
 import { queryReader } from './query';
-import type {
-  IAbstractResolver,
-  IEntityTypeResolver,
-  TAbstractResolverFnAny,
-  TEntityTypeAny,
-  TTypeResolverFnAny,
-} from './types';
+import { RESOLVER, type TAbstractResolverFnAny, type TEntityResolverFnAny, type TResolver } from './resolver';
 
 export interface IEngine {
   run: <Q extends TTypedQueryAny>(query: Q) => Promise<TTypedQueryResult<Q>>;
 }
 
 export interface IEngineOptions {
-  abstractResolvers?: IAbstractResolver[];
-  typeResolvers?: IEntityTypeResolver[];
-  schema: TEntityAny;
-  entityResolvers: IEntityResolver[];
+  resolvers: readonly TResolver[];
+  schema: TInstanceAny;
 }
 
-export function engine({
-  abstractResolvers = Object.values(baseAbstractResolvers),
-  typeResolvers = Object.values(baseTypeResolvers),
-  entityResolvers,
-  schema,
-}: IEngineOptions): IEngine {
+export function engine({ resolvers = defaultResolvers, schema }: IEngineOptions): IEngine {
   const resolverByAbstract = new Map<string, TAbstractResolverFnAny>();
-  for (const item of abstractResolvers) {
-    if (resolverByAbstract.has(item.abstract.name)) {
-      throw DuplicateResolver.create(abstractResolvers.indexOf(item));
-    }
-    resolverByAbstract.set(item.abstract.name, item.resolver);
-  }
+  const resolverByEntity = new Map<TEntityAny, TEntityResolverFnAny>();
 
-  const resolverByType = new Map<TEntityTypeAny, TTypeResolverFnAny>();
-  for (const item of typeResolvers) {
-    if (resolverByType.has(item.type)) {
-      throw DuplicateResolver.create(typeResolvers.indexOf(item));
+  for (const item of resolvers) {
+    if (item[RESOLVER] === 'abstract') {
+      if (resolverByAbstract.has(item.abstract.name)) {
+        throw DuplicateResolver.create(item.abstract.name);
+      }
+      resolverByAbstract.set(item.abstract.name, item.resolver);
+      continue;
     }
-    resolverByType.set(item.type, item.resolver);
-  }
-
-  const resolverByEntity = new Map<TEntityAny, TEntityResolverFn<TEntityAny>>();
-  for (const item of entityResolvers) {
-    if (resolverByEntity.has(item.entity)) {
-      throw DuplicateResolver.create(entityResolvers.indexOf(item));
+    if (item[RESOLVER] === 'entity') {
+      if (resolverByEntity.has(item.entity)) {
+        throw DuplicateResolver.create(item.entity[INTERNAL].name);
+      }
+      resolverByEntity.set(item.entity, item.resolver);
+      continue;
     }
-    resolverByEntity.set(item.entity, item.resolver);
+    throw UnexpectedReach.create();
   }
 
   return { run };
 
   async function run(query: TTypedQueryAny) {
     const path: TPath = [];
-    const ctx = ApiContext.create(path, queryReader(query.query), internalResolve);
-    return await internalResolve(schema, ctx);
+    const ctx = ApiContext.create(path, queryReader(query.query), resolve);
+    return await resolve(schema, ctx);
   }
 
-  // { ctx, query, path, value, entity }: IInternalResolveParams
-  async function internalResolve(entity: TEntityAny, ctx: ApiContext, skipType: boolean = false): Promise<any> {
+  async function resolve(instance: TInstanceAny | null, ctx: ApiContext): Promise<any> {
     // abstract
-    const [abstract, nextQuery] = ctx.query.maybeReadAbstract();
+    const [abstract] = ctx.query.maybeReadAbstract();
     if (abstract) {
       const [name, data] = abstract;
       const abstractResolver = resolverByAbstract.get(name);
       if (!abstractResolver) {
         throw UnknownAbstract.create(name);
       }
-      return abstractResolver({
-        ctx,
-        data,
-        entity,
-        path: ctx.path,
-        query: nextQuery,
-        value: ctx.value,
-        resolve: internalResolve,
-      });
+      return abstractResolver(ctx, async (ctx) => resolve(instance, ctx), data);
     }
-
-    if (skipType) {
-      console.log('resolve entity', entity.name, ctx.value);
-      // resolve the actual entity
-      return await resolveEntity(entity, ctx.withQuery(nextQuery));
-    }
-
-    console.log('resolve type', entity.type.name, ctx.value);
-    return resolveType(entity, ctx);
-  }
-
-  function resolveType(entity: TEntityAny, ctx: ApiContext): any {
-    const typeResolver = resolverByType.get(entity.type);
-    if (!typeResolver) {
-      throw CannotResolveType.create();
-    }
-    return typeResolver(ctx, entity, entity.typeData);
-  }
-
-  async function resolveEntity(entity: TEntityAny, ctx: ApiContext): Promise<unknown> {
-    const value = ctx.value;
-    if (value !== undefined) {
-      return value;
-    }
-    const resolver = resolverByEntity.get(entity);
-    if (!resolver) {
+    // Not an abstract, resolve entity
+    if (instance === null) {
+      // nothing to resolve
       return undefined;
     }
-    return await resolver(ctx);
+
+    const stack: TInstanceAny[] = [];
+    let current: TInstanceAny | null = instance;
+    while (current !== null) {
+      stack.push(current);
+      current = current.parent;
+    }
+
+    return await handleNext(stack.length - 1, ctx);
+
+    async function handleNext(index: number, ctx: ApiContext): Promise<any> {
+      if (index < 0) {
+        return ctx.value;
+      }
+      const instance = stack[index];
+      const resolver = resolverByEntity.get(instance.entity);
+      if (!resolver) {
+        return await handleNext(index - 1, ctx);
+      }
+      return await resolver(ctx, async (ctx) => await handleNext(index - 1, ctx), instance);
+    }
   }
 }

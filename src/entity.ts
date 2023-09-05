@@ -1,53 +1,75 @@
-import type { ApiContext } from './context';
 import type { TQuery } from './query';
-import type { IEntityType } from './types';
 
-export const RESOLVED = Symbol('RESOLVED');
+export const INTERNAL = Symbol('INTERNAL');
 
 export type TPath = readonly (string | number)[];
 
 export type TEntityAny = IEntity<any, any, any>;
 
-export type TEntityResolved<Entity extends TEntityAny> = Entity extends IEntity<infer Resolved, any, any>
-  ? Resolved
-  : never;
-export type TQueryBuilder<Entity extends TEntityAny> = ReturnType<Entity['builder']>;
+export type TResolved<Entity extends TEntityAny> = Entity[typeof INTERNAL]['_resolved'];
 
-/**
- * An entity is like an instance of an type
- */
-export interface IEntity<Resolved, QueryBuilder, TypeData> {
-  readonly [RESOLVED]: Resolved;
-  // base type resolver
-  readonly type: IEntityType<TypeData, any>;
-  readonly typeData: TypeData;
-  readonly name: string;
-  readonly builder: (parentDef: TQuery) => QueryBuilder;
+export type TInstanceResolved<Instance extends TInstanceAny> = Instance['entity'][typeof INTERNAL]['_resolved'];
+export type TQueryBuilder<Instance extends TInstanceAny> = Instance['entity'][typeof INTERNAL]['_queryBuilder'];
+export type TPayload<Instance extends TInstanceAny> = Instance['entity'][typeof INTERNAL]['_payload'];
+
+export type TQueryBuilderFactory<QueryBuilder, Payload> = (parentDef: TQuery, payload: Payload) => QueryBuilder;
+export type TParentEntityFactory<Payload> = (payload: Payload) => TInstanceAny;
+
+export interface IEntity<Resolved, QueryBuilder, Payload> {
+  (payload: Payload): IInstance<Resolved, QueryBuilder, Payload>;
+  readonly [INTERNAL]: {
+    readonly _queryBuilder: QueryBuilder;
+    readonly _payload: Payload;
+    readonly _resolved: Resolved;
+    readonly name: string;
+    readonly builder: TQueryBuilderFactory<QueryBuilder, Payload> | null;
+    readonly parent: TParentEntityFactory<Payload> | null;
+  };
 }
 
-export function defineEntity<Resolved, QueryBuilder, TypeData>(
-  mod: Omit<IEntity<Resolved, QueryBuilder, TypeData>, typeof RESOLVED>,
-): IEntity<Resolved, QueryBuilder, TypeData> {
-  Object.assign(mod, { [RESOLVED]: null as any });
-  return mod as any;
+export type TInstanceAny = IInstance<any, any, any>;
+
+export type TInstanceOf<Entity extends TEntityAny> = IInstance<
+  TResolved<Entity>,
+  Entity[typeof INTERNAL]['_queryBuilder'],
+  Entity[typeof INTERNAL]['_payload']
+>;
+
+export interface IInstance<Resolved, QueryBuilder, Payload> {
+  readonly entity: IEntity<Resolved, QueryBuilder, Payload>;
+  readonly parent: TInstanceAny | null;
+  readonly payload: Payload;
 }
 
-const RESOLVER = Symbol('RESOLVER');
-type RESOLVER = typeof RESOLVER;
-
-export interface IEntityResolver {
-  readonly [RESOLVER]: true;
-  readonly entity: TEntityAny;
-  readonly resolver: TEntityResolverFn<TEntityAny>;
+export function defineEntity<Resolved, QueryBuilder, Payload>(
+  name: string,
+  builder: TQueryBuilderFactory<QueryBuilder, Payload> | null = null,
+  parent: TParentEntityFactory<Payload> | null = null,
+): IEntity<Resolved, QueryBuilder, Payload> {
+  function create(payload?: Payload): IInstance<Resolved, QueryBuilder, Payload> {
+    return {
+      entity,
+      parent: parent ? (parent as any)(payload) : null,
+      payload: payload as any,
+    };
+  }
+  const entity: IEntity<Resolved, QueryBuilder, Payload> = Object.assign(create, {
+    [INTERNAL]: {
+      _queryBuilder: null as any,
+      _payload: null as any,
+      _resolved: null as any,
+      name,
+      builder,
+      parent,
+    },
+  });
+  return entity;
 }
 
-export type TEntityResolverFn<Entity extends TEntityAny> = (
-  ctx: ApiContext,
-) => Promise<TEntityResolved<Entity>> | TEntityResolved<Entity>;
-
-export function resolver<Entity extends TEntityAny>(
-  entity: Entity,
-  resolverFn: TEntityResolverFn<Entity>,
-): IEntityResolver {
-  return { [RESOLVER]: true, entity, resolver: resolverFn as any };
+export function resolveBuilder(instance: TInstanceAny, parentDef: TQuery) {
+  const builder = instance.entity[INTERNAL].builder;
+  if (!builder) {
+    throw new Error(`Entity ${instance.entity[INTERNAL].name} has no builder`);
+  }
+  return builder(parentDef, instance.payload);
 }

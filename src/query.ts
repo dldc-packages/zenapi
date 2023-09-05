@@ -1,4 +1,5 @@
-import type { TEntityAny, TQueryBuilder } from './entity';
+import type { TInstanceAny } from './entity';
+import { resolveBuilder, type TQueryBuilder } from './entity';
 import { UnexpectedReadNextInEmptyQuery, UnexpectedReadNextType } from './erreur';
 
 export const RESULT = Symbol('RESULT');
@@ -26,8 +27,8 @@ export function createQuery<Result>(q: TQuery): ITypedQuery<Result> {
   return { query: q, [RESULT]: null as any };
 }
 
-export function query<Schema extends TEntityAny>(schema: Schema): TQueryBuilder<Schema> {
-  return schema.builder([]);
+export function query<Schema extends TInstanceAny>(schema: Schema): TQueryBuilder<Schema> {
+  return resolveBuilder(schema, []);
 }
 
 export interface IQueryReader {

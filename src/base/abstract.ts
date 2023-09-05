@@ -1,6 +1,17 @@
-import type { ITypedQuery, TTypedQueryAny, TTypedQueryResult } from '../query';
+import { defineAbstract } from '../abstract';
+import type { ITypedQuery, TQuery, TTypedQueryAny, TTypedQueryResult } from '../query';
 import { createQuery } from '../query';
-import { abstracts } from './type';
+
+export type TAbstractObjectDef = Record<string, TQuery>;
+
+const objectAbstract = defineAbstract<TAbstractObjectDef>('object');
+
+const errorBoundaryAbstract = defineAbstract<TQuery>('errorBoundary');
+
+export const abstracts = {
+  object: objectAbstract,
+  errorBoundary: errorBoundaryAbstract,
+};
 
 export type TQueryRecord = Record<string, TTypedQueryAny>;
 

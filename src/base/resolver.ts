@@ -1,12 +1,15 @@
-import { Key } from '@dldc/stack';
+import { Key } from '../context';
 import { InvalidQuery, InvalidResolvedValue, UnexpectedNullable, UnresolvedValue } from '../erreur';
 import { queryReader } from '../query';
-import { abstractResolver, typeResolver } from '../types';
-import type { IInputDef, TNullableDef } from './type';
-import { abstracts, types } from './type';
+import type { TResolver } from '../resolver';
+import { abstractResolver, resolver } from '../resolver';
+import type { TAbstractErrorBoundaryResult } from './abstract';
+import { abstracts } from './abstract';
+import type { IInputDef, TNullableDef } from './entity';
+import { baseEntity } from './entity';
 
-const stringResolver = typeResolver(types.string, async (ctx, entity) => {
-  const value = await ctx.resolve(entity, ctx, true);
+const stringResolver = resolver(baseEntity.string, async (ctx, next) => {
+  const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
   }
@@ -16,19 +19,8 @@ const stringResolver = typeResolver(types.string, async (ctx, entity) => {
   return value;
 });
 
-const dateResolver = typeResolver(types.date, async (ctx, entity) => {
-  const value = await ctx.resolve(entity, ctx, true);
-  if (value === undefined) {
-    throw UnresolvedValue.create();
-  }
-  if (!(value instanceof Date)) {
-    throw InvalidResolvedValue.create();
-  }
-  return value;
-});
-
-const numberResolver = typeResolver(types.number, async (ctx, entity) => {
-  const value = await ctx.resolve(entity, ctx, true);
+const numberResolver = resolver(baseEntity.number, async (ctx, next) => {
+  const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
   }
@@ -38,8 +30,8 @@ const numberResolver = typeResolver(types.number, async (ctx, entity) => {
   return value;
 });
 
-const booleanResolver = typeResolver(types.boolean, async (ctx, entity) => {
-  const value = await ctx.resolve(entity, ctx, true);
+const booleanResolver = resolver(baseEntity.boolean, async (ctx, next) => {
+  const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
   }
@@ -49,16 +41,27 @@ const booleanResolver = typeResolver(types.boolean, async (ctx, entity) => {
   return value;
 });
 
-const jsonResolver = typeResolver(types.json, async (ctx, entity) => {
-  const value = await ctx.resolve(entity, ctx, true);
+const dateResolver = resolver(baseEntity.date, async (ctx, next) => {
+  const value = await next(ctx);
+  if (value === undefined) {
+    throw UnresolvedValue.create();
+  }
+  if (!(value instanceof Date)) {
+    throw InvalidResolvedValue.create();
+  }
+  return value;
+});
+
+const jsonResolver = resolver(baseEntity.json, async (ctx, next) => {
+  const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
   }
   return value;
 });
 
-const nilResolver = typeResolver(types.nil, async (ctx, entity) => {
-  const value = await ctx.resolve(entity, ctx, true);
+const nilResolver = resolver(baseEntity.nil, async (ctx, next) => {
+  const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
   }
@@ -68,19 +71,20 @@ const nilResolver = typeResolver(types.nil, async (ctx, entity) => {
   return value;
 });
 
-const enumResolver = typeResolver(types.enum, async (ctx, entity, data) => {
-  const value = await ctx.resolve(entity, ctx, true);
+const enumResolver = resolver(baseEntity.enum, async (ctx, next, instance) => {
+  const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
   }
-  if (!data.includes(value)) {
+  if (!instance.payload.includes(value)) {
     throw InvalidResolvedValue.create();
   }
   return value;
 });
 
-const nullableResolver = typeResolver(types.nullable, async (ctx, entity, data) => {
-  const value = await ctx.resolve(entity, ctx, true);
+const nullableResolver = resolver(baseEntity.nullable, async (ctx, next, instance) => {
+  const value = await next(ctx);
+  const child = instance.payload;
   const [def, defRest] = ctx.query.readEntity<TNullableDef>();
   if (value === null) {
     if (def.nullable === false) {
@@ -89,10 +93,10 @@ const nullableResolver = typeResolver(types.nullable, async (ctx, entity, data) 
     return null;
   }
   if (def.nullable === false) {
-    return ctx.resolve(data, ctx.withQuery(defRest).withValue(value));
+    return ctx.resolve(child, ctx.withQuery(defRest).withValue(value));
   }
   return ctx.resolve(
-    data,
+    child,
     ctx
       .withQuery(queryReader(def.nullable))
       .withValue(value)
@@ -100,8 +104,9 @@ const nullableResolver = typeResolver(types.nullable, async (ctx, entity, data) 
   );
 });
 
-const objectResolver = typeResolver(types.object, async (ctx, entity, fields) => {
-  const value = await ctx.resolve(entity, ctx, true);
+const objectResolver = resolver(baseEntity.object, async (ctx, next, instance) => {
+  const value = await next(ctx);
+  const fields = instance.payload;
   const [key, nextQuery] = ctx.query.readEntity<string>();
   if (key in fields === false) {
     throw InvalidQuery.create();
@@ -115,27 +120,28 @@ const objectResolver = typeResolver(types.object, async (ctx, entity, fields) =>
   );
 });
 
-const listResolver = typeResolver(types.list, () => {
+const listResolver = resolver(baseEntity.list, () => {
   throw new Error('Not implemented');
 });
 
 export const InputDataKey = Key.create<any>('InputData');
 
-const inputResolver = typeResolver(types.input, async (ctx, entity, data) => {
+const inputResolver = resolver(baseEntity.input, async (ctx, next, instance) => {
   const [q] = ctx.query.readEntity<IInputDef>();
 
-  const value = await ctx.resolve(entity, ctx.with(InputDataKey.Provider(q.input)), true);
+  const child = instance.payload;
+  const value = await next(ctx.with(InputDataKey.Provider(q.input)));
 
   return ctx.resolve(
-    data,
+    child,
     ctx
       .withQuery(queryReader(q.select))
-      .withPath([...ctx.path, 'select'])
+      .withPath([...ctx.path, '()'])
       .withValue(value),
   );
 });
 
-export const typeResolvers = {
+export const baseResolvers = {
   string: stringResolver,
   date: dateResolver,
   number: numberResolver,
@@ -153,24 +159,32 @@ export const typeResolvers = {
  * Abstracts
  */
 
-const objectAbstractResolver = abstractResolver(abstracts.object, async ({ resolve, ctx, data, entity }) => {
+const objectAbstractResolver = abstractResolver(abstracts.object, async (ctx, next, data) => {
   const result: Record<string, any> = {};
   for (const [key, subDef] of Object.entries(data)) {
-    result[key] = await resolve(entity, ctx.withQuery(queryReader(subDef)));
+    result[key] = await next(ctx.withQuery(queryReader(subDef)));
   }
   return result;
 });
 
-const errorBoundaryAbstractResolver = abstractResolver(abstracts.errorBoundary, ({ ctx, resolve, data, entity }) => {
-  try {
-    const result = resolve(entity, ctx.withQuery(queryReader(data)));
-    return { success: true, result };
-  } catch (error) {
-    return { success: false, error };
-  }
-});
+const errorBoundaryAbstractResolver = abstractResolver(
+  abstracts.errorBoundary,
+  (ctx, next, data): TAbstractErrorBoundaryResult<any> => {
+    try {
+      const result = next(ctx.withQuery(queryReader(data)));
+      return { success: true, result };
+    } catch (error) {
+      return { success: false, error };
+    }
+  },
+);
 
 export const abstractResolvers = {
   object: objectAbstractResolver,
   errorBoundary: errorBoundaryAbstractResolver,
 };
+
+export const defaultResolvers: readonly TResolver[] = [
+  ...Object.values(baseResolvers),
+  ...Object.values(abstractResolvers),
+];

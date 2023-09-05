@@ -1,31 +1,29 @@
+export { defineAbstract, type IAbstract, type TAbstractAny } from './abstract';
 export {
+  abstracts,
   errorBoundary,
   obj,
   type TAbstractErrorBoundaryResult,
+  type TAbstractObjectDef,
   type TQueryRecord,
   type TQueryRecordResult,
   type TSimplify,
 } from './base/abstract';
 export {
+  baseEntity,
   entity,
+  type IInputDef,
   type IListQueryBuilder,
   type INullableQueryBuilder,
   type IRecordQueryBuilder,
   type TInputQueryBuilder,
+  type TInstanceRecord,
+  type TNullableDef,
   type TNullableQuery,
   type TObjectResolved,
   type TRecordQueryBuilderInner,
 } from './base/entity';
-export { InputDataKey, abstractResolvers, typeResolvers } from './base/resolver';
-export {
-  abstracts,
-  types,
-  type IInputDef,
-  type TAbstractObjectDef,
-  type TEntityRecord,
-  type TListDef,
-  type TNullableDef,
-} from './base/type';
+export { InputDataKey, abstractResolvers, baseResolvers, defaultResolvers } from './base/resolver';
 export {
   ApiContext,
   Key,
@@ -34,18 +32,24 @@ export {
   type IKeyProvider,
   type TKeyProviderFn,
   type TMaybeParam,
+  type TResolve,
 } from './context';
 export { engine, type IEngine, type IEngineOptions } from './engine';
 export {
   defineEntity,
-  resolver,
+  resolveBuilder,
   type IEntity,
-  type IEntityResolver,
+  type IInstance,
   type TEntityAny,
-  type TEntityResolved,
-  type TEntityResolverFn,
+  type TInstanceAny,
+  type TInstanceOf,
+  type TInstanceResolved,
+  type TParentEntityFactory,
   type TPath,
+  type TPayload,
   type TQueryBuilder,
+  type TQueryBuilderFactory,
+  type TResolved,
 } from './entity';
 export {
   createQuery,
@@ -62,19 +66,12 @@ export {
 } from './query';
 export {
   abstractResolver,
-  defineAbstract,
-  defineType,
-  typeResolver,
-  type IAbstract,
+  resolver,
   type IAbstractResolver,
-  type IAbstractResolverParams,
-  type IEntityType,
-  type IEntityTypeResolver,
-  type TAbstractAny,
+  type IEntityResolver,
   type TAbstractResolverFn,
   type TAbstractResolverFnAny,
-  type TEntityTypeAny,
-  type TResolveNext,
-  type TTypeResolverFn,
-  type TTypeResolverFnAny,
-} from './types';
+  type TEntityResolverFn,
+  type TEntityResolverFnAny,
+  type TResolver,
+} from './resolver';

@@ -1,8 +1,7 @@
 import type { TStaackCoreValue } from '@dldc/stack';
 import { Key, Staack } from '@dldc/stack';
-import type { TPath } from './entity';
+import type { TInstanceAny, TPath } from './entity';
 import type { IQueryReader } from './query';
-import type { TResolveNext } from './types';
 
 export {
   Key,
@@ -13,10 +12,12 @@ export {
   type TMaybeParam,
 } from '@dldc/stack';
 
+export type TResolve = (instance: TInstanceAny | null, ctx: ApiContext) => Promise<any>;
+
 const PathKey = Key.create<TPath>('path');
 const ValueKey = Key.createWithDefault<unknown>('value', undefined);
 const QueryKey = Key.create<IQueryReader>('query');
-const ResolveKey = Key.create<TResolveNext>('resolve');
+const ResolveKey = Key.create<TResolve>('resolve');
 
 export class ApiContext extends Staack {
   static readonly PathKey = PathKey;
@@ -24,7 +25,7 @@ export class ApiContext extends Staack {
   static readonly QueryKey = QueryKey;
   static readonly ResolveKey = ResolveKey;
 
-  static create(path: TPath, query: IQueryReader, resolve: TResolveNext): ApiContext {
+  static create(path: TPath, query: IQueryReader, resolve: TResolve): ApiContext {
     return new ApiContext().with(PathKey.Provider(path), QueryKey.Provider(query), ResolveKey.Provider(resolve));
   }
 
@@ -44,7 +45,7 @@ export class ApiContext extends Staack {
     return this.getOrFail(QueryKey.Consumer);
   }
 
-  get resolve(): TResolveNext {
+  get resolve(): TResolve {
     return this.getOrFail(ResolveKey.Consumer);
   }
 

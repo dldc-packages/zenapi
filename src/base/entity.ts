@@ -1,154 +1,166 @@
-import type { IEntity, TEntityAny, TEntityResolved, TQueryBuilder } from '../entity';
-import { defineEntity } from '../entity';
-import type { ITypedQuery, RESULT, TTypedQueryAny, TTypedQueryResult } from '../query';
+import type { TInstanceAny, TInstanceResolved, TQueryBuilder } from '../entity';
+import { defineEntity, resolveBuilder } from '../entity';
+import type { ITypedQuery, RESULT, TQuery, TTypedQueryAny, TTypedQueryResult } from '../query';
 import { createQuery } from '../query';
-import type { TEntityRecord } from './type';
-import { types } from './type';
 
-function string(): IEntity<string, ITypedQuery<string>, null> {
-  return defineEntity({
-    name: 'string',
-    type: types.string,
-    typeData: null,
-    builder(parentDef): ITypedQuery<string> {
-      return createQuery<string>(parentDef);
-    },
-  });
+export type TNullableDef = { nullable: TQuery | false };
+
+export interface IInputDef {
+  input: any;
+  select: TQuery;
 }
 
-function date(): IEntity<Date, ITypedQuery<Date>, null> {
-  return defineEntity({
-    name: 'date',
-    type: types.date,
-    typeData: null,
-    builder(parentDef): ITypedQuery<Date> {
-      return createQuery<Date>(parentDef);
-    },
-  });
+export const baseEntity = (() => {
+  const stringBase = defineEntity<string, never, null>('base.string');
+  const numberBase = defineEntity<number, never, null>('base.number');
+  const booleanBase = defineEntity<boolean, never, null>('base.boolean');
+  const nilBase = defineEntity<null, never, null>('base.nil');
+  const dateBase = defineEntity<Date, never, null>('base.date');
+  const jsonBase = defineEntity<unknown, never, null>('base.json');
+  const enumBase = defineEntity<string, never, readonly string[]>('base.enum');
+  const nullableBase = defineEntity<any, never, TInstanceAny>('base.nullable');
+  const objectBase = defineEntity<Record<string, any>, never, TInstanceRecord>('base.object');
+  const listBase = defineEntity<readonly any[], never, TInstanceAny>('base.list');
+  const inputBase = defineEntity<any, never, TInstanceAny>('base.input');
+
+  return {
+    string: stringBase,
+    number: numberBase,
+    boolean: booleanBase,
+    nil: nilBase,
+    date: dateBase,
+    json: jsonBase,
+    enum: enumBase,
+    nullable: nullableBase,
+    object: objectBase,
+    list: listBase,
+    input: inputBase,
+  };
+})();
+
+function string() {
+  return defineEntity<string, ITypedQuery<string>, null>(
+    'string',
+    (parentDef): ITypedQuery<string> => createQuery<string>(parentDef),
+    () => baseEntity.string(null),
+  )(null);
 }
 
-function number(): IEntity<number, ITypedQuery<number>, null> {
-  return defineEntity({
-    name: 'number',
-    type: types.number,
-    typeData: null,
-    builder(parentDef): ITypedQuery<number> {
-      return createQuery<number>(parentDef);
-    },
-  });
+function number() {
+  return defineEntity<number, ITypedQuery<number>, null>(
+    'number',
+    (parentDef): ITypedQuery<number> => createQuery<number>(parentDef),
+    () => baseEntity.number(null),
+  )(null);
 }
 
-function boolean(): IEntity<boolean, ITypedQuery<boolean>, null> {
-  return defineEntity({
-    name: 'boolean',
-    type: types.boolean,
-    typeData: null,
-    builder(parentDef): ITypedQuery<boolean> {
-      return createQuery<boolean>(parentDef);
-    },
-  });
+function boolean() {
+  return defineEntity<boolean, ITypedQuery<boolean>, null>(
+    'boolean',
+    (parentDef): ITypedQuery<boolean> => createQuery<boolean>(parentDef),
+    () => baseEntity.boolean(null),
+  )(null);
 }
 
-function json<Data>(): IEntity<Data, ITypedQuery<Data>, null> {
-  return defineEntity({
-    name: 'json',
-    type: types.json,
-    typeData: null,
-    builder(parentDef): ITypedQuery<Data> {
-      return createQuery<Data>(parentDef);
-    },
-  });
+function nil() {
+  return defineEntity<null, ITypedQuery<null>, null>(
+    'nil',
+    (parentDef): ITypedQuery<null> => createQuery<null>(parentDef),
+    () => baseEntity.nil(null),
+  )(null);
 }
 
-function nil(): IEntity<null, ITypedQuery<null>, null> {
-  return defineEntity({
-    name: 'null',
-    type: types.nil,
-    typeData: null,
-    builder(parentDef): ITypedQuery<null> {
-      return createQuery<null>(parentDef);
-    },
-  });
+function date() {
+  return defineEntity<Date, ITypedQuery<Date>, null>(
+    'date',
+    (parentDef): ITypedQuery<Date> => createQuery<Date>(parentDef),
+    () => baseEntity.date(null),
+  )(null);
 }
 
-function enumMod<Values extends readonly string[]>(
-  values: Values,
-): IEntity<Values[number], ITypedQuery<Values[number]>, readonly string[]> {
-  return defineEntity({
-    name: 'enum',
-    type: types.enum,
-    typeData: values,
-    builder(parentDef) {
-      return createQuery(parentDef);
-    },
-  });
+function enumEntity<Values extends readonly string[]>(values: Values) {
+  return defineEntity<Values[number], ITypedQuery<Values[number]>, null>(
+    'enum',
+    (parentDef): ITypedQuery<Values[number]> => createQuery<Values[number]>(parentDef),
+    () => baseEntity.enum(values),
+  )(null);
+}
+
+function json<Data>() {
+  return defineEntity<Data, ITypedQuery<Data>, null>(
+    'json',
+    (parentDef): ITypedQuery<Data> => createQuery<Data>(parentDef),
+    () => baseEntity.json(null),
+  )(null);
 }
 
 export type TNullableQuery<Q extends TTypedQueryAny> = ITypedQuery<Q[RESULT] | null>;
 
-export interface INullableQueryBuilder<Child extends TEntityAny> {
+export interface INullableQueryBuilder<Child extends TInstanceAny> {
   <Q extends TTypedQueryAny>(fn: (inner: TQueryBuilder<Child>) => Q): TNullableQuery<Q>;
   defined: TQueryBuilder<Child>;
 }
 
-function nullable<Child extends TEntityAny>(
-  inner: Child,
-): IEntity<TEntityResolved<Child> | null, INullableQueryBuilder<Child>, TEntityAny> {
-  return defineEntity({
-    name: 'nullable',
-    type: types.nullable,
-    typeData: inner,
-    builder(parentDef): INullableQueryBuilder<Child> {
+function nullable<Child extends TInstanceAny>(child: Child) {
+  return defineEntity<TInstanceResolved<Child> | null, INullableQueryBuilder<Child>, null>(
+    'nullable',
+    (parentDef): INullableQueryBuilder<Child> => {
+      const nullDef: TNullableDef = { nullable: false };
       return Object.assign(
-        (fn: (inner: TQueryBuilder<Child>) => TTypedQueryAny) => {
-          const sub = fn(inner.builder([]));
-          return createQuery([...parentDef, { nullable: sub.query }]);
+        (fn: (inner: TQueryBuilder<TInstanceAny>) => TTypedQueryAny) => {
+          const sub = fn(resolveBuilder(child, []));
+          const def: TNullableDef = { nullable: sub.query };
+          return createQuery([...parentDef, def]);
         },
         {
-          defined: inner.builder([...parentDef, { nullable: false }]),
+          defined: resolveBuilder(child, [...parentDef, nullDef]),
         },
       );
     },
-  });
+    () => baseEntity.nullable(child),
+  )(null);
 }
 
-export type TRecordQueryBuilderInner<Fields extends TEntityRecord> = { [K in keyof Fields]: TQueryBuilder<Fields[K]> };
+export type TInstanceRecord = Record<string, TInstanceAny>;
 
-export interface IRecordQueryBuilder<Fields extends TEntityRecord> {
+export type TRecordQueryBuilderInner<Fields extends TInstanceRecord> = {
+  [K in keyof Fields]: TQueryBuilder<Fields[K]>;
+};
+
+export interface IRecordQueryBuilder<Fields extends TInstanceRecord> {
   (): TRecordQueryBuilderInner<Fields>;
   <Q extends TTypedQueryAny>(fn: (inner: TRecordQueryBuilderInner<Fields>) => Q): Q;
 }
 
-export type TObjectResolved<Fields extends TEntityRecord> = { [K in keyof Fields]?: TEntityResolved<Fields[K]> };
+export type TObjectResolved<Fields extends TInstanceRecord> = {
+  [K in keyof Fields]?: TInstanceResolved<Fields[K]>;
+};
 
-function objectMod<Fields extends TEntityRecord>(
-  fields: Fields,
-): IEntity<TObjectResolved<Fields>, IRecordQueryBuilder<Fields>, TEntityRecord> {
-  return defineEntity({
-    name: 'object',
-    type: types.object,
-    typeData: fields,
-    builder(parentDef) {
-      return ((fn?: (inner: TRecordQueryBuilderInner<Fields>) => TTypedQueryAny) => {
+function objectEntity<Fields extends TInstanceRecord>(fields: Fields) {
+  return defineEntity<TObjectResolved<Fields>, IRecordQueryBuilder<Fields>, null>(
+    'object',
+    (parentDef): IRecordQueryBuilder<Fields> => {
+      return (fn?: (inner: TRecordQueryBuilderInner<Fields>) => TTypedQueryAny): any => {
         if (!fn) {
           const inner: Record<string, any> = {};
           for (const [key, child] of Object.entries(fields)) {
-            inner[key] = child.builder([...parentDef, key]);
+            inner[key] = resolveBuilder(child, [...parentDef, key]);
           }
           return inner;
         }
         const inner: Record<string, any> = {};
         for (const [key, child] of Object.entries(fields)) {
-          inner[key] = child.builder([key]);
+          inner[key] = resolveBuilder(child, [key]);
         }
         const q = fn(inner as TRecordQueryBuilderInner<Fields>);
         return createQuery([...parentDef, ...q.query]);
-      }) as any;
+      };
     },
-  });
+    () => baseEntity.object(fields),
+  )(null);
 }
 
-export interface IListQueryBuilder<Children extends TEntityAny> {
+export interface IListQueryBuilder<Children extends TInstanceAny> {
   all<Q extends TTypedQueryAny>(fn: (sub: TQueryBuilder<Children>) => Q): ITypedQuery<TTypedQueryResult<Q>[]>;
   first<Q extends TTypedQueryAny>(fn: (sub: TQueryBuilder<Children>) => Q): ITypedQuery<TTypedQueryResult<Q>>;
   paginate<Q extends TTypedQueryAny>(
@@ -157,51 +169,45 @@ export interface IListQueryBuilder<Children extends TEntityAny> {
   ): ITypedQuery<TTypedQueryResult<Q>[]>;
 }
 
-function list<Child extends TEntityAny>(
-  child: Child,
-): IEntity<TEntityResolved<Child>[], IListQueryBuilder<Child>, TEntityAny> {
-  return defineEntity({
-    name: 'list',
-    type: types.list,
-    typeData: child,
-    builder(parentDef): IListQueryBuilder<Child> {
+function list<Child extends TInstanceAny>(child: Child) {
+  return defineEntity<TInstanceResolved<Child>[], IListQueryBuilder<Child>, null>(
+    'list',
+    (parentDef): IListQueryBuilder<Child> => {
       return {
         all(fn) {
-          const inner = fn(child.builder([]));
+          const inner = fn(resolveBuilder(child, []));
           return createQuery([...parentDef, { type: 'all', select: inner.query }]);
         },
         first(fn) {
-          const inner = fn(child.builder([]));
+          const inner = fn(resolveBuilder(child, []));
           return createQuery([...parentDef, { type: 'first', select: inner.query }]);
         },
         paginate(page, fn) {
-          const inner = fn(child.builder([]));
+          const inner = fn(resolveBuilder(child, []));
           return createQuery([...parentDef, { type: 'paginate', page, select: inner.query }]);
         },
       };
     },
-  });
+    () => baseEntity.list(child),
+  )(null);
 }
 
-export type TInputQueryBuilder<Input, Result extends TEntityAny> = <Q extends TTypedQueryAny>(
+export type TInputQueryBuilder<Input, Result extends TInstanceAny> = <Q extends TTypedQueryAny>(
   data: Input,
   fn: (sub: TQueryBuilder<Result>) => Q,
 ) => ITypedQuery<TTypedQueryResult<Q>>;
 
-function input<Input, Result extends TEntityAny>(
-  result: Result,
-): IEntity<TEntityResolved<Result>, TInputQueryBuilder<Input, Result>, TEntityAny> {
-  return defineEntity({
-    name: 'input',
-    type: types.input,
-    typeData: result,
-    builder(parentDef): TInputQueryBuilder<Input, Result> {
+function input<Input, Result extends TInstanceAny>(result: Result) {
+  return defineEntity<TInstanceResolved<Result>, TInputQueryBuilder<Input, Result>, null>(
+    'input',
+    (parentDef): TInputQueryBuilder<Input, Result> => {
       return (data, select) => {
-        const sub = select(result.builder([]));
+        const sub = select(resolveBuilder(result, []));
         return createQuery([...parentDef, { input: data, select: sub.query }]);
       };
     },
-  });
+    () => baseEntity.input(result),
+  )(null);
 }
 
 export const entity = {
@@ -209,11 +215,11 @@ export const entity = {
   number,
   boolean,
   nil,
+  date,
+  enum: enumEntity,
+  json,
   nullable,
-  object: objectMod,
+  object: objectEntity,
   list,
   input,
-  enum: enumMod,
-  date,
-  json,
 } as const;

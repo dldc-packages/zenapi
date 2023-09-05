@@ -1,7 +1,7 @@
-import { InputDataKey, engine, resolver } from '../../src/mod';
+import { InputDataKey, defaultResolvers, engine, resolver } from '../../src/mod';
 import { appSchema, authLogin, maybeMe, meWorspacesType, version } from './schema';
 
-const authLoginImplem = resolver(authLogin, (ctx) => {
+const authLoginImplem = resolver(authLogin.entity, (ctx) => {
   const input = ctx.getOrFail(InputDataKey.Consumer);
 
   return {
@@ -11,20 +11,19 @@ const authLoginImplem = resolver(authLogin, (ctx) => {
   };
 });
 
-const versionImplem = resolver(version, () => {
-  console.log('versionImplem');
+const versionImplem = resolver(version.entity, () => {
   return '1.0.0';
 });
 
-const meWorspacesTypeImplem = resolver(meWorspacesType, () => {
+const meWorspacesTypeImplem = resolver(meWorspacesType.entity, () => {
   throw new Error('Not implemented');
 });
 
-const maybeMeImple = resolver(maybeMe, () => {
+const maybeMeImple = resolver(maybeMe.entity, () => {
   return null;
 });
 
 export const appEngine = engine({
   schema: appSchema,
-  entityResolvers: [authLoginImplem, meWorspacesTypeImplem, versionImplem, maybeMeImple],
+  resolvers: [...defaultResolvers, authLoginImplem, meWorspacesTypeImplem, versionImplem, maybeMeImple],
 });
