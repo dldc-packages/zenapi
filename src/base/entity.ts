@@ -38,7 +38,7 @@ export const baseEntity = (() => {
   };
 })();
 
-function string() {
+function string(): IInstance<string, ITypedQuery<string>, null> {
   return defineEntity<string, ITypedQuery<string>, null>(
     'string',
     (parentDef): ITypedQuery<string> => createQuery<string>(parentDef),
@@ -46,7 +46,7 @@ function string() {
   )(null);
 }
 
-function number() {
+function number(): IInstance<number, ITypedQuery<number>, null> {
   return defineEntity<number, ITypedQuery<number>, null>(
     'number',
     (parentDef): ITypedQuery<number> => createQuery<number>(parentDef),
@@ -54,7 +54,7 @@ function number() {
   )(null);
 }
 
-function boolean() {
+function boolean(): IInstance<boolean, ITypedQuery<boolean>, null> {
   return defineEntity<boolean, ITypedQuery<boolean>, null>(
     'boolean',
     (parentDef): ITypedQuery<boolean> => createQuery<boolean>(parentDef),
@@ -62,7 +62,7 @@ function boolean() {
   )(null);
 }
 
-function nil() {
+function nil(): IInstance<null, ITypedQuery<null>, null> {
   return defineEntity<null, ITypedQuery<null>, null>(
     'nil',
     (parentDef): ITypedQuery<null> => createQuery<null>(parentDef),
@@ -70,7 +70,7 @@ function nil() {
   )(null);
 }
 
-function date() {
+function date(): IInstance<Date, ITypedQuery<Date>, null> {
   return defineEntity<Date, ITypedQuery<Date>, null>(
     'date',
     (parentDef): ITypedQuery<Date> => createQuery<Date>(parentDef),
@@ -78,7 +78,9 @@ function date() {
   )(null);
 }
 
-function enumEntity<Values extends readonly string[]>(values: Values) {
+function enumEntity<Values extends readonly string[]>(
+  values: Values,
+): IInstance<Values[number], ITypedQuery<Values[number]>, Values> {
   return defineEntity<Values[number], ITypedQuery<Values[number]>, Values>(
     'enum',
     (parentDef): ITypedQuery<Values[number]> => createQuery<Values[number]>(parentDef),
@@ -101,7 +103,13 @@ export interface INullableQueryBuilder<Child extends TInstanceAny> {
   defined: TQueryBuilder<Child>;
 }
 
-function nullable<Child extends TInstanceAny>(child: Child) {
+export type TNullableInstance<Child extends TInstanceAny> = IInstance<
+  TInstanceResolved<Child> | null,
+  INullableQueryBuilder<Child>,
+  Child
+>;
+
+function nullable<Child extends TInstanceAny>(child: Child): TNullableInstance<Child> {
   return defineEntity<TInstanceResolved<Child> | null, INullableQueryBuilder<Child>, Child>(
     'nullable',
     (parentDef): INullableQueryBuilder<Child> => {
@@ -203,7 +211,13 @@ export type TInputQueryBuilder<Input, Result extends TInstanceAny> = <Q extends 
   fn: (sub: TQueryBuilder<Result>) => Q,
 ) => ITypedQuery<TTypedQueryResult<Q>>;
 
-function input<Input, Result extends TInstanceAny>(result: Result) {
+export type TInputInstance<Input, Result extends TInstanceAny> = IInstance<
+  TInstanceResolved<Result>,
+  TInputQueryBuilder<Input, Result>,
+  Result
+>;
+
+function input<Input, Result extends TInstanceAny>(result: Result): TInputInstance<Input, Result> {
   return defineEntity<TInstanceResolved<Result>, TInputQueryBuilder<Input, Result>, Result>(
     'input',
     (parentDef): TInputQueryBuilder<Input, Result> => {
