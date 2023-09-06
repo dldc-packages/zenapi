@@ -1,4 +1,4 @@
-import type { TInstanceAny, TInstanceResolved, TQueryBuilder } from '../entity';
+import type { IInstance, TInstanceAny, TInstanceResolved, TQueryBuilder } from '../entity';
 import { defineEntity, resolveBuilder } from '../entity';
 import type { ITypedQuery, RESULT, TQuery, TTypedQueryAny, TTypedQueryResult } from '../query';
 import { createQuery } from '../query';
@@ -136,7 +136,13 @@ export type TObjectResolved<Fields extends TInstanceRecord> = {
   [K in keyof Fields]?: TInstanceResolved<Fields[K]>;
 };
 
-function objectEntity<Fields extends TInstanceRecord>(fields: Fields) {
+export type TObjectInstance<Fields extends TInstanceRecord> = IInstance<
+  TObjectResolved<Fields>,
+  IObjectQueryBuilder<Fields>,
+  Fields
+>;
+
+function objectEntity<Fields extends TInstanceRecord>(fields: Fields): TObjectInstance<Fields> {
   return defineEntity<TObjectResolved<Fields>, IObjectQueryBuilder<Fields>, Fields>(
     'object',
     (parentDef): IObjectQueryBuilder<Fields> => {

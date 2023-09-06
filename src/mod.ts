@@ -20,6 +20,7 @@ export {
   type TInstanceRecord,
   type TNullableDef,
   type TNullableQuery,
+  type TObjectInstance,
   type TObjectQueryBuilderInner,
   type TObjectResolved,
 } from './base/entity';
