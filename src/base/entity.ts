@@ -183,7 +183,13 @@ export interface IListQueryBuilder<Children extends TInstanceAny> {
   ): ITypedQuery<TTypedQueryResult<Q>[]>;
 }
 
-function list<Child extends TInstanceAny>(child: Child) {
+export type TListInstance<Child extends TInstanceAny> = IInstance<
+  TInstanceResolved<Child>[],
+  IListQueryBuilder<Child>,
+  Child
+>;
+
+function list<Child extends TInstanceAny>(child: Child): TListInstance<Child> {
   return defineEntity<TInstanceResolved<Child>[], IListQueryBuilder<Child>, Child>(
     'list',
     (parentDef): IListQueryBuilder<Child> => {

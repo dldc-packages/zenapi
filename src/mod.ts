@@ -19,6 +19,7 @@ export {
   type TInputInstance,
   type TInputQueryBuilder,
   type TInstanceRecord,
+  type TListInstance,
   type TNullableDef,
   type TNullableInstance,
   type TNullableQuery,
