@@ -15,13 +15,13 @@ export {
   type IInputDef,
   type IListQueryBuilder,
   type INullableQueryBuilder,
-  type IRecordQueryBuilder,
+  type IObjectQueryBuilder,
   type TInputQueryBuilder,
   type TInstanceRecord,
   type TNullableDef,
   type TNullableQuery,
+  type TObjectQueryBuilderInner,
   type TObjectResolved,
-  type TRecordQueryBuilderInner,
 } from './base/entity';
 export { InputDataKey, abstractResolvers, baseResolvers, defaultResolvers } from './base/resolver';
 export {

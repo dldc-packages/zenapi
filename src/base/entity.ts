@@ -79,11 +79,11 @@ function date() {
 }
 
 function enumEntity<Values extends readonly string[]>(values: Values) {
-  return defineEntity<Values[number], ITypedQuery<Values[number]>, null>(
+  return defineEntity<Values[number], ITypedQuery<Values[number]>, Values>(
     'enum',
     (parentDef): ITypedQuery<Values[number]> => createQuery<Values[number]>(parentDef),
     () => baseEntity.enum(values),
-  )(null);
+  )(values);
 }
 
 function json<Data>() {
@@ -102,7 +102,7 @@ export interface INullableQueryBuilder<Child extends TInstanceAny> {
 }
 
 function nullable<Child extends TInstanceAny>(child: Child) {
-  return defineEntity<TInstanceResolved<Child> | null, INullableQueryBuilder<Child>, null>(
+  return defineEntity<TInstanceResolved<Child> | null, INullableQueryBuilder<Child>, Child>(
     'nullable',
     (parentDef): INullableQueryBuilder<Child> => {
       const nullDef: TNullableDef = { nullable: false };
@@ -118,18 +118,18 @@ function nullable<Child extends TInstanceAny>(child: Child) {
       );
     },
     () => baseEntity.nullable(child),
-  )(null);
+  )(child);
 }
 
 export type TInstanceRecord = Record<string, TInstanceAny>;
 
-export type TRecordQueryBuilderInner<Fields extends TInstanceRecord> = {
+export type TObjectQueryBuilderInner<Fields extends TInstanceRecord> = {
   [K in keyof Fields]: TQueryBuilder<Fields[K]>;
 };
 
-export interface IRecordQueryBuilder<Fields extends TInstanceRecord> {
-  (): TRecordQueryBuilderInner<Fields>;
-  <Q extends TTypedQueryAny>(fn: (inner: TRecordQueryBuilderInner<Fields>) => Q): Q;
+export interface IObjectQueryBuilder<Fields extends TInstanceRecord> {
+  (): TObjectQueryBuilderInner<Fields>;
+  <Q extends TTypedQueryAny>(fn: (inner: TObjectQueryBuilderInner<Fields>) => Q): Q;
 }
 
 export type TObjectResolved<Fields extends TInstanceRecord> = {
@@ -137,10 +137,10 @@ export type TObjectResolved<Fields extends TInstanceRecord> = {
 };
 
 function objectEntity<Fields extends TInstanceRecord>(fields: Fields) {
-  return defineEntity<TObjectResolved<Fields>, IRecordQueryBuilder<Fields>, null>(
+  return defineEntity<TObjectResolved<Fields>, IObjectQueryBuilder<Fields>, Fields>(
     'object',
-    (parentDef): IRecordQueryBuilder<Fields> => {
-      return (fn?: (inner: TRecordQueryBuilderInner<Fields>) => TTypedQueryAny): any => {
+    (parentDef): IObjectQueryBuilder<Fields> => {
+      return (fn?: (inner: TObjectQueryBuilderInner<Fields>) => TTypedQueryAny): any => {
         if (!fn) {
           const inner: Record<string, any> = {};
           for (const [key, child] of Object.entries(fields)) {
@@ -152,12 +152,12 @@ function objectEntity<Fields extends TInstanceRecord>(fields: Fields) {
         for (const [key, child] of Object.entries(fields)) {
           inner[key] = resolveBuilder(child, [key]);
         }
-        const q = fn(inner as TRecordQueryBuilderInner<Fields>);
+        const q = fn(inner as TObjectQueryBuilderInner<Fields>);
         return createQuery([...parentDef, ...q.query]);
       };
     },
     () => baseEntity.object(fields),
-  )(null);
+  )(fields);
 }
 
 export interface IListQueryBuilder<Children extends TInstanceAny> {
@@ -170,7 +170,7 @@ export interface IListQueryBuilder<Children extends TInstanceAny> {
 }
 
 function list<Child extends TInstanceAny>(child: Child) {
-  return defineEntity<TInstanceResolved<Child>[], IListQueryBuilder<Child>, null>(
+  return defineEntity<TInstanceResolved<Child>[], IListQueryBuilder<Child>, Child>(
     'list',
     (parentDef): IListQueryBuilder<Child> => {
       return {
@@ -189,7 +189,7 @@ function list<Child extends TInstanceAny>(child: Child) {
       };
     },
     () => baseEntity.list(child),
-  )(null);
+  )(child);
 }
 
 export type TInputQueryBuilder<Input, Result extends TInstanceAny> = <Q extends TTypedQueryAny>(
@@ -198,7 +198,7 @@ export type TInputQueryBuilder<Input, Result extends TInstanceAny> = <Q extends 
 ) => ITypedQuery<TTypedQueryResult<Q>>;
 
 function input<Input, Result extends TInstanceAny>(result: Result) {
-  return defineEntity<TInstanceResolved<Result>, TInputQueryBuilder<Input, Result>, null>(
+  return defineEntity<TInstanceResolved<Result>, TInputQueryBuilder<Input, Result>, Result>(
     'input',
     (parentDef): TInputQueryBuilder<Input, Result> => {
       return (data, select) => {
@@ -207,7 +207,7 @@ function input<Input, Result extends TInstanceAny>(result: Result) {
       };
     },
     () => baseEntity.input(result),
-  )(null);
+  )(result);
 }
 
 export const entity = {
