@@ -1,6 +1,6 @@
 {
   "name": "@dldc/zenapi",
-  "version": "1.7.2",
+  "version": "1.7.3",
   "description": "A pure TS alternative to GraphQL",
   "keywords": [],
   "homepage": "https://github.com/dldc-packages/zenapi#readme",
