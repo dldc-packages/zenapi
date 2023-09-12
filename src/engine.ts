@@ -7,8 +7,10 @@ import type { TTypedQueryAny, TTypedQueryResult } from './query';
 import { queryReader } from './query';
 import { RESOLVER, type TAbstractResolverFnAny, type TEntityResolverFnAny, type TResolver } from './resolver';
 
+export type TExtendsContext = (ctx: ApiContext) => ApiContext | Promise<ApiContext>;
+
 export interface IEngine {
-  run: <Q extends TTypedQueryAny>(query: Q) => Promise<TTypedQueryResult<Q>>;
+  run: <Q extends TTypedQueryAny>(query: Q, extendsCtx?: TExtendsContext) => Promise<TTypedQueryResult<Q>>;
 }
 
 export interface IEngineOptions {
@@ -40,10 +42,11 @@ export function engine({ resolvers = defaultResolvers, schema }: IEngineOptions)
 
   return { run };
 
-  async function run(query: TTypedQueryAny) {
+  async function run(query: TTypedQueryAny, extendsCtx?: TExtendsContext) {
     const path: TPath = [];
     const ctx = ApiContext.create(path, queryReader(query.query), resolve);
-    return await resolve(schema, ctx);
+    const ctxExtended = extendsCtx ? await extendsCtx(ctx) : ctx;
+    return await resolve(schema, ctxExtended);
   }
 
   async function resolve(instance: TInstanceAny | null, ctx: ApiContext): Promise<any> {

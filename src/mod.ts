@@ -38,7 +38,7 @@ export {
   type TMaybeParam,
   type TResolve,
 } from './context';
-export { engine, type IEngine, type IEngineOptions } from './engine';
+export { engine, type IEngine, type IEngineOptions, type TExtendsContext } from './engine';
 export {
   defineEntity,
   resolveBuilder,
