@@ -70,11 +70,13 @@ export {
 } from './query';
 export {
   abstractResolver,
+  basicResolver,
   resolver,
   type IAbstractResolver,
   type IEntityResolver,
   type TAbstractResolverFn,
   type TAbstractResolverFnAny,
+  type TEntityMiddleware,
   type TEntityResolverFn,
   type TEntityResolverFnAny,
   type TResolver,

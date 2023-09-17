@@ -2,13 +2,13 @@ import { Key } from '../context';
 import { InvalidQuery, InvalidResolvedValue, UnexpectedNullable, UnresolvedValue } from '../erreur';
 import { queryReader } from '../query';
 import type { TResolver } from '../resolver';
-import { abstractResolver, resolver } from '../resolver';
+import { abstractResolver, basicResolver } from '../resolver';
 import type { TAbstractErrorBoundaryResult } from './abstract';
 import { abstracts } from './abstract';
 import type { IInputDef, TNullableDef } from './entity';
 import { baseEntity } from './entity';
 
-const stringResolver = resolver(baseEntity.string, async (ctx, next) => {
+const stringResolver = basicResolver(baseEntity.string, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
@@ -19,7 +19,7 @@ const stringResolver = resolver(baseEntity.string, async (ctx, next) => {
   return value;
 });
 
-const numberResolver = resolver(baseEntity.number, async (ctx, next) => {
+const numberResolver = basicResolver(baseEntity.number, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
@@ -30,7 +30,7 @@ const numberResolver = resolver(baseEntity.number, async (ctx, next) => {
   return value;
 });
 
-const booleanResolver = resolver(baseEntity.boolean, async (ctx, next) => {
+const booleanResolver = basicResolver(baseEntity.boolean, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
@@ -41,7 +41,7 @@ const booleanResolver = resolver(baseEntity.boolean, async (ctx, next) => {
   return value;
 });
 
-const dateResolver = resolver(baseEntity.date, async (ctx, next) => {
+const dateResolver = basicResolver(baseEntity.date, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
@@ -52,7 +52,7 @@ const dateResolver = resolver(baseEntity.date, async (ctx, next) => {
   return value;
 });
 
-const jsonResolver = resolver(baseEntity.json, async (ctx, next) => {
+const jsonResolver = basicResolver(baseEntity.json, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
@@ -60,7 +60,7 @@ const jsonResolver = resolver(baseEntity.json, async (ctx, next) => {
   return value;
 });
 
-const nilResolver = resolver(baseEntity.nil, async (ctx, next) => {
+const nilResolver = basicResolver(baseEntity.nil, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
@@ -71,7 +71,7 @@ const nilResolver = resolver(baseEntity.nil, async (ctx, next) => {
   return value;
 });
 
-const enumResolver = resolver(baseEntity.enum, async (ctx, next, instance) => {
+const enumResolver = basicResolver(baseEntity.enum, async (ctx, next, instance) => {
   const value = await next(ctx);
   if (value === undefined) {
     throw UnresolvedValue.create();
@@ -82,7 +82,7 @@ const enumResolver = resolver(baseEntity.enum, async (ctx, next, instance) => {
   return value;
 });
 
-const nullableResolver = resolver(baseEntity.nullable, async (ctx, next, instance) => {
+const nullableResolver = basicResolver(baseEntity.nullable, async (ctx, next, instance) => {
   const value = await next(ctx);
   const child = instance.payload;
   const [def, defRest] = ctx.query.readEntity<TNullableDef>();
@@ -104,7 +104,7 @@ const nullableResolver = resolver(baseEntity.nullable, async (ctx, next, instanc
   );
 });
 
-const objectResolver = resolver(baseEntity.object, async (ctx, next, instance) => {
+const objectResolver = basicResolver(baseEntity.object, async (ctx, next, instance) => {
   const value = await next(ctx);
   const fields = instance.payload;
   const [key, nextQuery] = ctx.query.readEntity<string>();
@@ -120,13 +120,13 @@ const objectResolver = resolver(baseEntity.object, async (ctx, next, instance) =
   );
 });
 
-const listResolver = resolver(baseEntity.list, () => {
+const listResolver = basicResolver(baseEntity.list, () => {
   throw new Error('Not implemented');
 });
 
 export const InputDataKey = Key.create<any>('InputData');
 
-const inputResolver = resolver(baseEntity.input, async (ctx, next, instance) => {
+const inputResolver = basicResolver(baseEntity.input, async (ctx, next, instance) => {
   const [q] = ctx.query.readEntity<IInputDef>();
 
   const child = instance.payload;

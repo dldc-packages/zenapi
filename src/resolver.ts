@@ -23,6 +23,8 @@ export function abstractResolver<Data>(
   return { [RESOLVER]: 'abstract', abstract, resolver };
 }
 
+export type TEntityMiddleware = (ctx: ApiContext, next: (ctx: ApiContext) => Promise<any>) => any;
+
 export type TEntityResolverFnAny = TEntityResolverFn<TEntityAny>;
 
 export type TEntityResolverFn<Entity extends TEntityAny> = (
@@ -34,12 +36,21 @@ export type TEntityResolverFn<Entity extends TEntityAny> = (
 export interface IEntityResolver {
   readonly [RESOLVER]: 'entity';
   readonly entity: TEntityAny;
+  readonly middlewares: readonly TEntityMiddleware[];
   readonly resolver: TEntityResolverFnAny;
 }
 
 export function resolver<Entity extends TEntityAny>(
   entity: Entity,
+  middlewares: readonly TEntityMiddleware[],
   resolverFn: TEntityResolverFn<Entity>,
 ): IEntityResolver {
-  return { [RESOLVER]: 'entity', entity, resolver: resolverFn as any };
+  return { [RESOLVER]: 'entity', entity, middlewares, resolver: resolverFn as any };
+}
+
+export function basicResolver<Entity extends TEntityAny>(
+  entity: Entity,
+  resolverFn: TEntityResolverFn<Entity>,
+): IEntityResolver {
+  return resolver(entity, [], resolverFn);
 }

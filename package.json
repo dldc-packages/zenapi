@@ -42,7 +42,6 @@
   },
   "dependencies": {
     "@dldc/erreur": "^3.1.0",
-    "@dldc/formi": "^1.0.0",
     "@dldc/stack": "^3.1.4"
   },
   "devDependencies": {
