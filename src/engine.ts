@@ -2,7 +2,7 @@ import { defaultResolvers } from './base/resolver';
 import { ApiContext } from './context';
 import type { TInstanceAny, TPath } from './entity';
 import { INTERNAL, type TEntityAny } from './entity';
-import { DuplicateResolver, UnexpectedReach, UnknownAbstract } from './erreur';
+import { ZenapiErreur } from './erreur';
 import type { TTypedQueryAny, TTypedQueryResult } from './query';
 import { queryReader } from './query';
 import type { TEntityMiddleware } from './resolver';
@@ -26,14 +26,14 @@ export function engine({ resolvers = defaultResolvers, schema }: IEngineOptions)
   for (const item of resolvers) {
     if (item[RESOLVER] === 'abstract') {
       if (resolverByAbstract.has(item.abstract.name)) {
-        throw DuplicateResolver.create(item.abstract.name);
+        throw ZenapiErreur.DuplicateResolver.create(item.abstract.name);
       }
       resolverByAbstract.set(item.abstract.name, item.resolver);
       continue;
     }
     if (item[RESOLVER] === 'entity') {
       if (resolverByEntity.has(item.entity)) {
-        throw DuplicateResolver.create(item.entity[INTERNAL].name);
+        throw ZenapiErreur.DuplicateResolver.create(item.entity[INTERNAL].name);
       }
       const resolverWithMiddlewares: TEntityResolverFnAny = async (ctx, next, instance) => {
         const ctxMid =
@@ -53,7 +53,7 @@ export function engine({ resolvers = defaultResolvers, schema }: IEngineOptions)
       resolverByEntity.set(item.entity, resolverWithMiddlewares);
       continue;
     }
-    throw UnexpectedReach.create();
+    throw ZenapiErreur.UnexpectedReach.create();
   }
 
   return { run };
@@ -72,7 +72,7 @@ export function engine({ resolvers = defaultResolvers, schema }: IEngineOptions)
       const [name, data] = abstract;
       const abstractResolver = resolverByAbstract.get(name);
       if (!abstractResolver) {
-        throw UnknownAbstract.create(name);
+        throw ZenapiErreur.UnknownAbstract.create(name);
       }
       return abstractResolver(ctx, async (ctx) => resolve(instance, ctx), data);
     }

@@ -1,5 +1,5 @@
 import { Key } from '../context';
-import { InvalidQuery, InvalidResolvedValue, UnexpectedNullable, UnresolvedValue } from '../erreur';
+import { ZenapiErreur } from '../erreur';
 import { queryReader } from '../query';
 import type { TResolver } from '../resolver';
 import { abstractResolver, basicResolver } from '../resolver';
@@ -11,10 +11,10 @@ import { baseEntity } from './entity';
 const stringResolver = basicResolver(baseEntity.string, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
-    throw UnresolvedValue.create();
+    throw ZenapiErreur.UnresolvedValue.create();
   }
   if (typeof value !== 'string') {
-    throw InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create();
   }
   return value;
 });
@@ -22,10 +22,10 @@ const stringResolver = basicResolver(baseEntity.string, async (ctx, next) => {
 const numberResolver = basicResolver(baseEntity.number, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
-    throw UnresolvedValue.create();
+    throw ZenapiErreur.UnresolvedValue.create();
   }
   if (typeof value !== 'number') {
-    throw InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create();
   }
   return value;
 });
@@ -33,10 +33,10 @@ const numberResolver = basicResolver(baseEntity.number, async (ctx, next) => {
 const booleanResolver = basicResolver(baseEntity.boolean, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
-    throw UnresolvedValue.create();
+    throw ZenapiErreur.UnresolvedValue.create();
   }
   if (typeof value !== 'boolean') {
-    throw InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create();
   }
   return value;
 });
@@ -44,10 +44,10 @@ const booleanResolver = basicResolver(baseEntity.boolean, async (ctx, next) => {
 const dateResolver = basicResolver(baseEntity.date, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
-    throw UnresolvedValue.create();
+    throw ZenapiErreur.UnresolvedValue.create();
   }
   if (!(value instanceof Date)) {
-    throw InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create();
   }
   return value;
 });
@@ -55,7 +55,7 @@ const dateResolver = basicResolver(baseEntity.date, async (ctx, next) => {
 const jsonResolver = basicResolver(baseEntity.json, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
-    throw UnresolvedValue.create();
+    throw ZenapiErreur.UnresolvedValue.create();
   }
   return value;
 });
@@ -63,10 +63,10 @@ const jsonResolver = basicResolver(baseEntity.json, async (ctx, next) => {
 const nilResolver = basicResolver(baseEntity.nil, async (ctx, next) => {
   const value = await next(ctx);
   if (value === undefined) {
-    throw UnresolvedValue.create();
+    throw ZenapiErreur.UnresolvedValue.create();
   }
   if (value !== null) {
-    throw InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create();
   }
   return value;
 });
@@ -74,10 +74,10 @@ const nilResolver = basicResolver(baseEntity.nil, async (ctx, next) => {
 const enumResolver = basicResolver(baseEntity.enum, async (ctx, next, instance) => {
   const value = await next(ctx);
   if (value === undefined) {
-    throw UnresolvedValue.create();
+    throw ZenapiErreur.UnresolvedValue.create();
   }
   if (!instance.payload.includes(value)) {
-    throw InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create();
   }
   return value;
 });
@@ -88,7 +88,7 @@ const nullableResolver = basicResolver(baseEntity.nullable, async (ctx, next, in
   const [def, defRest] = ctx.query.readEntity<TNullableDef>();
   if (value === null) {
     if (def.nullable === false) {
-      throw UnexpectedNullable.create();
+      throw ZenapiErreur.UnexpectedNullable.create();
     }
     return null;
   }
@@ -109,7 +109,7 @@ const objectResolver = basicResolver(baseEntity.object, async (ctx, next, instan
   const fields = instance.payload;
   const [key, nextQuery] = ctx.query.readEntity<string>();
   if (key in fields === false) {
-    throw InvalidQuery.create();
+    throw ZenapiErreur.InvalidQuery.create();
   }
   return ctx.resolve(
     fields[key],

@@ -35,7 +35,6 @@ export {
   type IKeyConsumer,
   type IKeyProvider,
   type TKeyProviderFn,
-  type TMaybeParam,
   type TResolve,
 } from './context';
 export { engine, type IEngine, type IEngineOptions, type TExtendsContext } from './engine';
@@ -55,6 +54,7 @@ export {
   type TQueryBuilderFactory,
   type TResolved,
 } from './entity';
+export { ZenapiErreur } from './erreur';
 export {
   createQuery,
   query,
