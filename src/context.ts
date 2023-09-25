@@ -7,19 +7,28 @@ export { Key, type IKey, type IKeyConsumer, type IKeyProvider, type TKeyProvider
 
 export type TResolve = (instance: TInstanceAny | null, ctx: ApiContext) => Promise<any>;
 
+export type TOnError<ErrorData = unknown> = (err: unknown) => ErrorData;
+
 const PathKey = Key.create<TPath>('path');
 const ValueKey = Key.createWithDefault<unknown>('value', undefined);
 const QueryKey = Key.create<IQueryReader>('query');
 const ResolveKey = Key.create<TResolve>('resolve');
+const OnErrorKey = Key.create<TOnError<any>>('onError');
 
 export class ApiContext extends Stack {
   static readonly PathKey = PathKey;
   static readonly ValueKey = ValueKey;
   static readonly QueryKey = QueryKey;
   static readonly ResolveKey = ResolveKey;
+  static readonly OnErrorKey = OnErrorKey;
 
-  static create(path: TPath, query: IQueryReader, resolve: TResolve): ApiContext {
-    return new ApiContext().with(PathKey.Provider(path), QueryKey.Provider(query), ResolveKey.Provider(resolve));
+  static create(path: TPath, query: IQueryReader, resolve: TResolve, onError: TOnError): ApiContext {
+    return new ApiContext().with(
+      PathKey.Provider(path),
+      QueryKey.Provider(query),
+      ResolveKey.Provider(resolve),
+      OnErrorKey.Provider(onError),
+    );
   }
 
   protected instantiate(stackCore: TStackCoreValue): this {
@@ -40,6 +49,10 @@ export class ApiContext extends Stack {
 
   get resolve(): TResolve {
     return this.getOrFail(ResolveKey.Consumer);
+  }
+
+  get onError(): TOnError {
+    return this.getOrFail(OnErrorKey.Consumer);
   }
 
   withPath(path: TPath): this {

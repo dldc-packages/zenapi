@@ -29,10 +29,12 @@ export function obj<Query extends TQueryRecord>(obj: Query): ITypedQuery<TSimpli
   return createQuery([[abstracts.object.name, select]]);
 }
 
-export type TAbstractErrorBoundaryResult<Q extends TTypedQueryAny> =
+export type TAbstractErrorBoundaryResult<Q extends TTypedQueryAny, ErrorData> =
   | { success: true; result: TTypedQueryResult<Q> }
-  | { success: false; error: unknown };
+  | { success: false; error: ErrorData };
 
-export function errorBoundary<Q extends TTypedQueryAny>(query: Q): ITypedQuery<TAbstractErrorBoundaryResult<Q>> {
+export function errorBoundary<Q extends TTypedQueryAny, ErrorData>(
+  query: Q,
+): ITypedQuery<TAbstractErrorBoundaryResult<Q, ErrorData>> {
   return createQuery([[abstracts.errorBoundary.name, query.query]]);
 }

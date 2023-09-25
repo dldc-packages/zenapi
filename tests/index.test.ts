@@ -8,7 +8,10 @@ test('resolve version', async () => {
 
   const res = await appEngine.run(q);
 
-  expect(res).toEqual('1.0.0');
+  expect(res).toEqual({
+    result: '1.0.0',
+    success: true,
+  });
 });
 
 test('resolve version in object', async () => {
@@ -16,7 +19,10 @@ test('resolve version in object', async () => {
 
   const res = await appEngine.run(q1);
 
-  expect(res).toEqual({ currentVersion: '1.0.0' });
+  expect(res).toEqual({
+    result: { currentVersion: '1.0.0' },
+    success: true,
+  });
 });
 
 test('resolve connexion', async () => {
@@ -31,10 +37,13 @@ test('resolve connexion', async () => {
   const res = await appEngine.run(q);
 
   expect(res).toEqual({
-    connexion: {
-      id: '123',
-      name: 'User',
-      email: 'a',
+    success: true,
+    result: {
+      connexion: {
+        id: '123',
+        name: 'User',
+        email: 'a',
+      },
     },
   });
 });
@@ -44,5 +53,8 @@ test('nullable', async () => {
 
   const res = await appEngine.run(q);
 
-  expect(res).toEqual(null);
+  expect(res).toEqual({
+    success: true,
+    result: null,
+  });
 });

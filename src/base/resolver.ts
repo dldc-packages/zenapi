@@ -169,12 +169,13 @@ const objectAbstractResolver = abstractResolver(abstracts.object, async (ctx, ne
 
 const errorBoundaryAbstractResolver = abstractResolver(
   abstracts.errorBoundary,
-  (ctx, next, data): TAbstractErrorBoundaryResult<any> => {
+  (ctx, next, data): TAbstractErrorBoundaryResult<any, any> => {
     try {
       const result = next(ctx.withQuery(queryReader(data)));
       return { success: true, result };
     } catch (error) {
-      return { success: false, error };
+      const errorData = ctx.onError(error);
+      return { success: false, error: errorData };
     }
   },
 );

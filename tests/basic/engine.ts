@@ -23,7 +23,8 @@ const maybeMeImple = basicResolver(maybeMe.entity, () => {
   return null;
 });
 
-export const appEngine = engine({
+export const appEngine = engine<null>({
   schema: appSchema,
   resolvers: [...defaultResolvers, authLoginImplem, meWorspacesTypeImplem, versionImplem, maybeMeImple],
+  onError: () => null,
 });

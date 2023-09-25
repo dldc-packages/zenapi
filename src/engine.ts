@@ -1,4 +1,5 @@
 import { defaultResolvers } from './base/resolver';
+import type { TOnError } from './context';
 import { ApiContext } from './context';
 import type { TInstanceAny, TPath } from './entity';
 import { INTERNAL, type TEntityAny } from './entity';
@@ -10,16 +11,25 @@ import { RESOLVER, type TAbstractResolverFnAny, type TEntityResolverFnAny, type 
 
 export type TExtendsContext = (ctx: ApiContext) => ApiContext | Promise<ApiContext>;
 
-export interface IEngine {
-  run: <Q extends TTypedQueryAny>(query: Q, extendsCtx?: TExtendsContext) => Promise<TTypedQueryResult<Q>>;
+export type RunResult<Query extends TTypedQueryAny, ErrorData> =
+  | { success: true; result: TTypedQueryResult<Query> }
+  | { success: false; error: ErrorData };
+
+export interface IEngine<ErrorData> {
+  run: <Q extends TTypedQueryAny>(query: Q, extendsCtx?: TExtendsContext) => Promise<RunResult<Q, ErrorData>>;
 }
 
-export interface IEngineOptions {
-  resolvers: readonly TResolver[];
-  schema: TInstanceAny;
+export interface IEngineOptions<ErrorData> {
+  readonly resolvers: readonly TResolver[];
+  readonly schema: TInstanceAny;
+  readonly onError: TOnError<ErrorData>;
 }
 
-export function engine({ resolvers = defaultResolvers, schema }: IEngineOptions): IEngine {
+export function engine<ErrorData>({
+  resolvers = defaultResolvers,
+  schema,
+  onError,
+}: IEngineOptions<ErrorData>): IEngine<ErrorData> {
   const resolverByAbstract = new Map<string, TAbstractResolverFnAny>();
   const resolverByEntity = new Map<TEntityAny, TEntityResolverFnAny>();
 
@@ -58,9 +68,22 @@ export function engine({ resolvers = defaultResolvers, schema }: IEngineOptions)
 
   return { run };
 
-  async function run(query: TTypedQueryAny, extendsCtx?: TExtendsContext) {
+  async function run(
+    query: TTypedQueryAny,
+    extendsCtx?: TExtendsContext,
+  ): Promise<RunResult<TTypedQueryAny, ErrorData>> {
+    try {
+      const result = await runUnsafe(query, extendsCtx);
+      return { success: true, result };
+    } catch (error) {
+      const errorData = onError(error);
+      return { success: false, error: errorData };
+    }
+  }
+
+  async function runUnsafe(query: TTypedQueryAny, extendsCtx?: TExtendsContext) {
     const path: TPath = [];
-    const ctx = ApiContext.create(path, queryReader(query.query), resolve);
+    const ctx = ApiContext.create(path, queryReader(query.query), resolve, onError);
     const ctxExtended = extendsCtx ? await extendsCtx(ctx) : ctx;
     return await resolve(schema, ctxExtended);
   }
