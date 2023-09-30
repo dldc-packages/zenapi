@@ -31,11 +31,12 @@ export { InputDataKey, abstractResolvers, baseResolvers, defaultResolvers } from
 export {
   ApiContext,
   Key,
-  type IKey,
   type IKeyConsumer,
   type IKeyProvider,
+  type TKey,
   type TKeyProviderFn,
   type TResolve,
+  type TVoidKey,
 } from './context';
 export { engine, type IEngine, type IEngineOptions, type TExtendsContext } from './engine';
 export {
