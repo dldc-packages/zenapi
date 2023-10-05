@@ -11,12 +11,12 @@ import { RESOLVER, type TAbstractResolverFnAny, type TEntityResolverFnAny, type 
 
 export type TExtendsContext = (ctx: ApiContext) => ApiContext | Promise<ApiContext>;
 
-export type RunResult<Query extends TTypedQueryAny, ErrorData> =
+export type TRunResult<Query extends TTypedQueryAny, ErrorData> =
   | { success: true; result: TTypedQueryResult<Query> }
   | { success: false; error: ErrorData };
 
 export interface IEngine<ErrorData> {
-  run: <Q extends TTypedQueryAny>(query: Q, extendsCtx?: TExtendsContext) => Promise<RunResult<Q, ErrorData>>;
+  run: <Q extends TTypedQueryAny>(query: Q, extendsCtx?: TExtendsContext) => Promise<TRunResult<Q, ErrorData>>;
 }
 
 export interface IEngineOptions<ErrorData> {
@@ -71,7 +71,7 @@ export function engine<ErrorData>({
   async function run(
     query: TTypedQueryAny,
     extendsCtx?: TExtendsContext,
-  ): Promise<RunResult<TTypedQueryAny, ErrorData>> {
+  ): Promise<TRunResult<TTypedQueryAny, ErrorData>> {
     try {
       const result = await runUnsafe(query, extendsCtx);
       return { success: true, result };

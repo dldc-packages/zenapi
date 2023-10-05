@@ -38,7 +38,7 @@ export {
   type TResolve,
   type TVoidKey,
 } from './context';
-export { engine, type IEngine, type IEngineOptions, type TExtendsContext } from './engine';
+export { engine, type IEngine, type IEngineOptions, type TExtendsContext, type TRunResult } from './engine';
 export {
   defineEntity,
   resolveBuilder,
