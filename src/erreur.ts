@@ -47,7 +47,7 @@ export const ZenapiErreur = (() => {
     UnknownAbstract: {
       Key: UnknownAbstractKey,
       create: (name: string) =>
-        createZenapiErreur().with(UnknownAbstractKey.Provider({ name })).withMessage(`Unknown abstract ${name}`),
+        createZenapiErreur().with(UnknownAbstractKey.Provider({ name })).withMessage(`Unknown abstract "${name}"`),
     },
     UnexpectedReadNextInEmptyQuery: {
       Key: UnexpectedReadNextInEmptyQueryKey,
