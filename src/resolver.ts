@@ -14,7 +14,11 @@ export interface IAbstractResolver {
 
 export type TAbstractResolverFnAny = TAbstractResolverFn<any>;
 
-export type TAbstractResolverFn<Data> = (ctx: ApiContext, next: (ctx: ApiContext) => Promise<any>, data: Data) => any;
+export type TAbstractResolverFn<Data> = (
+  ctx: ApiContext,
+  next: (ctx: ApiContext) => Promise<ApiContext>,
+  data: Data,
+) => Promise<ApiContext> | ApiContext;
 
 export function abstractResolver<Data>(
   abstract: IAbstract<Data>,
@@ -27,11 +31,13 @@ export type TEntityMiddleware = (ctx: ApiContext, next: (ctx: ApiContext) => Pro
 
 export type TEntityResolverFnAny = TEntityResolverFn<TEntityAny>;
 
+// TODO: We need to be able to return a new ctx when we return the value
+// Should we allow to return a new ctx ? What would it mean for the return of next() ?
 export type TEntityResolverFn<Entity extends TEntityAny> = (
   ctx: ApiContext,
-  next: (ctx: ApiContext) => Promise<any>, // call next entity (child) of return undefined
+  next: (ctx: ApiContext) => Promise<ApiContext>, // call next entity (child) or return undefined
   instance: TInstanceOf<Entity>,
-) => Promise<TResolved<Entity>> | TResolved<Entity>;
+) => Promise<TResolved<Entity> | ApiContext> | TResolved<Entity> | ApiContext;
 
 export interface IEntityResolver {
   readonly [RESOLVER]: 'entity';

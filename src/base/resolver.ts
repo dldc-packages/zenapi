@@ -9,108 +9,104 @@ import type { IInputDef, TNullableDef } from './entity';
 import { baseEntity } from './entity';
 
 const stringResolver = basicResolver(baseEntity.string, async (ctx, next) => {
-  const value = await next(ctx);
-  if (value === undefined) {
+  const ctx1 = await next(ctx);
+  if (ctx1.value === undefined) {
     throw ZenapiErreur.UnresolvedValue.create();
   }
-  if (typeof value !== 'string') {
+  if (typeof ctx1.value !== 'string') {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return value;
+  return ctx1;
 });
 
 const numberResolver = basicResolver(baseEntity.number, async (ctx, next) => {
-  const value = await next(ctx);
-  if (value === undefined) {
+  const ctx1 = await next(ctx);
+  if (ctx1.value === undefined) {
     throw ZenapiErreur.UnresolvedValue.create();
   }
-  if (typeof value !== 'number') {
+  if (typeof ctx1.value !== 'number') {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return value;
+  return ctx1;
 });
 
 const booleanResolver = basicResolver(baseEntity.boolean, async (ctx, next) => {
-  const value = await next(ctx);
-  if (value === undefined) {
+  const ctx1 = await next(ctx);
+  if (ctx1.value === undefined) {
     throw ZenapiErreur.UnresolvedValue.create();
   }
-  if (typeof value !== 'boolean') {
+  if (typeof ctx1.value !== 'boolean') {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return value;
+  return ctx1;
 });
 
 const dateResolver = basicResolver(baseEntity.date, async (ctx, next) => {
-  const value = await next(ctx);
-  if (value === undefined) {
+  const ctx1 = await next(ctx);
+  if (ctx1.value === undefined) {
     throw ZenapiErreur.UnresolvedValue.create();
   }
-  if (!(value instanceof Date)) {
+  if (!(ctx1.value instanceof Date)) {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return value;
+  return ctx1;
 });
 
 const jsonResolver = basicResolver(baseEntity.json, async (ctx, next) => {
-  const value = await next(ctx);
-  if (value === undefined) {
+  const ctx1 = await next(ctx);
+  if (ctx1.value === undefined) {
     throw ZenapiErreur.UnresolvedValue.create();
   }
-  return value;
+  return ctx1;
 });
 
 const nilResolver = basicResolver(baseEntity.nil, async (ctx, next) => {
-  const value = await next(ctx);
-  if (value === undefined) {
+  const ctx1 = await next(ctx);
+  if (ctx1.value === undefined) {
     throw ZenapiErreur.UnresolvedValue.create();
   }
-  if (value !== null) {
+  if (ctx1.value !== null) {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return value;
+  return ctx1;
 });
 
 const enumResolver = basicResolver(baseEntity.enum, async (ctx, next, instance) => {
-  const value = await next(ctx);
+  const ctx1 = await next(ctx);
+  const value = ctx1.value as any;
   if (value === undefined) {
     throw ZenapiErreur.UnresolvedValue.create();
   }
   if (!instance.payload.includes(value)) {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return value;
+  return ctx1;
 });
 
-const nullableResolver = basicResolver(baseEntity.nullable, async (ctx, next, instance) => {
-  const value = await next(ctx);
+const nullableResolver = basicResolver(baseEntity.nullable, async (ctxBase, next, instance) => {
+  const ctx = await next(ctxBase);
   const child = instance.payload;
-  const [def, defRest] = ctx.query.readEntity<TNullableDef>();
-  if (value === null) {
+  const [def, defRest] = ctxBase.query.readEntity<TNullableDef>();
+  if (ctx.value === null) {
     if (def.nullable === false) {
       throw ZenapiErreur.UnexpectedNullable.create();
     }
     return null;
   }
   if (def.nullable === false) {
-    return ctx.resolve(child, ctx.withQuery(defRest).withValue(value));
+    return ctx.resolve(child, ctx.withQuery(defRest));
   }
-  return ctx.resolve(
-    child,
-    ctx
-      .withQuery(queryReader(def.nullable))
-      .withValue(value)
-      .withPath([...ctx.path, 'nullable']),
-  );
+  return ctx.resolve(child, ctx.withQuery(queryReader(def.nullable)).withPath([...ctxBase.path, 'nullable']));
 });
 
-const objectResolver = basicResolver(baseEntity.object, async (ctx, next, instance) => {
-  const value = await next(ctx);
+const objectResolver = basicResolver(baseEntity.object, async (ctxBase, next, instance) => {
+  const [key, nextQuery] = ctxBase.query.readEntity<string>();
+  const ctx = await next(ctxBase);
   const fields = instance.payload;
-  const [key, nextQuery] = ctx.query.readEntity<string>();
   if (key in fields === false) {
     throw ZenapiErreur.InvalidQuery.create();
   }
+  const value = ctx.value as any;
   return ctx.resolve(
     fields[key],
     ctx
@@ -126,19 +122,13 @@ const listResolver = basicResolver(baseEntity.list, () => {
 
 export const InputDataKey = Key.create<any>('InputData');
 
-const inputResolver = basicResolver(baseEntity.input, async (ctx, next, instance) => {
-  const [q] = ctx.query.readEntity<IInputDef>();
+const inputResolver = basicResolver(baseEntity.input, async (ctxBase, next, instance) => {
+  const [q] = ctxBase.query.readEntity<IInputDef>();
 
   const child = instance.payload;
-  const value = await next(ctx.with(InputDataKey.Provider(q.input)));
+  const ctx = await next(ctxBase.with(InputDataKey.Provider(q.input)));
 
-  return ctx.resolve(
-    child,
-    ctx
-      .withQuery(queryReader(q.select))
-      .withPath([...ctx.path, '()'])
-      .withValue(value),
-  );
+  return ctx.resolve(child, ctx.withQuery(queryReader(q.select)).withPath([...ctxBase.path, '()']));
 });
 
 export const baseResolvers = {
@@ -162,23 +152,23 @@ export const baseResolvers = {
 const objectAbstractResolver = abstractResolver(abstracts.object, async (ctx, next, data) => {
   const result: Record<string, any> = {};
   for (const [key, subDef] of Object.entries(data)) {
-    result[key] = await next(ctx.withQuery(queryReader(subDef)));
+    const keyCtx = await next(ctx.withQuery(queryReader(subDef)));
+    result[key] = keyCtx.value;
   }
-  return result;
+  return ctx.withValue(result);
 });
 
-const errorBoundaryAbstractResolver = abstractResolver(
-  abstracts.errorBoundary,
-  (ctx, next, data): TAbstractErrorBoundaryResult<any, any> => {
-    try {
-      const result = next(ctx.withQuery(queryReader(data)));
-      return { success: true, result };
-    } catch (error) {
-      const errorData = ctx.onError(error);
-      return { success: false, error: errorData };
-    }
-  },
-);
+const errorBoundaryAbstractResolver = abstractResolver(abstracts.errorBoundary, async (ctx, next, data) => {
+  try {
+    const resultCtx = await next(ctx.withQuery(queryReader(data)));
+    const result: TAbstractErrorBoundaryResult<any, any> = { success: true, result: resultCtx.value };
+    return ctx.withValue(result);
+  } catch (error) {
+    const errorData = ctx.onError(error);
+    const result: TAbstractErrorBoundaryResult<any, any> = { success: false, error: errorData };
+    return ctx.withValue(result);
+  }
+});
 
 export const abstractResolvers = {
   object: objectAbstractResolver,

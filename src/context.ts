@@ -5,7 +5,7 @@ import type { IQueryReader } from './query';
 
 export { Key, type IKeyConsumer, type IKeyProvider, type TKey, type TKeyProviderFn, type TVoidKey } from '@dldc/stack';
 
-export type TResolve = (instance: TInstanceAny | null, ctx: ApiContext) => Promise<any>;
+export type TResolve = (instance: TInstanceAny | null, ctx: ApiContext) => Promise<ApiContext>;
 
 export type TOnError<ErrorData = unknown> = (err: unknown) => ErrorData;
 

@@ -16,9 +16,7 @@ test('resolve version', async () => {
 
 test('resolve version in object', async () => {
   const q1 = query(appSchema)((s) => obj({ currentVersion: s.version }));
-
   const res = await appEngine.run(q1);
-
   expect(res).toEqual({
     result: { currentVersion: '1.0.0' },
     success: true,

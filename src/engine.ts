@@ -85,10 +85,11 @@ export function engine<ErrorData>({
     const path: TPath = [];
     const ctx = ApiContext.create(path, queryReader(query.query), resolve, onError);
     const ctxExtended = extendsCtx ? await extendsCtx(ctx) : ctx;
-    return await resolve(schema, ctxExtended);
+    const finalCtx = await resolve(schema, ctxExtended);
+    return finalCtx.value;
   }
 
-  async function resolve(instance: TInstanceAny | null, ctx: ApiContext): Promise<any> {
+  async function resolve(instance: TInstanceAny | null, ctx: ApiContext): Promise<ApiContext> {
     // abstract
     const [abstract] = ctx.query.maybeReadAbstract();
     if (abstract) {
@@ -102,7 +103,7 @@ export function engine<ErrorData>({
     // Not an abstract, resolve entity
     if (instance === null) {
       // nothing to resolve
-      return undefined;
+      return ctx.withValue(undefined);
     }
 
     const stack: TInstanceAny[] = [];
@@ -112,32 +113,20 @@ export function engine<ErrorData>({
       current = current.parent;
     }
 
-    return withNext<TInstanceAny, ApiContext, any>(
+    return await withNext<TInstanceAny, ApiContext, ApiContext>(
       stack,
       ctx,
       async (instance, ctx, next) => {
         const resolver = resolverByEntity.get(instance.entity);
         if (!resolver) {
-          return await next(ctx);
+          const res = await next(ctx);
+          return res instanceof ApiContext ? res : ctx.withValue(res);
         }
-        return await resolver(ctx, async (ctx) => await next(ctx), instance);
+        const res = await resolver(ctx, async (ctx) => await next(ctx), instance);
+        return res instanceof ApiContext ? res : ctx.withValue(res);
       },
-      (ctx) => Promise.resolve(ctx.value),
+      (ctx) => Promise.resolve(ctx),
     );
-
-    // return await handleNext(stack.length - 1, ctx);
-
-    // async function handleNext(index: number, ctx: ApiContext): Promise<any> {
-    //   if (index < 0) {
-    //     return ctx.value;
-    //   }
-    //   const instance = stack[index];
-    //   const resolver = resolverByEntity.get(instance.entity);
-    //   if (!resolver) {
-    //     return await handleNext(index - 1, ctx);
-    //   }
-    //   return await resolver(ctx, async (ctx) => await handleNext(index - 1, ctx), instance);
-    // }
   }
 }
 
