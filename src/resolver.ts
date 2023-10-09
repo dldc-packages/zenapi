@@ -27,7 +27,10 @@ export function abstractResolver<Data>(
   return { [RESOLVER]: 'abstract', abstract, resolver };
 }
 
-export type TEntityMiddleware = (ctx: ApiContext, next: (ctx: ApiContext) => Promise<any>) => any;
+export type TEntityMiddleware = (
+  ctx: ApiContext,
+  next: (ctx: ApiContext) => Promise<ApiContext>,
+) => ApiContext | Promise<ApiContext>;
 
 export type TEntityResolverFnAny = TEntityResolverFn<TEntityAny>;
 
