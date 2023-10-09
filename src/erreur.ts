@@ -1,10 +1,10 @@
 import { Erreur, Key } from '@dldc/erreur';
-// import type { TPath } from './entity';
+import type { TPath } from './entity';
 
 export const ZenapiErreur = (() => {
   const ZenapiErreurKey = Key.createEmpty('ZenapiErreur');
 
-  const UnresolvedValueKey = Key.createEmpty('UnresolvedValue');
+  const UnresolvedValueKey = Key.create<{ path: TPath }>('UnresolvedValue');
   const InvalidResolvedValueKey = Key.createEmpty('InvalidResolvedValue');
   const InvalidQueryKey = Key.createEmpty('InvalidQuery');
   const UnexpectedNullableKey = Key.createEmpty('UnexpectedNullable');
@@ -23,7 +23,10 @@ export const ZenapiErreur = (() => {
     },
     UnresolvedValue: {
       Key: UnresolvedValueKey,
-      create: () => createZenapiErreur().with(UnresolvedValueKey.Provider()).withMessage('Unresolved value'),
+      create: (path: TPath) =>
+        createZenapiErreur()
+          .with(UnresolvedValueKey.Provider({ path }))
+          .withMessage(`Unresolved value at ${path.join('.')}`),
     },
     InvalidQuery: {
       Key: InvalidQueryKey,

@@ -8,79 +8,79 @@ import { abstracts } from './abstract';
 import type { IInputDef, TNullableDef } from './entity';
 import { baseEntity } from './entity';
 
-const stringResolver = basicResolver(baseEntity.string, async (ctx, next) => {
-  const ctx1 = await next(ctx);
-  if (ctx1.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue.create();
+const stringResolver = basicResolver(baseEntity.string, async (ctxBase, next) => {
+  const ctx = await next(ctxBase);
+  if (ctx.value === undefined) {
+    throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
-  if (typeof ctx1.value !== 'string') {
+  if (typeof ctx.value !== 'string') {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return ctx1;
+  return ctx;
 });
 
-const numberResolver = basicResolver(baseEntity.number, async (ctx, next) => {
-  const ctx1 = await next(ctx);
-  if (ctx1.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue.create();
+const numberResolver = basicResolver(baseEntity.number, async (ctxBase, next) => {
+  const ctx = await next(ctxBase);
+  if (ctx.value === undefined) {
+    throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
-  if (typeof ctx1.value !== 'number') {
+  if (typeof ctx.value !== 'number') {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return ctx1;
+  return ctx;
 });
 
-const booleanResolver = basicResolver(baseEntity.boolean, async (ctx, next) => {
-  const ctx1 = await next(ctx);
-  if (ctx1.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue.create();
+const booleanResolver = basicResolver(baseEntity.boolean, async (ctxBase, next) => {
+  const ctx = await next(ctxBase);
+  if (ctx.value === undefined) {
+    throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
-  if (typeof ctx1.value !== 'boolean') {
+  if (typeof ctx.value !== 'boolean') {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return ctx1;
+  return ctx;
 });
 
-const dateResolver = basicResolver(baseEntity.date, async (ctx, next) => {
-  const ctx1 = await next(ctx);
-  if (ctx1.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue.create();
+const dateResolver = basicResolver(baseEntity.date, async (ctxBase, next) => {
+  const ctx = await next(ctxBase);
+  if (ctx.value === undefined) {
+    throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
-  if (!(ctx1.value instanceof Date)) {
+  if (!(ctx.value instanceof Date)) {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return ctx1;
+  return ctx;
 });
 
-const jsonResolver = basicResolver(baseEntity.json, async (ctx, next) => {
-  const ctx1 = await next(ctx);
-  if (ctx1.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue.create();
+const jsonResolver = basicResolver(baseEntity.json, async (ctxBase, next) => {
+  const ctx = await next(ctxBase);
+  if (ctx.value === undefined) {
+    throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
-  return ctx1;
+  return ctx;
 });
 
-const nilResolver = basicResolver(baseEntity.nil, async (ctx, next) => {
-  const ctx1 = await next(ctx);
-  if (ctx1.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue.create();
+const nilResolver = basicResolver(baseEntity.nil, async (ctxBase, next) => {
+  const ctx = await next(ctxBase);
+  if (ctx.value === undefined) {
+    throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
-  if (ctx1.value !== null) {
+  if (ctx.value !== null) {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return ctx1;
+  return ctx;
 });
 
-const enumResolver = basicResolver(baseEntity.enum, async (ctx, next, instance) => {
-  const ctx1 = await next(ctx);
-  const value = ctx1.value as any;
+const enumResolver = basicResolver(baseEntity.enum, async (ctxBase, next, instance) => {
+  const ctx = await next(ctxBase);
+  const value = ctx.value as any;
   if (value === undefined) {
-    throw ZenapiErreur.UnresolvedValue.create();
+    throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
   if (!instance.payload.includes(value)) {
     throw ZenapiErreur.InvalidResolvedValue.create();
   }
-  return ctx1;
+  return ctx;
 });
 
 const nullableResolver = basicResolver(baseEntity.nullable, async (ctxBase, next, instance) => {
