@@ -10,6 +10,11 @@ export interface IInputDef {
   select: TQuery;
 }
 
+export type TListDef =
+  | { type: 'all'; select: TQuery }
+  | { type: 'first'; select: TQuery }
+  | { type: 'paginate'; select: TQuery; page: number; pageSize: number | null };
+
 export const baseEntity = (() => {
   const stringBase = defineEntity<string, never, null>('base.string');
   const numberBase = defineEntity<number, never, null>('base.number');
@@ -196,15 +201,23 @@ function list<Child extends TInstanceAny>(child: Child): TListInstance<Child> {
       return {
         all(fn) {
           const inner = fn(resolveBuilder(child, []));
-          return createQuery([...parentDef, { type: 'all', select: inner.query }]);
+          const listDef: TListDef = { type: 'all', select: inner.query };
+          return createQuery([...parentDef, listDef]);
         },
         first(fn) {
           const inner = fn(resolveBuilder(child, []));
-          return createQuery([...parentDef, { type: 'first', select: inner.query }]);
+          const listDef: TListDef = { type: 'first', select: inner.query };
+          return createQuery([...parentDef, listDef]);
         },
         paginate(page, fn) {
           const inner = fn(resolveBuilder(child, []));
-          return createQuery([...parentDef, { type: 'paginate', page, select: inner.query }]);
+          const listDef: TListDef = {
+            type: 'paginate',
+            select: inner.query,
+            page: typeof page === 'number' ? page : page.page,
+            pageSize: typeof page === 'number' ? null : page.pageSize,
+          };
+          return createQuery([...parentDef, listDef]);
         },
       };
     },

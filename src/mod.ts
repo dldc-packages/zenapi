@@ -19,6 +19,7 @@ export {
   type TInputInstance,
   type TInputQueryBuilder,
   type TInstanceRecord,
+  type TListDef,
   type TListInstance,
   type TNullableDef,
   type TNullableInstance,
@@ -27,7 +28,8 @@ export {
   type TObjectQueryBuilderInner,
   type TObjectResolved,
 } from './base/entity';
-export { InputDataKey, abstractResolvers, baseResolvers, defaultResolvers } from './base/resolver';
+export { InputDataKey, ListQueryKey, abstractResolvers, baseResolvers, defaultResolvers } from './base/resolver';
+export type { TListQuery } from './base/resolver';
 export {
   ApiContext,
   Key,

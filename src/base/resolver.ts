@@ -5,7 +5,7 @@ import type { TResolver } from '../resolver';
 import { abstractResolver, basicResolver } from '../resolver';
 import type { TAbstractErrorBoundaryResult } from './abstract';
 import { abstracts } from './abstract';
-import type { IInputDef, TNullableDef } from './entity';
+import type { IInputDef, TListDef, TNullableDef } from './entity';
 import { baseEntity } from './entity';
 
 const stringResolver = basicResolver(baseEntity.string, async (ctxBase, next) => {
@@ -116,8 +116,18 @@ const objectResolver = basicResolver(baseEntity.object, async (ctxBase, next, in
   );
 });
 
-const listResolver = basicResolver(baseEntity.list, () => {
-  throw new Error('Not implemented');
+export type TListQuery =
+  | { type: 'all' }
+  | { type: 'first' }
+  | { type: 'paginate'; page: number; pageSize: number | null };
+
+export const ListQueryKey = Key.create<any>('ListQuery');
+
+const listResolver = basicResolver(baseEntity.list, async (ctxBase, next, instance) => {
+  const [q] = ctxBase.query.readEntity<TListDef>();
+  const child = instance.payload;
+  const ctx = await next(ctxBase.with(ListQueryKey.Provider(q)));
+  return ctx.resolve(child, ctx.withQuery(queryReader(q.select)).withPath([...ctxBase.path, '()']));
 });
 
 export const InputDataKey = Key.create<any>('InputData');
