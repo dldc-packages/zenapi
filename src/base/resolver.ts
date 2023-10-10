@@ -14,7 +14,7 @@ const stringResolver = basicResolver(baseEntity.string, async (ctxBase, next) =>
     throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
   if (typeof ctx.value !== 'string') {
-    throw ZenapiErreur.InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create(ctx.path, 'Expected string');
   }
   return ctx;
 });
@@ -25,7 +25,7 @@ const numberResolver = basicResolver(baseEntity.number, async (ctxBase, next) =>
     throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
   if (typeof ctx.value !== 'number') {
-    throw ZenapiErreur.InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create(ctx.path, 'Expected number');
   }
   return ctx;
 });
@@ -36,7 +36,7 @@ const booleanResolver = basicResolver(baseEntity.boolean, async (ctxBase, next) 
     throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
   if (typeof ctx.value !== 'boolean') {
-    throw ZenapiErreur.InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create(ctx.path, 'Expected boolean');
   }
   return ctx;
 });
@@ -47,7 +47,7 @@ const dateResolver = basicResolver(baseEntity.date, async (ctxBase, next) => {
     throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
   if (!(ctx.value instanceof Date)) {
-    throw ZenapiErreur.InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create(ctx.path, 'Expected Date');
   }
   return ctx;
 });
@@ -66,7 +66,7 @@ const nilResolver = basicResolver(baseEntity.nil, async (ctxBase, next) => {
     throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
   if (ctx.value !== null) {
-    throw ZenapiErreur.InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create(ctx.path, 'Expected null');
   }
   return ctx;
 });
@@ -78,7 +78,7 @@ const enumResolver = basicResolver(baseEntity.enum, async (ctxBase, next, instan
     throw ZenapiErreur.UnresolvedValue.create(ctx.path);
   }
   if (!instance.payload.includes(value)) {
-    throw ZenapiErreur.InvalidResolvedValue.create();
+    throw ZenapiErreur.InvalidResolvedValue.create(ctx.path, `Expected one of ${instance.payload.join(', ')}`);
   }
   return ctx;
 });
@@ -127,7 +127,35 @@ const listResolver = basicResolver(baseEntity.list, async (ctxBase, next, instan
   const [q] = ctxBase.query.readEntity<TListDef>();
   const child = instance.payload;
   const ctx = await next(ctxBase.with(ListQueryKey.Provider(q)));
-  return ctx.resolve(child, ctx.withQuery(queryReader(q.select)).withPath([...ctxBase.path, '()']));
+  const value = ctx.value;
+  if (!Array.isArray(value)) {
+    throw ZenapiErreur.InvalidResolvedValue.create(ctx.path, 'Expected array');
+  }
+  if (q.type === 'first') {
+    if (value.length === 0) {
+      throw ZenapiErreur.UnresolvedValue.create(ctx.path);
+    }
+    return ctx.resolve(
+      child,
+      ctx
+        .withValue(value[0])
+        .withQuery(queryReader(q.select))
+        .withPath([...ctxBase.path, '[first]']),
+    );
+  }
+  const nextValue = await Promise.all(
+    value.map(async (item, index) => {
+      const resolved = await ctx.resolve(
+        child,
+        ctx
+          .withValue(item)
+          .withQuery(queryReader(q.select))
+          .withPath([...ctxBase.path, `[${index}]`]),
+      );
+      return resolved.value;
+    }),
+  );
+  return ctx.withValue(nextValue);
 });
 
 export const InputDataKey = Key.create<any>('InputData');

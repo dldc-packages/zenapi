@@ -5,7 +5,7 @@ export const ZenapiErreur = (() => {
   const ZenapiErreurKey = Key.createEmpty('ZenapiErreur');
 
   const UnresolvedValueKey = Key.create<{ path: TPath }>('UnresolvedValue');
-  const InvalidResolvedValueKey = Key.createEmpty('InvalidResolvedValue');
+  const InvalidResolvedValueKey = Key.create<{ path: TPath }>('InvalidResolvedValue');
   const InvalidQueryKey = Key.createEmpty('InvalidQuery');
   const UnexpectedNullableKey = Key.createEmpty('UnexpectedNullable');
   const UnexpectedReachKey = Key.createEmpty('UnexpectedReach');
@@ -19,7 +19,10 @@ export const ZenapiErreur = (() => {
     create: createZenapiErreur,
     InvalidResolvedValue: {
       Key: InvalidResolvedValueKey,
-      create: () => createZenapiErreur().with(InvalidResolvedValueKey.Provider()).withMessage('Invalid resolved value'),
+      create: (path: TPath, message: string) =>
+        createZenapiErreur()
+          .with(InvalidResolvedValueKey.Provider({ path }))
+          .withMessage(`Invalid resolved value at "${path.join('.')}": ${message}`),
     },
     UnresolvedValue: {
       Key: UnresolvedValueKey,

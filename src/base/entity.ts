@@ -182,6 +182,7 @@ function objectEntity<Fields extends TInstanceRecord>(fields: Fields): TObjectIn
 export interface IListQueryBuilder<Children extends TInstanceAny> {
   all<Q extends TTypedQueryAny>(fn: (sub: TQueryBuilder<Children>) => Q): ITypedQuery<TTypedQueryResult<Q>[]>;
   first<Q extends TTypedQueryAny>(fn: (sub: TQueryBuilder<Children>) => Q): ITypedQuery<TTypedQueryResult<Q>>;
+  // TODO: add maybeFirst
   paginate<Q extends TTypedQueryAny>(
     page: number | { page: number; pageSize: number },
     fn: (sub: TQueryBuilder<Children>) => Q,
