@@ -15,7 +15,7 @@ export const maybePersonal = entity.nullable(personal);
 
 export const login = entity.input<{ email: string; password: string }, typeof personal>(personal);
 
-export const appSchema = entity.object({
+export const appSchema = entity.namespace({
   personal: maybePersonal,
   login,
 });

@@ -3,24 +3,22 @@ import { errorBoundary, obj, query } from '../src/mod';
 import { appSchema } from './basic/schema';
 
 test('query version', () => {
-  const q1 = query(appSchema)((s) => s.version);
+  const q1 = query(appSchema).version;
 
   expect(q1).toMatchObject({ query: ['version'] });
 });
 
 test('query object', () => {
-  const q1 = query(appSchema)((s) => obj({ currentVersion: s.version }));
+  const q1 = obj({ currentVersion: query(appSchema).version });
 
   expect(q1).toMatchObject({ query: [['object', { currentVersion: ['version'] }]] });
 });
 
 test('query multiple settings (resolve multiple times)', () => {
-  const q = query(appSchema)((s) =>
-    obj({
-      name: s.settings().appName,
-      version: s.settings().appVersion,
-    }),
-  );
+  const q = obj({
+    name: query(appSchema).settings().appName,
+    version: query(appSchema).settings().appVersion,
+  });
 
   expect(q).toMatchObject({
     query: [
@@ -36,13 +34,11 @@ test('query multiple settings (resolve multiple times)', () => {
 });
 
 test('query multiple inside settings (resolve only once)', () => {
-  const q = query(appSchema)((s) =>
-    s.settings((settings) =>
-      obj({
-        name: settings.appName,
-        version: settings.appVersion,
-      }),
-    ),
+  const q = query(appSchema).settings((settings) =>
+    obj({
+      name: settings.appName,
+      version: settings.appVersion,
+    }),
   );
 
   expect(q).toMatchObject({
@@ -51,13 +47,11 @@ test('query multiple inside settings (resolve only once)', () => {
 });
 
 test('query connexion', () => {
-  const q1 = query(appSchema)((s) =>
-    obj({
-      connexion: s
-        .auth()
-        .login({ email: 'a', otp: 'b', otpId: 'c' }, (me) => me(({ id, name, email }) => obj({ id, name, email }))),
-    }),
-  );
+  const q1 = obj({
+    connexion: query(appSchema).auth.login({ email: 'a', otp: 'b', otpId: 'c' }, (me) =>
+      me(({ id, name, email }) => obj({ id, name, email })),
+    ),
+  });
 
   expect(q1).toMatchObject({
     query: [
@@ -79,15 +73,13 @@ test('query connexion', () => {
 });
 
 test('query nested', () => {
-  const q1 = query(appSchema)((s) =>
-    s.workspaces.paginate(3, (workspace) =>
-      workspace(({ id, name, storages }) =>
-        obj({
-          id,
-          name,
-          storages: storages.all((storage) => storage(({ id, description }) => obj({ id, description }))),
-        }),
-      ),
+  const q1 = query(appSchema).workspaces.paginate(3, (workspace) =>
+    workspace(({ id, name, storages }) =>
+      obj({
+        id,
+        name,
+        storages: storages.all((storage) => storage(({ id, description }) => obj({ id, description }))),
+      }),
     ),
   );
 
@@ -116,19 +108,17 @@ test('query nested', () => {
 });
 
 test('query multiple', () => {
-  const q1 = query(appSchema)((s) =>
-    obj({
-      first: s
-        .workspace()
-        .byTenant('first', (workspace) => workspace(({ id, name, tenant }) => obj({ id, name, tenant }))),
-      second: s
-        .workspace()
-        .byTenant('second', (workspace) => workspace(({ id, name, tenant }) => obj({ id, name, tenant }))),
-      third: s
-        .workspace()
-        .byTenant('third', (workspace) => workspace(({ id, name, tenant }) => obj({ id, name, tenant }))),
-    }),
-  );
+  const q1 = obj({
+    first: query(appSchema).workspace.byTenant('first', (workspace) =>
+      workspace(({ id, name, tenant }) => obj({ id, name, tenant })),
+    ),
+    second: query(appSchema).workspace.byTenant('second', (workspace) =>
+      workspace(({ id, name, tenant }) => obj({ id, name, tenant })),
+    ),
+    third: query(appSchema).workspace.byTenant('third', (workspace) =>
+      workspace(({ id, name, tenant }) => obj({ id, name, tenant })),
+    ),
+  });
 
   expect(q1).toMatchObject({
     query: [
@@ -157,18 +147,12 @@ test('query multiple', () => {
 });
 
 test('query multiple (factored)', () => {
-  const q1 = query(appSchema)((s) =>
-    s.workspace((wokspace) =>
+  const q1 = query(appSchema).workspace.byTenant('first', (workspace) =>
+    workspace(({ id, name, tenant }) =>
       obj({
-        first: wokspace.byTenant('first', (workspace) =>
-          workspace(({ id, name, tenant }) => obj({ id, name, tenant })),
-        ),
-        second: wokspace.byTenant('second', (workspace) =>
-          workspace(({ id, name, tenant }) => obj({ id, name, tenant })),
-        ),
-        third: wokspace.byTenant('third', (workspace) =>
-          workspace(({ id, name, tenant }) => obj({ id, name, tenant })),
-        ),
+        first: obj({ id, name, tenant }),
+        second: obj({ id, name, tenant }),
+        third: obj({ id, name, tenant }),
       }),
     ),
   );
@@ -176,35 +160,32 @@ test('query multiple (factored)', () => {
   expect(q1).toMatchObject({
     query: [
       'workspace',
-      [
-        'object',
-        {
-          first: [
-            'byTenant',
-            { input: 'first', select: [['object', { id: ['id'], name: ['name'], tenant: ['tenant'] }]] },
+      'byTenant',
+      {
+        input: 'first',
+        select: [
+          [
+            'object',
+            {
+              first: [['object', { id: ['id'], name: ['name'], tenant: ['tenant'] }]],
+              second: [['object', { id: ['id'], name: ['name'], tenant: ['tenant'] }]],
+              third: [['object', { id: ['id'], name: ['name'], tenant: ['tenant'] }]],
+            },
           ],
-          second: [
-            'byTenant',
-            { input: 'second', select: [['object', { id: ['id'], name: ['name'], tenant: ['tenant'] }]] },
-          ],
-          third: [
-            'byTenant',
-            { input: 'third', select: [['object', { id: ['id'], name: ['name'], tenant: ['tenant'] }]] },
-          ],
-        },
-      ],
+        ],
+      },
     ],
   });
 });
 
 test('nullable', () => {
-  const q1 = query(appSchema)((s) => s.me((me) => me(({ id, name, email }) => obj({ id, name, email }))));
+  const q1 = query(appSchema).me((me) => me(({ id, name, email }) => obj({ id, name, email })));
 
   expect(q1).toMatchObject({
     query: ['me', { nullable: [['object', { email: ['email'], id: ['id'], name: ['name'] }]] }],
   });
 
-  const q2 = query(appSchema)((s) => s.me((me) => me().displayName.defined));
+  const q2 = query(appSchema).me((me) => me().displayName.defined);
 
   expect(q2).toMatchObject({
     query: ['me', { nullable: ['displayName', { nullable: false }] }],
@@ -212,11 +193,9 @@ test('nullable', () => {
 });
 
 test('errorBoundary abstract', () => {
-  const q = query(appSchema)((s) =>
-    obj({
-      foo: errorBoundary(s.me.defined(({ id, name, email }) => obj({ id, name, email }))),
-    }),
-  );
+  const q = obj({
+    foo: errorBoundary(query(appSchema).me.defined(({ id, name, email }) => obj({ id, name, email }))),
+  });
 
   expect(q).toMatchObject({
     query: [

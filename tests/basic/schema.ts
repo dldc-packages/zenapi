@@ -38,7 +38,7 @@ export const authLogout = entity.number();
 
 export const authRequestOtp = entity.input<{ tenant?: string; email: string }, typeof authRequestType>(authRequestType);
 
-export const auth = entity.object({
+export const auth = entity.namespace({
   login: authLogin,
   logout: authLogout,
   requestOtp: authRequestOtp,
@@ -63,13 +63,13 @@ export const version = entity.string();
 
 export const maybeMe = entity.nullable(meType);
 
-export const appSchema = entity.object({
+export const appSchema = entity.namespace({
   version,
   settings: settingsTypes,
   auth,
   me: maybeMe,
   workspaces: entity.list(workspaceType),
-  workspace: entity.object({
+  workspace: entity.namespace({
     byTenant: workspaceByTenant,
     byId: workspaceById,
   }),

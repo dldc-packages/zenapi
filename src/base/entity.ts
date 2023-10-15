@@ -179,6 +179,32 @@ function objectEntity<Fields extends TInstanceRecord>(fields: Fields): TObjectIn
   )(fields);
 }
 
+export type TNamespaceQueryBuilder<Fields extends TInstanceRecord> = TObjectQueryBuilderInner<Fields>;
+
+export type TNamespaceInstance<Fields extends TInstanceRecord> = IInstance<
+  TObjectResolved<Fields>,
+  TNamespaceQueryBuilder<Fields>,
+  Fields
+>;
+
+/**
+ * This is tha same as object except the builder only exposes direct children.
+ * This is meant to be used for object that are not resolved
+ */
+function namespace<Fields extends TInstanceRecord>(fields: Fields): TNamespaceInstance<Fields> {
+  return defineEntity<TObjectResolved<Fields>, TNamespaceQueryBuilder<Fields>, Fields>(
+    'object',
+    (parentDef): TNamespaceQueryBuilder<Fields> => {
+      const inner: Record<string, any> = {};
+      for (const [key, child] of Object.entries(fields)) {
+        inner[key] = resolveBuilder(child, [...parentDef, key]);
+      }
+      return inner as any;
+    },
+    () => baseEntity.object(fields),
+  )(fields);
+}
+
 export interface IListQueryBuilder<Children extends TInstanceAny> {
   all<Q extends TTypedQueryAny>(fn: (sub: TQueryBuilder<Children>) => Q): ITypedQuery<TTypedQueryResult<Q>[]>;
   first<Q extends TTypedQueryAny>(fn: (sub: TQueryBuilder<Children>) => Q): ITypedQuery<TTypedQueryResult<Q>>;
@@ -260,6 +286,7 @@ export const entity = {
   json,
   nullable,
   object: objectEntity,
+  namespace,
   list,
   input,
 } as const;
