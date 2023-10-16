@@ -21,6 +21,8 @@ export {
   type TInstanceRecord,
   type TListDef,
   type TListInstance,
+  type TNamespaceInstance,
+  type TNamespaceQueryBuilder,
   type TNullableDef,
   type TNullableInstance,
   type TNullableQuery,
