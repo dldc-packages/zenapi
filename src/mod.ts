@@ -39,19 +39,23 @@ export {
   type IKeyProvider,
   type TKey,
   type TKeyProviderFn,
+  type TOnError,
   type TResolve,
   type TVoidKey,
 } from './context';
 export { engine, type IEngine, type IEngineOptions, type TExtendsContext, type TRunResult } from './engine';
 export {
+  deferred,
   defineEntity,
   resolveBuilder,
+  type IDeferredInstance,
   type IEntity,
   type IInstance,
   type TEntityAny,
   type TInstanceAny,
   type TInstanceOf,
   type TInstanceResolved,
+  type TLeafInstance,
   type TParentEntityFactory,
   type TPath,
   type TPayload,

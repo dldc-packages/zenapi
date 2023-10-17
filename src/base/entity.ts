@@ -1,4 +1,4 @@
-import type { IInstance, TInstanceAny, TInstanceResolved, TQueryBuilder } from '../entity';
+import type { IInstance, TInstanceAny, TInstanceResolved, TLeafInstance, TQueryBuilder } from '../entity';
 import { defineEntity, resolveBuilder } from '../entity';
 import type { ITypedQuery, RESULT, TQuery, TTypedQueryAny, TTypedQueryResult } from '../query';
 import { createQuery } from '../query';
@@ -43,7 +43,7 @@ export const baseEntity = (() => {
   };
 })();
 
-function string(): IInstance<string, ITypedQuery<string>, null> {
+function string(): TLeafInstance<string> {
   return defineEntity<string, ITypedQuery<string>, null>(
     'string',
     (parentDef): ITypedQuery<string> => createQuery<string>(parentDef),
@@ -51,7 +51,7 @@ function string(): IInstance<string, ITypedQuery<string>, null> {
   )(null);
 }
 
-function number(): IInstance<number, ITypedQuery<number>, null> {
+function number(): TLeafInstance<number> {
   return defineEntity<number, ITypedQuery<number>, null>(
     'number',
     (parentDef): ITypedQuery<number> => createQuery<number>(parentDef),
@@ -59,7 +59,7 @@ function number(): IInstance<number, ITypedQuery<number>, null> {
   )(null);
 }
 
-function boolean(): IInstance<boolean, ITypedQuery<boolean>, null> {
+function boolean(): TLeafInstance<boolean> {
   return defineEntity<boolean, ITypedQuery<boolean>, null>(
     'boolean',
     (parentDef): ITypedQuery<boolean> => createQuery<boolean>(parentDef),
@@ -67,7 +67,7 @@ function boolean(): IInstance<boolean, ITypedQuery<boolean>, null> {
   )(null);
 }
 
-function nil(): IInstance<null, ITypedQuery<null>, null> {
+function nil(): TLeafInstance<null> {
   return defineEntity<null, ITypedQuery<null>, null>(
     'nil',
     (parentDef): ITypedQuery<null> => createQuery<null>(parentDef),
@@ -75,7 +75,7 @@ function nil(): IInstance<null, ITypedQuery<null>, null> {
   )(null);
 }
 
-function date(): IInstance<Date, ITypedQuery<Date>, null> {
+function date(): TLeafInstance<Date> {
   return defineEntity<Date, ITypedQuery<Date>, null>(
     'date',
     (parentDef): ITypedQuery<Date> => createQuery<Date>(parentDef),
@@ -93,7 +93,7 @@ function enumEntity<Values extends readonly string[]>(
   )(values);
 }
 
-function json<Data>() {
+function json<Data>(): TLeafInstance<Data> {
   return defineEntity<Data, ITypedQuery<Data>, null>(
     'json',
     (parentDef): ITypedQuery<Data> => createQuery<Data>(parentDef),

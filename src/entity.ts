@@ -1,4 +1,4 @@
-import type { TQuery } from './query';
+import type { ITypedQuery, TQuery } from './query';
 
 export const INTERNAL = Symbol('INTERNAL');
 
@@ -41,6 +41,13 @@ export interface IInstance<Resolved, QueryBuilder, Payload> {
   readonly payload: Payload;
 }
 
+export interface IDeferredInstance<Instance extends TInstanceAny>
+  extends IInstance<TInstanceResolved<Instance>, TQueryBuilder<Instance>, TPayload<Instance>> {
+  define(instance: Instance): void;
+}
+
+export type TLeafInstance<T> = IInstance<T, ITypedQuery<T>, null>;
+
 export function defineEntity<Resolved, QueryBuilder, Payload>(
   name: string,
   builder: TQueryBuilderFactory<QueryBuilder, Payload> | null = null,
@@ -64,6 +71,36 @@ export function defineEntity<Resolved, QueryBuilder, Payload>(
     },
   });
   return entity;
+}
+
+export function deferred<Instance extends TInstanceAny>(debugName: string): IDeferredInstance<Instance> {
+  let instance: Instance | null = null;
+  return {
+    get entity() {
+      if (!instance) {
+        throw new Error(`Deferred entity ${debugName} is not defined`);
+      }
+      return instance.entity;
+    },
+    get parent() {
+      if (!instance) {
+        throw new Error(`Deferred entity ${debugName} is not defined`);
+      }
+      return instance.parent;
+    },
+    get payload() {
+      if (!instance) {
+        throw new Error(`Deferred entity ${debugName} is not defined`);
+      }
+      return instance.payload;
+    },
+    define(def: Instance) {
+      if (instance) {
+        throw new Error(`Deferred entity ${debugName} is already defined`);
+      }
+      instance = def;
+    },
+  };
 }
 
 export function resolveBuilder(instance: TInstanceAny, parentDef: TQuery) {
