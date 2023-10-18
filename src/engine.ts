@@ -21,15 +21,18 @@ export interface IEngine<ErrorData> {
 
 export interface IEngineOptions<ErrorData> {
   readonly resolvers: readonly TResolver[];
+  readonly noDefaultResolvers?: boolean;
   readonly schema: TInstanceAny;
   readonly onError: TOnError<ErrorData>;
 }
 
 export function engine<ErrorData>({
-  resolvers = defaultResolvers,
+  resolvers: userResolvers,
   schema,
   onError,
+  noDefaultResolvers = false,
 }: IEngineOptions<ErrorData>): IEngine<ErrorData> {
+  const resolvers = new Set(noDefaultResolvers ? userResolvers : [...defaultResolvers, ...userResolvers]);
   const resolverByAbstract = new Map<string, TAbstractResolverFnAny>();
   const resolverByEntity = new Map<TEntityAny, TEntityResolverFnAny>();
 

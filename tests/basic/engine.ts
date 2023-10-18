@@ -1,4 +1,4 @@
-import { InputDataKey, basicResolver, defaultResolvers, engine } from '../../src/mod';
+import { InputDataKey, basicResolver, engine } from '../../src/mod';
 import { appSchema, authLogin, maybeMe, meWorspacesType, version } from './schema';
 
 const authLoginImplem = basicResolver(authLogin.entity, (ctx) => {
@@ -25,6 +25,6 @@ const maybeMeImple = basicResolver(maybeMe.entity, () => {
 
 export const appEngine = engine<null>({
   schema: appSchema,
-  resolvers: [...defaultResolvers, authLoginImplem, meWorspacesTypeImplem, versionImplem, maybeMeImple],
+  resolvers: [authLoginImplem, meWorspacesTypeImplem, versionImplem, maybeMeImple],
   onError: () => null,
 });

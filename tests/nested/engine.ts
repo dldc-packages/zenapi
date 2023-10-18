@@ -1,5 +1,5 @@
 import { Erreur } from '@dldc/erreur';
-import { Key, defaultResolvers, engine, resolver } from '../../src/mod';
+import { Key, engine, resolver } from '../../src/mod';
 import { appSchema, login, maybePersonal } from './schema';
 
 interface IUser {
@@ -32,7 +32,7 @@ const maybePersonalResolver = resolver(maybePersonal.entity, [], (ctx) => {
 
 export const appEngine = engine<unknown>({
   schema: appSchema,
-  resolvers: [...defaultResolvers, loginResolver, maybePersonalResolver],
+  resolvers: [loginResolver, maybePersonalResolver],
   onError: (error) => {
     return error instanceof Erreur ? error.toJSON() : 'Unknown error';
   },

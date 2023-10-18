@@ -1,5 +1,5 @@
 import { Erreur } from '@dldc/erreur';
-import { defaultResolvers, engine, resolver } from '../../src/mod';
+import { engine, resolver } from '../../src/mod';
 import { app, schema, user } from './schema';
 
 const userResolver = resolver(user.entity, [], () => {
@@ -16,7 +16,7 @@ const appResolver = resolver(app.entity, [], () => {
 
 export const appEngine = engine<unknown>({
   schema,
-  resolvers: [...defaultResolvers, userResolver, appResolver],
+  resolvers: [userResolver, appResolver],
   onError: (error) => {
     return error instanceof Erreur ? error.toJSON() : 'Unknown error';
   },
