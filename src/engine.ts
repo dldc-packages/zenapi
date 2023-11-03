@@ -39,14 +39,14 @@ export function engine<ErrorData>({
   for (const item of resolvers) {
     if (item[RESOLVER] === 'abstract') {
       if (resolverByAbstract.has(item.abstract.name)) {
-        throw ZenapiErreur.DuplicateResolver.create(item.abstract.name);
+        throw ZenapiErreur.DuplicateResolver(item.abstract.name);
       }
       resolverByAbstract.set(item.abstract.name, item.resolver);
       continue;
     }
     if (item[RESOLVER] === 'entity') {
       if (resolverByEntity.has(item.entity)) {
-        throw ZenapiErreur.DuplicateResolver.create(item.entity[INTERNAL].name);
+        throw ZenapiErreur.DuplicateResolver(item.entity[INTERNAL].name);
       }
       const resolverWithMiddlewares: TEntityResolverFnAny = async (ctx, next, instance) => {
         const ctxMid =
@@ -66,7 +66,7 @@ export function engine<ErrorData>({
       resolverByEntity.set(item.entity, resolverWithMiddlewares);
       continue;
     }
-    throw ZenapiErreur.UnexpectedReach.create();
+    throw ZenapiErreur.UnexpectedReach();
   }
 
   return { run };
@@ -99,7 +99,7 @@ export function engine<ErrorData>({
       const [name, data] = abstract;
       const abstractResolver = resolverByAbstract.get(name);
       if (!abstractResolver) {
-        throw ZenapiErreur.UnknownAbstract.create(name);
+        throw ZenapiErreur.UnknownAbstract(name);
       }
       return abstractResolver(ctx, async (ctx) => resolve(instance, ctx), data);
     }

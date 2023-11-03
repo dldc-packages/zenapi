@@ -51,7 +51,7 @@ export function queryReader(query: TQuery): IQueryReader {
     readEntity<Query extends TQueryItemEntity>() {
       const [item, next] = readNext();
       if (isAbstract(item)) {
-        throw ZenapiErreur.UnexpectedReadNextType.create();
+        throw ZenapiErreur.UnexpectedReadNextType();
       }
       return [item as Query, next];
     },
@@ -65,7 +65,7 @@ export function queryReader(query: TQuery): IQueryReader {
 
   function readNext(): [TQueryItem, IQueryReader] {
     if (query.length === 0) {
-      throw ZenapiErreur.UnexpectedReadNextInEmptyQuery.create();
+      throw ZenapiErreur.UnexpectedReadNextInEmptyQuery();
     }
     const [item, ...rest] = query;
     return [item, queryReader(rest)];

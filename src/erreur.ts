@@ -1,85 +1,64 @@
+import type { TKey } from '@dldc/erreur';
 import { Erreur, Key } from '@dldc/erreur';
 import type { TPath } from './entity';
 
-export const ZenapiErreur = (() => {
-  const ZenapiErreurKey = Key.createEmpty('ZenapiErreur');
+export type TZenapiErreurData =
+  | { kind: 'UnresolvedValue'; path: TPath }
+  | { kind: 'InvalidResolvedValue'; path: TPath }
+  | { kind: 'InvalidQuery' }
+  | { kind: 'UnexpectedNullable' }
+  | { kind: 'UnexpectedReach' }
+  | { kind: 'DuplicateResolver'; abstractName: string }
+  | { kind: 'UnknownAbstract'; name: string }
+  | { kind: 'UnexpectedReadNextInEmptyQuery' }
+  | { kind: 'UnexpectedReadNextType' };
 
-  const UnresolvedValueKey = Key.create<{ path: TPath }>('UnresolvedValue');
-  const InvalidResolvedValueKey = Key.create<{ path: TPath }>('InvalidResolvedValue');
-  const InvalidQueryKey = Key.createEmpty('InvalidQuery');
-  const UnexpectedNullableKey = Key.createEmpty('UnexpectedNullable');
-  const UnexpectedReachKey = Key.createEmpty('UnexpectedReach');
-  const DuplicateResolverKey = Key.create<{ abstractName: string }>('DuplicateResolver');
-  const UnknownAbstractKey = Key.create<{ name: string }>('UnknownAbstract');
-  const UnexpectedReadNextInEmptyQueryKey = Key.createEmpty('UnexpectedReadNextInEmptyQuery');
-  const UnexpectedReadNextTypeKey = Key.createEmpty('UnexpectedReadNextType');
+export const ZenapiErreurKey: TKey<TZenapiErreurData, false> = Key.create<TZenapiErreurData>('ZenapiErreur');
 
-  return {
-    Key: ZenapiErreurKey,
-    create: createZenapiErreur,
-    InvalidResolvedValue: {
-      Key: InvalidResolvedValueKey,
-      create: (path: TPath, message: string) =>
-        createZenapiErreur()
-          .with(InvalidResolvedValueKey.Provider({ path }))
-          .withMessage(`Invalid resolved value at "${path.join('.')}": ${message}`),
-    },
-    UnresolvedValue: {
-      Key: UnresolvedValueKey,
-      create: (path: TPath) =>
-        createZenapiErreur()
-          .with(UnresolvedValueKey.Provider({ path }))
-          .withMessage(`Unresolved value at ${path.join('.')}`),
-    },
-    InvalidQuery: {
-      Key: InvalidQueryKey,
-      create: () => createZenapiErreur().with(InvalidQueryKey.Provider()).withMessage('Invalid query'),
-    },
-    UnexpectedNullable: {
-      Key: UnexpectedNullableKey,
-      create: () => createZenapiErreur().with(UnexpectedNullableKey.Provider()).withMessage('Unexpected nullable'),
-    },
-    UnexpectedReach: {
-      Key: UnexpectedReachKey,
-      create: () => createZenapiErreur().with(UnexpectedReachKey.Provider()).withMessage('Unexpected reach'),
-    },
-    DuplicateResolver: {
-      Key: DuplicateResolverKey,
-      create: (abstractName: string) =>
-        createZenapiErreur()
-          .with(DuplicateResolverKey.Provider({ abstractName }))
-          .withMessage(`Duplicate resolver for ${abstractName}`),
-    },
-    UnknownAbstract: {
-      Key: UnknownAbstractKey,
-      create: (name: string) =>
-        createZenapiErreur().with(UnknownAbstractKey.Provider({ name })).withMessage(`Unknown abstract "${name}"`),
-    },
-    UnexpectedReadNextInEmptyQuery: {
-      Key: UnexpectedReadNextInEmptyQueryKey,
-      create: () =>
-        createZenapiErreur()
-          .with(UnexpectedReadNextInEmptyQueryKey.Provider())
-          .withMessage('Unexpected read next in empty query'),
-    },
-    UnexpectedReadNextType: {
-      Key: UnexpectedReadNextTypeKey,
-      create: () =>
-        createZenapiErreur().with(UnexpectedReadNextTypeKey.Provider()).withMessage('Unexpected read next type'),
-    },
-  };
-
-  // export const UnexpectedArrayInQueryDef = ErreurType.defineEmpty('UnexpectedArrayInQueryDef');
-
-  // export const CouldNotResolve = ErreurType.defineWithTransform(
-  //   'CouldNotResolve',
-  //   (path: TPath) => ({ path }),
-  //   (base, provider, { path }) => {
-  //     return base.with(provider).withMessage(`Could not resolve ${path.join('.')}`);
-  //   },
-  // );
-
-  function createZenapiErreur() {
-    return Erreur.createWith(ZenapiErreurKey);
-  }
-})();
+export const ZenapiErreur = {
+  InvalidResolvedValue: (path: TPath, message: string) => {
+    return Erreur.create(new Error(`Invalid resolved value at "${path.join('.')}": ${message}`))
+      .with(ZenapiErreurKey.Provider({ kind: 'InvalidResolvedValue', path }))
+      .withName('ZenapiErreur');
+  },
+  UnresolvedValue: (path: TPath) => {
+    return Erreur.create(new Error(`Unresolved value at ${path.join('.')}`))
+      .with(ZenapiErreurKey.Provider({ kind: 'UnresolvedValue', path }))
+      .withName('ZenapiErreur');
+  },
+  InvalidQuery: () => {
+    return Erreur.create(new Error('Invalid query'))
+      .with(ZenapiErreurKey.Provider({ kind: 'InvalidQuery' }))
+      .withName('ZenapiErreur');
+  },
+  UnexpectedNullable: () => {
+    return Erreur.create(new Error('Unexpected nullable'))
+      .with(ZenapiErreurKey.Provider({ kind: 'UnexpectedNullable' }))
+      .withName('ZenapiErreur');
+  },
+  UnexpectedReach: () => {
+    return Erreur.create(new Error('Unexpected reach'))
+      .with(ZenapiErreurKey.Provider({ kind: 'UnexpectedReach' }))
+      .withName('ZenapiErreur');
+  },
+  DuplicateResolver: (abstractName: string) => {
+    return Erreur.create(new Error(`Duplicate resolver for ${abstractName}`))
+      .with(ZenapiErreurKey.Provider({ kind: 'DuplicateResolver', abstractName }))
+      .withName('ZenapiErreur');
+  },
+  UnknownAbstract: (name: string) => {
+    return Erreur.create(new Error(`Unknown abstract "${name}"`))
+      .with(ZenapiErreurKey.Provider({ kind: 'UnknownAbstract', name }))
+      .withName('ZenapiErreur');
+  },
+  UnexpectedReadNextInEmptyQuery: () => {
+    return Erreur.create(new Error('Unexpected read next in empty query'))
+      .with(ZenapiErreurKey.Provider({ kind: 'UnexpectedReadNextInEmptyQuery' }))
+      .withName('ZenapiErreur');
+  },
+  UnexpectedReadNextType: () => {
+    return Erreur.create(new Error('Unexpected read next type'))
+      .with(ZenapiErreurKey.Provider({ kind: 'UnexpectedReadNextType' }))
+      .withName('ZenapiErreur');
+  },
+};
