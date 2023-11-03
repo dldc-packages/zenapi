@@ -1,9 +1,7 @@
 import type { TInstanceAny } from './entity';
 import { resolveBuilder, type TQueryBuilder } from './entity';
 import { ZenapiErreur } from './erreur';
-
-export const RESULT = Symbol('RESULT');
-export type RESULT = typeof RESULT;
+import { RESULT } from './internal';
 
 // No array as they are reserved for query only (like object)
 export type TQueryItemEntity = Record<string, any> | string | number | boolean | null | undefined;

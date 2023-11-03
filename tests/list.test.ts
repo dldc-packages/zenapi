@@ -33,11 +33,8 @@ test('should resolve partial result in list', async () => {
   const q = query(items).all((item) => item(({ id, name }) => obj({ id, name })));
   const res = await appEngine.run(q);
 
-  expect(res).toEqual({
-    success: true,
-    result: [
-      { id: '1', name: 'Item 1' },
-      { id: '1', name: 'Item 1' },
-    ],
-  });
+  expect(res).toEqual([
+    { id: '1', name: 'Item 1' },
+    { id: '1', name: 'Item 1' },
+  ]);
 });

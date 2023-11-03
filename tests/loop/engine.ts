@@ -14,7 +14,7 @@ const appResolver = resolver(app.entity, [], () => {
   };
 });
 
-export const appEngine = engine<unknown>({
+export const appEngine = engine({
   schema,
   resolvers: [userResolver, appResolver],
   onError: (error) => {

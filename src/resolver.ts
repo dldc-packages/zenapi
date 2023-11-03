@@ -1,8 +1,7 @@
 import type { IAbstract, TAbstractAny } from './abstract';
 import type { ApiContext } from './context';
 import type { TEntityAny, TInstanceOf, TResolved } from './entity';
-
-export const RESOLVER = Symbol('RESOLVER');
+import { RESOLVER } from './internal';
 
 export type TResolver = IAbstractResolver | IEntityResolver;
 

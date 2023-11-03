@@ -1,6 +1,7 @@
 import type { IInstance, TInstanceAny, TInstanceResolved, TLeafInstance, TQueryBuilder } from '../entity';
 import { defineEntity, resolveBuilder } from '../entity';
-import type { ITypedQuery, RESULT, TQuery, TTypedQueryAny, TTypedQueryResult } from '../query';
+import type { RESULT } from '../internal';
+import type { ITypedQuery, TQuery, TTypedQueryAny, TTypedQueryResult } from '../query';
 import { createQuery } from '../query';
 
 export type TNullableDef = { nullable: TQuery | false };

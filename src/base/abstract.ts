@@ -38,3 +38,9 @@ export function errorBoundary<Q extends TTypedQueryAny, ErrorData>(
 ): ITypedQuery<TAbstractErrorBoundaryResult<Q, ErrorData>> {
   return createQuery([[abstracts.errorBoundary.name, query.query]]);
 }
+
+export function createErrorBoundary<ErrorData>() {
+  return <Q extends TTypedQueryAny>(query: Q): ITypedQuery<TAbstractErrorBoundaryResult<Q, ErrorData>> => {
+    return errorBoundary(query);
+  };
+}

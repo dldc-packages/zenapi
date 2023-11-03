@@ -1,4 +1,4 @@
-import { assert, expect, test } from 'vitest';
+import { expect, test } from 'vitest';
 import { obj, query } from '../src/mod';
 import { appEngine } from './nested/engine';
 import { appSchema } from './nested/schema';
@@ -6,8 +6,7 @@ import { appSchema } from './nested/schema';
 test('resolve user should be null', async () => {
   const q = query(appSchema).personal((p) => p().user((u) => obj(u)));
   const res = await appEngine.run(q);
-  assert(res.success);
-  expect(res.result).toBeNull();
+  expect(res).toBeNull();
 });
 
 test('resolve login should get authenticated user', async () => {
@@ -15,8 +14,7 @@ test('resolve login should get authenticated user', async () => {
     p(({ user }) => user((u) => obj(u))),
   );
   const res = await appEngine.run(q);
-  assert(res.success);
-  expect(res.result).toEqual({
+  expect(res).toEqual({
     id: '123',
     name: 'User',
     email: 'user@example.com',

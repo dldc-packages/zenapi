@@ -1,38 +1,37 @@
-import { defaultResolvers } from './base/resolver';
-import type { TOnError } from './context';
+import type { TOnError } from './base/resolver';
+import { createDefaultResolvers } from './base/resolver';
 import { ApiContext } from './context';
 import type { TInstanceAny, TPath } from './entity';
-import { INTERNAL, type TEntityAny } from './entity';
+import { type TEntityAny } from './entity';
 import { ZenapiErreur } from './erreur';
+import { INTERNAL, RESOLVER } from './internal';
 import type { TTypedQueryAny, TTypedQueryResult } from './query';
 import { queryReader } from './query';
 import type { TEntityMiddleware } from './resolver';
-import { RESOLVER, type TAbstractResolverFnAny, type TEntityResolverFnAny, type TResolver } from './resolver';
+import { type TAbstractResolverFnAny, type TEntityResolverFnAny, type TResolver } from './resolver';
 
 export type TExtendsContext = (ctx: ApiContext) => ApiContext | Promise<ApiContext>;
 
-export type TRunResult<Query extends TTypedQueryAny, ErrorData> =
-  | { success: true; result: TTypedQueryResult<Query> }
-  | { success: false; error: ErrorData };
-
-export interface IEngine<ErrorData> {
-  run: <Q extends TTypedQueryAny>(query: Q, extendsCtx?: TExtendsContext) => Promise<TRunResult<Q, ErrorData>>;
+export interface IEngine {
+  run: <Q extends TTypedQueryAny>(query: Q, extendsCtx?: TExtendsContext) => Promise<TTypedQueryResult<Q>>;
 }
 
-export interface IEngineOptions<ErrorData> {
+export interface IEngineOptions {
   readonly resolvers: readonly TResolver[];
   readonly noDefaultResolvers?: boolean;
   readonly schema: TInstanceAny;
-  readonly onError: TOnError<ErrorData>;
+  readonly onError: TOnError<unknown>;
 }
 
-export function engine<ErrorData>({
+export function engine({
   resolvers: userResolvers,
   schema,
-  onError,
   noDefaultResolvers = false,
-}: IEngineOptions<ErrorData>): IEngine<ErrorData> {
-  const resolvers = new Set(noDefaultResolvers ? userResolvers : [...defaultResolvers, ...userResolvers]);
+  onError,
+}: IEngineOptions): IEngine {
+  const resolvers = new Set(
+    noDefaultResolvers ? userResolvers : [...createDefaultResolvers(onError), ...userResolvers],
+  );
   const resolverByAbstract = new Map<string, TAbstractResolverFnAny>();
   const resolverByEntity = new Map<TEntityAny, TEntityResolverFnAny>();
 
@@ -71,22 +70,9 @@ export function engine<ErrorData>({
 
   return { run };
 
-  async function run(
-    query: TTypedQueryAny,
-    extendsCtx?: TExtendsContext,
-  ): Promise<TRunResult<TTypedQueryAny, ErrorData>> {
-    try {
-      const result = await runUnsafe(query, extendsCtx);
-      return { success: true, result };
-    } catch (error) {
-      const errorData = onError(error);
-      return { success: false, error: errorData };
-    }
-  }
-
-  async function runUnsafe(query: TTypedQueryAny, extendsCtx?: TExtendsContext) {
+  async function run(query: TTypedQueryAny, extendsCtx?: TExtendsContext) {
     const path: TPath = [];
-    const ctx = ApiContext.create(path, queryReader(query.query), resolve, onError);
+    const ctx = ApiContext.create(path, queryReader(query.query), resolve);
     const ctxExtended = extendsCtx ? await extendsCtx(ctx) : ctx;
     const finalCtx = await resolve(schema, ctxExtended);
     return finalCtx.value;

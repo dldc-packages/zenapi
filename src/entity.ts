@@ -1,6 +1,5 @@
+import { INTERNAL } from './internal';
 import type { ITypedQuery, TQuery } from './query';
-
-export const INTERNAL = Symbol('INTERNAL');
 
 export type TPath = readonly (string | number)[];
 

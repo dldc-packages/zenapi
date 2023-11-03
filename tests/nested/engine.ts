@@ -30,7 +30,7 @@ const maybePersonalResolver = resolver(maybePersonal.entity, [], (ctx) => {
   };
 });
 
-export const appEngine = engine<unknown>({
+export const appEngine = engine({
   schema: appSchema,
   resolvers: [loginResolver, maybePersonalResolver],
   onError: (error) => {

@@ -63,6 +63,8 @@ export const version = entity.string();
 
 export const maybeMe = entity.nullable(meType);
 
+export const unauthorized = entity.string();
+
 export const appSchema = entity.namespace({
   version,
   settings: settingsTypes,
@@ -73,4 +75,5 @@ export const appSchema = entity.namespace({
     byTenant: workspaceByTenant,
     byId: workspaceById,
   }),
+  unauthorized,
 });

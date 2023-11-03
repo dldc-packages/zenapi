@@ -1,4 +1,4 @@
-const QUERY_DATA = Symbol('DATA');
+import { QUERY_DATA } from './internal';
 
 export type TAbstractAny = IAbstract<any>;
 

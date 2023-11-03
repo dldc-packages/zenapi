@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { obj, query } from '../src/mod';
-import { appEngine } from './basic/engine';
+import { appEngine, errorBoundary } from './basic/engine';
 import { appSchema } from './basic/schema';
 
 test('resolve version', async () => {
@@ -8,19 +8,13 @@ test('resolve version', async () => {
 
   const res = await appEngine.run(q);
 
-  expect(res).toEqual({
-    result: '1.0.0',
-    success: true,
-  });
+  expect(res).toEqual('1.0.0');
 });
 
 test('resolve version in object', async () => {
   const q1 = obj({ currentVersion: query(appSchema).version });
   const res = await appEngine.run(q1);
-  expect(res).toEqual({
-    result: { currentVersion: '1.0.0' },
-    success: true,
-  });
+  expect(res).toEqual({ currentVersion: '1.0.0' });
 });
 
 test('resolve connexion', async () => {
@@ -33,13 +27,10 @@ test('resolve connexion', async () => {
   const res = await appEngine.run(q);
 
   expect(res).toEqual({
-    success: true,
-    result: {
-      connexion: {
-        id: '123',
-        name: 'User',
-        email: 'a',
-      },
+    connexion: {
+      id: '123',
+      name: 'User',
+      email: 'a',
     },
   });
 });
@@ -49,8 +40,16 @@ test('nullable', async () => {
 
   const res = await appEngine.run(q);
 
+  expect(res).toEqual(null);
+});
+
+test('errorBoundary', async () => {
+  const q = errorBoundary(query(appSchema).unauthorized);
+
+  const res = await appEngine.run(q);
+
   expect(res).toEqual({
-    success: true,
-    result: null,
+    error: { message: 'Unauthorized' },
+    success: false,
   });
 });

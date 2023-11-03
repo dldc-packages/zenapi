@@ -187,7 +187,7 @@ export const baseResolvers = {
  * Abstracts
  */
 
-const objectAbstractResolver = abstractResolver(abstracts.object, async (ctx, next, data) => {
+export const objectAbstractResolver = abstractResolver(abstracts.object, async (ctx, next, data) => {
   const result: Record<string, any> = {};
   for (const [key, subDef] of Object.entries(data)) {
     const keyCtx = await next(ctx.withQuery(queryReader(subDef)));
@@ -196,24 +196,22 @@ const objectAbstractResolver = abstractResolver(abstracts.object, async (ctx, ne
   return ctx.withValue(result);
 });
 
-const errorBoundaryAbstractResolver = abstractResolver(abstracts.errorBoundary, async (ctx, next, data) => {
-  try {
-    const resultCtx = await next(ctx.withQuery(queryReader(data)));
-    const result: TAbstractErrorBoundaryResult<any, any> = { success: true, result: resultCtx.value };
-    return ctx.withValue(result);
-  } catch (error) {
-    const errorData = ctx.onError(error);
-    const result: TAbstractErrorBoundaryResult<any, any> = { success: false, error: errorData };
-    return ctx.withValue(result);
-  }
-});
+export type TOnError<ErrorData = unknown> = (err: unknown) => ErrorData;
 
-export const abstractResolvers = {
-  object: objectAbstractResolver,
-  errorBoundary: errorBoundaryAbstractResolver,
+export function createErrorBoundaryAbstractResolver<ErrorData>(onError: TOnError<ErrorData>) {
+  return abstractResolver(abstracts.errorBoundary, async (ctx, next, data) => {
+    try {
+      const resultCtx = await next(ctx.withQuery(queryReader(data)));
+      const result: TAbstractErrorBoundaryResult<any, any> = { success: true, result: resultCtx.value };
+      return ctx.withValue(result);
+    } catch (error) {
+      const errorData = onError(error);
+      const result: TAbstractErrorBoundaryResult<any, any> = { success: false, error: errorData };
+      return ctx.withValue(result);
+    }
+  });
+}
+
+export const createDefaultResolvers = (onError: TOnError<unknown>): readonly TResolver[] => {
+  return [...Object.values(baseResolvers), objectAbstractResolver, createErrorBoundaryAbstractResolver(onError)];
 };
-
-export const defaultResolvers: readonly TResolver[] = [
-  ...Object.values(baseResolvers),
-  ...Object.values(abstractResolvers),
-];
