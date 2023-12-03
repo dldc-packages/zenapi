@@ -47,11 +47,17 @@ export type TDeferredResult<Instance extends TInstanceAny> = readonly [
 
 export type TLeafInstance<T> = IInstance<T, ITypedQuery<T>, null>;
 
-export function defineEntity<Resolved, QueryBuilder, Payload>(
-  name: string,
-  builder: TQueryBuilderFactory<QueryBuilder, Payload> | null = null,
-  parent: TParentEntityFactory<Payload> | null = null,
-): IEntity<Resolved, QueryBuilder, Payload> {
+export interface IDefineEntityParams<QueryBuilder, Payload> {
+  name: string;
+  builder?: TQueryBuilderFactory<QueryBuilder, Payload> | null;
+  parent?: TParentEntityFactory<Payload> | null;
+}
+
+export function defineEntity<Resolved, QueryBuilder, Payload>({
+  name,
+  builder = null,
+  parent = null,
+}: IDefineEntityParams<QueryBuilder, Payload>): IEntity<Resolved, QueryBuilder, Payload> {
   function create(payload?: Payload): IInstance<Resolved, QueryBuilder, Payload> {
     return {
       entity,
