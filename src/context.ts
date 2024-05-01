@@ -3,7 +3,7 @@ import { Key, Stack } from '@dldc/stack';
 import type { TInstanceAny, TPath } from './entity';
 import type { IQueryReader } from './query';
 
-export { Key, type IKeyConsumer, type IKeyProvider, type TKey, type TKeyProviderFn, type TVoidKey } from '@dldc/stack';
+export { Key, type TKey, type TKeyConsumer, type TKeyProvider, type TKeyProviderFn, type TVoidKey } from '@dldc/stack';
 
 export type TResolve = (instance: TInstanceAny | null, ctx: ApiContext) => Promise<ApiContext>;
 

@@ -1,6 +1,6 @@
 import type { TInstanceAny } from './entity';
 import { resolveBuilder, type TQueryBuilder } from './entity';
-import { ZenapiErreur } from './erreur';
+import { createUnexpectedReadNextInEmptyQuery, createUnexpectedReadNextType } from './erreur';
 import { RESULT } from './internal';
 
 // No array as they are reserved for query only (like object)
@@ -49,7 +49,7 @@ export function queryReader(query: TQuery): IQueryReader {
     readEntity<Query extends TQueryItemEntity>() {
       const [item, next] = readNext();
       if (isAbstract(item)) {
-        throw ZenapiErreur.UnexpectedReadNextType();
+        throw createUnexpectedReadNextType();
       }
       return [item as Query, next];
     },
@@ -63,7 +63,7 @@ export function queryReader(query: TQuery): IQueryReader {
 
   function readNext(): [TQueryItem, IQueryReader] {
     if (query.length === 0) {
-      throw ZenapiErreur.UnexpectedReadNextInEmptyQuery();
+      throw createUnexpectedReadNextInEmptyQuery();
     }
     const [item, ...rest] = query;
     return [item, queryReader(rest)];

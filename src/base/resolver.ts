@@ -1,5 +1,10 @@
 import { Key } from '../context';
-import { ZenapiErreur } from '../erreur';
+import {
+  createInvalidQuery,
+  createInvalidResolvedValue,
+  createUnexpectedNullable,
+  createUnresolvedValue,
+} from '../erreur';
 import { queryReader } from '../query';
 import type { TResolver } from '../resolver';
 import { abstractResolver, basicResolver } from '../resolver';
@@ -11,10 +16,10 @@ import { baseEntity } from './entity';
 const stringResolver = basicResolver(baseEntity.string, async (ctxBase, next) => {
   const ctx = await next(ctxBase);
   if (ctx.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue(ctx.path);
+    throw createUnresolvedValue(ctx.path);
   }
   if (typeof ctx.value !== 'string') {
-    throw ZenapiErreur.InvalidResolvedValue(ctx.path, 'Expected string');
+    throw createInvalidResolvedValue(ctx.path, 'Expected string');
   }
   return ctx;
 });
@@ -22,10 +27,10 @@ const stringResolver = basicResolver(baseEntity.string, async (ctxBase, next) =>
 const numberResolver = basicResolver(baseEntity.number, async (ctxBase, next) => {
   const ctx = await next(ctxBase);
   if (ctx.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue(ctx.path);
+    throw createUnresolvedValue(ctx.path);
   }
   if (typeof ctx.value !== 'number') {
-    throw ZenapiErreur.InvalidResolvedValue(ctx.path, 'Expected number');
+    throw createInvalidResolvedValue(ctx.path, 'Expected number');
   }
   return ctx;
 });
@@ -33,10 +38,10 @@ const numberResolver = basicResolver(baseEntity.number, async (ctxBase, next) =>
 const booleanResolver = basicResolver(baseEntity.boolean, async (ctxBase, next) => {
   const ctx = await next(ctxBase);
   if (ctx.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue(ctx.path);
+    throw createUnresolvedValue(ctx.path);
   }
   if (typeof ctx.value !== 'boolean') {
-    throw ZenapiErreur.InvalidResolvedValue(ctx.path, 'Expected boolean');
+    throw createInvalidResolvedValue(ctx.path, 'Expected boolean');
   }
   return ctx;
 });
@@ -44,10 +49,10 @@ const booleanResolver = basicResolver(baseEntity.boolean, async (ctxBase, next) 
 const dateResolver = basicResolver(baseEntity.date, async (ctxBase, next) => {
   const ctx = await next(ctxBase);
   if (ctx.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue(ctx.path);
+    throw createUnresolvedValue(ctx.path);
   }
   if (!(ctx.value instanceof Date)) {
-    throw ZenapiErreur.InvalidResolvedValue(ctx.path, 'Expected Date');
+    throw createInvalidResolvedValue(ctx.path, 'Expected Date');
   }
   return ctx;
 });
@@ -55,7 +60,7 @@ const dateResolver = basicResolver(baseEntity.date, async (ctxBase, next) => {
 const jsonResolver = basicResolver(baseEntity.json, async (ctxBase, next) => {
   const ctx = await next(ctxBase);
   if (ctx.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue(ctx.path);
+    throw createUnresolvedValue(ctx.path);
   }
   return ctx;
 });
@@ -63,10 +68,10 @@ const jsonResolver = basicResolver(baseEntity.json, async (ctxBase, next) => {
 const nilResolver = basicResolver(baseEntity.nil, async (ctxBase, next) => {
   const ctx = await next(ctxBase);
   if (ctx.value === undefined) {
-    throw ZenapiErreur.UnresolvedValue(ctx.path);
+    throw createUnresolvedValue(ctx.path);
   }
   if (ctx.value !== null) {
-    throw ZenapiErreur.InvalidResolvedValue(ctx.path, 'Expected null');
+    throw createInvalidResolvedValue(ctx.path, 'Expected null');
   }
   return ctx;
 });
@@ -75,10 +80,10 @@ const enumResolver = basicResolver(baseEntity.enum, async (ctxBase, next, instan
   const ctx = await next(ctxBase);
   const value = ctx.value as any;
   if (value === undefined) {
-    throw ZenapiErreur.UnresolvedValue(ctx.path);
+    throw createUnresolvedValue(ctx.path);
   }
   if (!instance.payload.includes(value)) {
-    throw ZenapiErreur.InvalidResolvedValue(ctx.path, `Expected one of ${instance.payload.join(', ')}`);
+    throw createInvalidResolvedValue(ctx.path, `Expected one of ${instance.payload.join(', ')}`);
   }
   return ctx;
 });
@@ -89,7 +94,7 @@ const nullableResolver = basicResolver(baseEntity.nullable, async (ctxBase, next
   const [def, defRest] = ctxBase.query.readEntity<TNullableDef>();
   if (ctx.value === null) {
     if (def.nullable === false) {
-      throw ZenapiErreur.UnexpectedNullable();
+      throw createUnexpectedNullable();
     }
     return null;
   }
@@ -104,7 +109,7 @@ const objectResolver = basicResolver(baseEntity.object, async (ctxBase, next, in
   const ctx = await next(ctxBase);
   const fields = instance.payload;
   if (key in fields === false) {
-    throw ZenapiErreur.InvalidQuery();
+    throw createInvalidQuery();
   }
   const value = ctx.value as any;
   return ctx.resolve(
@@ -129,11 +134,11 @@ const listResolver = basicResolver(baseEntity.list, async (ctxBase, next, instan
   const ctx = await next(ctxBase.with(ListQueryKey.Provider(q)));
   const value = ctx.value;
   if (!Array.isArray(value)) {
-    throw ZenapiErreur.InvalidResolvedValue(ctx.path, 'Expected array');
+    throw createInvalidResolvedValue(ctx.path, 'Expected array');
   }
   if (q.type === 'first') {
     if (value.length === 0) {
-      throw ZenapiErreur.UnresolvedValue(ctx.path);
+      throw createUnresolvedValue(ctx.path);
     }
     return ctx.resolve(
       child,

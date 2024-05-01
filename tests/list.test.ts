@@ -1,6 +1,5 @@
-import { Erreur } from '@dldc/erreur';
 import { expect, test } from 'vitest';
-import { engine, entity, obj, query, resolver } from '../src/mod';
+import { ZenapiErreur, engine, entity, obj, query, resolver } from '../src/mod';
 
 const item = entity.object({
   id: entity.string(),
@@ -25,7 +24,7 @@ const appEngine = engine({
   schema: items,
   resolvers: [itemsResolver, itemResolver],
   onError: (error) => {
-    return error instanceof Erreur ? error.toJSON() : 'Unknown error';
+    return ZenapiErreur.get(error) ?? 'Unknown error';
   },
 });
 

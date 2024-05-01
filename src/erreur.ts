@@ -1,5 +1,4 @@
-import type { TKey } from '@dldc/erreur';
-import { Erreur, Key } from '@dldc/erreur';
+import { createErreurStore } from '@dldc/erreur';
 import type { TPath } from './entity';
 
 export type TZenapiErreurData =
@@ -13,52 +12,53 @@ export type TZenapiErreurData =
   | { kind: 'UnexpectedReadNextInEmptyQuery' }
   | { kind: 'UnexpectedReadNextType' };
 
-export const ZenapiErreurKey: TKey<TZenapiErreurData, false> = Key.create<TZenapiErreurData>('ZenapiErreur');
+export const ZenapiErreurInternal = createErreurStore<TZenapiErreurData>();
 
-export const ZenapiErreur = {
-  InvalidResolvedValue: (path: TPath, message: string) => {
-    return Erreur.create(new Error(`Invalid resolved value at "${path.join('.')}": ${message}`))
-      .with(ZenapiErreurKey.Provider({ kind: 'InvalidResolvedValue', path }))
-      .withName('ZenapiErreur');
-  },
-  UnresolvedValue: (path: TPath) => {
-    return Erreur.create(new Error(`Unresolved value at ${path.join('.')}`))
-      .with(ZenapiErreurKey.Provider({ kind: 'UnresolvedValue', path }))
-      .withName('ZenapiErreur');
-  },
-  InvalidQuery: () => {
-    return Erreur.create(new Error('Invalid query'))
-      .with(ZenapiErreurKey.Provider({ kind: 'InvalidQuery' }))
-      .withName('ZenapiErreur');
-  },
-  UnexpectedNullable: () => {
-    return Erreur.create(new Error('Unexpected nullable'))
-      .with(ZenapiErreurKey.Provider({ kind: 'UnexpectedNullable' }))
-      .withName('ZenapiErreur');
-  },
-  UnexpectedReach: () => {
-    return Erreur.create(new Error('Unexpected reach'))
-      .with(ZenapiErreurKey.Provider({ kind: 'UnexpectedReach' }))
-      .withName('ZenapiErreur');
-  },
-  DuplicateResolver: (abstractName: string) => {
-    return Erreur.create(new Error(`Duplicate resolver for ${abstractName}`))
-      .with(ZenapiErreurKey.Provider({ kind: 'DuplicateResolver', abstractName }))
-      .withName('ZenapiErreur');
-  },
-  UnknownAbstract: (name: string) => {
-    return Erreur.create(new Error(`Unknown abstract "${name}"`))
-      .with(ZenapiErreurKey.Provider({ kind: 'UnknownAbstract', name }))
-      .withName('ZenapiErreur');
-  },
-  UnexpectedReadNextInEmptyQuery: () => {
-    return Erreur.create(new Error('Unexpected read next in empty query'))
-      .with(ZenapiErreurKey.Provider({ kind: 'UnexpectedReadNextInEmptyQuery' }))
-      .withName('ZenapiErreur');
-  },
-  UnexpectedReadNextType: () => {
-    return Erreur.create(new Error('Unexpected read next type'))
-      .with(ZenapiErreurKey.Provider({ kind: 'UnexpectedReadNextType' }))
-      .withName('ZenapiErreur');
-  },
-};
+export const ZenapiErreur = ZenapiErreurInternal.asReadonly;
+
+export function createInvalidResolvedValue(path: TPath, message: string) {
+  return ZenapiErreurInternal.setAndReturn(new Error(`Invalid resolved value at "${path.join('.')}": ${message}`), {
+    kind: 'InvalidResolvedValue',
+    path,
+  });
+}
+
+export function createUnresolvedValue(path: TPath) {
+  return ZenapiErreurInternal.setAndReturn(new Error(`Unresolved value at ${path.join('.')}`), {
+    kind: 'UnresolvedValue',
+    path,
+  });
+}
+
+export function createInvalidQuery() {
+  return ZenapiErreurInternal.setAndReturn(new Error('Invalid query'), { kind: 'InvalidQuery' });
+}
+
+export function createUnexpectedNullable() {
+  return ZenapiErreurInternal.setAndReturn(new Error('Unexpected nullable'), { kind: 'UnexpectedNullable' });
+}
+
+export function createUnexpectedReach() {
+  return ZenapiErreurInternal.setAndReturn(new Error('Unexpected reach'), { kind: 'UnexpectedReach' });
+}
+
+export function createDuplicateResolver(abstractName: string) {
+  return ZenapiErreurInternal.setAndReturn(new Error(`Duplicate resolver for ${abstractName}`), {
+    kind: 'DuplicateResolver',
+    abstractName,
+  });
+}
+
+export function createUnknownAbstract(name: string) {
+  return ZenapiErreurInternal.setAndReturn(new Error(`Unknown abstract "${name}"`), { kind: 'UnknownAbstract', name });
+}
+
+export function createUnexpectedReadNextInEmptyQuery() {
+  return ZenapiErreurInternal.setAndReturn(new Error('Unexpected read next in empty query'), {
+    kind: 'UnexpectedReadNextInEmptyQuery',
+  });
+}
+
+export function createUnexpectedReadNextType() {
+  return ZenapiErreurInternal.setAndReturn(new Error('Unexpected read next type'), { kind: 'UnexpectedReadNextType' });
+}

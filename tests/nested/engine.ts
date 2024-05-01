@@ -1,5 +1,4 @@
-import { Erreur } from '@dldc/erreur';
-import { Key, engine, resolver } from '../../src/mod';
+import { Key, ZenapiErreur, engine, resolver } from '../../src/mod';
 import { appSchema, login, maybePersonal } from './schema';
 
 interface IUser {
@@ -34,6 +33,6 @@ export const appEngine = engine({
   schema: appSchema,
   resolvers: [loginResolver, maybePersonalResolver],
   onError: (error) => {
-    return error instanceof Erreur ? error.toJSON() : 'Unknown error';
+    return ZenapiErreur.get(error) ?? 'Unknown error';
   },
 });
