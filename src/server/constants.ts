@@ -1,5 +1,5 @@
 export const GRAPH_PATH = Symbol("GRAPH_PATH");
-export const SCHEMA_STRUCTURE = Symbol("SCHEMA_STRUCTURE");
+export const STRUCTURE = Symbol("STRUCTURE");
 export const SCHEMA = Symbol("SCHEMA");
 export const GRAPH_KEY = Symbol("GRAPH_KEY");
 export const GET = Symbol("GET");

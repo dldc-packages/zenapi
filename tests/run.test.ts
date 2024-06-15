@@ -1,17 +1,12 @@
-import { assertExists } from "@std/assert";
+import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
+import { queryBuilder, queryToJson } from "../client.ts";
 import { createEngine, parseSchema, resolver } from "../server.ts";
-import type { TodoListTypes } from "./schemas/types.ts";
+import { TodoListTypes } from "./schemas/types.ts";
 
-Deno.test("parseSchema", async () => {
-  const schema = parseSchema<TodoListTypes>(
-    resolve("./tests/schemas/todolist.ts"),
-  );
+const client = queryBuilder<TodoListTypes>();
 
-  assertExists(schema);
-});
-
-Deno.test("engine", () => {
+Deno.test("run query", () => {
   const schema = parseSchema<TodoListTypes>(
     resolve("./tests/schemas/todolist.ts"),
   );
@@ -28,5 +23,9 @@ Deno.test("engine", () => {
     ],
   });
 
-  assertExists(engine);
+  const query = queryToJson(client.Graph.config.env.version);
+
+  const result = engine.run(query);
+
+  assertEquals(result, 1);
 });

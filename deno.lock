@@ -7,7 +7,8 @@
       "jsr:@std/assert@^0.225.2": "jsr:@std/assert@0.225.3",
       "jsr:@std/assert@^0.225.3": "jsr:@std/assert@0.225.3",
       "jsr:@std/internal@^1.0.0": "jsr:@std/internal@1.0.0",
-      "jsr:@std/path@^0.225.1": "jsr:@std/path@0.225.1"
+      "jsr:@std/path@^0.225.1": "jsr:@std/path@0.225.1",
+      "jsr:@valibot/valibot@^0.31.1": "jsr:@valibot/valibot@0.31.1"
     },
     "jsr": {
       "@dldc/erreur@7.1.1": {
@@ -33,6 +34,9 @@
         "dependencies": [
           "jsr:@std/assert@^0.225.2"
         ]
+      },
+      "@valibot/valibot@0.31.1": {
+        "integrity": "154a6e453e11a5e65ba59289beb46457f7780ccac1529ffcc55cbd641667e80d"
       }
     }
   },
@@ -134,7 +138,8 @@
     "dependencies": [
       "jsr:@dldc/stack@^6.0.2",
       "jsr:@std/assert@^0.225.3",
-      "jsr:@std/path@^0.225.1"
+      "jsr:@std/path@^0.225.1",
+      "jsr:@valibot/valibot@^0.31.1"
     ]
   }
 }

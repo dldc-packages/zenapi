@@ -1,18 +1,22 @@
 import type { Primitive } from "../utils/types.ts";
-import type { GET, GRAPH_KEY, GRAPH_PATH, ROOT, SCHEMA } from "./constants.ts";
+import type { GET, GRAPH_PATH, ROOT, STRUCTURE } from "./constants.ts";
 import type { ApiContext } from "./context.ts";
-import type { TSchema } from "./parseSchema.ts";
+import type { TAllStructure } from "./structure.ts";
 
 export type TMiddleware = (
   ctx: ApiContext,
   next: (ctx: ApiContext) => Promise<ApiContext>,
 ) => ApiContext | Promise<ApiContext>;
 
+export type TTRansformResolver = (ctx: ApiContext, query: unknown) => unknown;
+
 export interface TGraphRefBase {
-  [GRAPH_PATH]: TGraphPath;
-  [SCHEMA]: TSchema<any>;
-  [GRAPH_KEY]: symbol;
-  [GET]: (prop: string | number) => TGraphRefBase;
+  [STRUCTURE]: TAllStructure;
+  [GRAPH_PATH]: TAllStructure[];
+  [GET]: (
+    prop: string | number | TAllStructure,
+    skipValidation?: boolean,
+  ) => TGraphRefBase;
   _<T extends TGraphRefBase>(next: T): T;
 }
 

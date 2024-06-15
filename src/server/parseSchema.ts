@@ -7,7 +7,6 @@ import type {
 } from "ts_morph";
 import { Node, Project, ResolutionHosts, SyntaxKind } from "ts_morph";
 import type { TTypesBase } from "../utils/types.ts";
-import { SCHEMA_STRUCTURE } from "./constants.ts";
 import { schemaRef } from "./schemaRef.ts";
 import type {
   TFunctionArgumentStructure,
@@ -21,7 +20,6 @@ import type { TGraphRefOf } from "./types.ts";
 
 export interface TSchema<Types extends TTypesBase> {
   ref: TGraphRefOf<Types>;
-  [SCHEMA_STRUCTURE]: TRootStructure;
 }
 
 export type TSchemaAny = TSchema<any>;
@@ -59,13 +57,9 @@ export function parseSchema<Types extends TTypesBase>(
     );
   }
 
-  const schema: TSchema<Types> = {
-    ref: {} as any,
-    [SCHEMA_STRUCTURE]: rootDeclarations,
+  return {
+    ref: schemaRef(rootDeclarations),
   };
-  Object.assign(schema, { ref: schemaRef(schema) });
-
-  return schema;
 }
 
 function parseNode(

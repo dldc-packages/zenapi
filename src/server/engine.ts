@@ -1,9 +1,9 @@
-import { SCHEMA_STRUCTURE } from "./constants.ts";
-import { normalizePath, type TNormalizedPath } from "./normalizePath.ts";
+import * as v from "@valibot/valibot";
 import type { TSchemaAny } from "./parseSchema.ts";
+import { type TNormalizedPath } from "./path.ts";
 import type { TResolver } from "./resolver.ts";
-import { unwrapSchemaRef } from "./schemaRef.ts";
-import type { TMiddleware } from "./types.ts";
+import { DEFAULT_TRANSFORMS } from "./transforms.ts";
+import type { TMiddleware, TTRansformResolver } from "./types.ts";
 
 export interface TEngine {
   schema: TSchemaAny;
@@ -13,12 +13,17 @@ export interface TEngine {
 export interface TEngineOptions {
   schema: TSchemaAny;
   resolvers: TResolver[];
+  transforms?: Record<string, TTRansformResolver>;
 }
 
 export function createEngine(
-  { schema, resolvers }: TEngineOptions,
+  { schema, resolvers, transforms: userTransforms = {} }: TEngineOptions,
 ): TEngine {
-  const resolversResolved = validateSchema(schema, resolvers);
+  // const resolversResolved = validateSchema(schema, resolvers);
+  const transforms: Record<string, TTRansformResolver> = {
+    ...DEFAULT_TRANSFORMS,
+    ...userTransforms,
+  };
 
   return {
     schema,
@@ -26,9 +31,20 @@ export function createEngine(
   };
 
   function run(query: unknown): unknown {
-    throw new Error("Not Implemented");
+    throw new Error("Not implemented");
+    // const ctx = ApiContext.create();
+
+    // const queryObject = v.parse(QueryObjectSchema, query);
+    // const kind = queryObject.kind;
+    // const transform = transforms?.[kind];
+    // if (!transform) {
+    //   throw new Error(`Unknown query kind: ${kind}`);
+    // }
+    // return transform(query);
   }
 }
+
+const QueryObjectSchema = v.looseObject({ kind: v.string() });
 
 interface TResolvedResolver {
   path: TNormalizedPath;
@@ -39,25 +55,25 @@ interface TResolvedResolver {
  * For each resolver, make sure it matches the parsed schema.
  * Build a tree of resolver for a given graphRef
  */
-function validateSchema(
-  schema: TSchemaAny,
-  resolvers: TResolver[],
-): TResolvedResolver[] {
-  const rootStructure = schema[SCHEMA_STRUCTURE];
+// function validateSchema(
+//   schema: TSchemaAny,
+//   resolvers: TResolver[],
+// ): TResolvedResolver[] {
+//   const rootStructure = schema[SCHEMA_STRUCTURE];
 
-  const resolversResolved = resolvers.map(({ ref, middlewares }) => {
-    const { path, schema: resolverSchema } = unwrapSchemaRef(ref);
-    if (resolverSchema !== schema) {
-      throw new Error(
-        `Resolver for ${path.join(".")} is linked to a different schema.`,
-      );
-    }
-    const normalizedPath = normalizePath(schema, rootStructure, path);
-    return { path: normalizedPath, middlewares };
-  });
+//   const resolversResolved = resolvers.map(({ ref, middlewares }) => {
+//     const { path, schema: resolverSchema } = unwrapSchemaRef(ref);
+//     if (resolverSchema !== schema) {
+//       throw new Error(
+//         `Resolver for ${path.join(".")} is linked to a different schema.`,
+//       );
+//     }
+//     const normalizedPath = normalizePath(schema, rootStructure, path);
+//     return { path: normalizedPath, middlewares };
+//   });
 
-  return resolversResolved;
-}
+//   return resolversResolved;
+// }
 
 // type TTranverseFn<K extends TStructureKind> = (
 //   structure: Extract<TAllStructure, { kind: K }>,
