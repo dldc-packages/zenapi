@@ -1,0 +1,113 @@
+export const snapshot = {};
+
+snapshot[`snapshot structure 1`] = `
+{
+  key: "",
+  kind: "root",
+  types: {
+    Graph: {
+      key: "Graph",
+      kind: "object",
+      properties: [
+        {
+          key: "Graph.group",
+          kind: "property",
+          name: "group",
+          optional: false,
+          structure: {
+            key: "Graph.group.ref",
+            kind: "ref",
+            params: undefined,
+            ref: "Group",
+          },
+        },
+        {
+          key: "Graph.user",
+          kind: "property",
+          name: "user",
+          optional: false,
+          structure: {
+            key: "Graph.user.ref",
+            kind: "ref",
+            params: undefined,
+            ref: "User",
+          },
+        },
+      ],
+    },
+    Group: {
+      key: "Group",
+      kind: "object",
+      properties: [
+        {
+          key: "Group.name",
+          kind: "property",
+          name: "name",
+          optional: false,
+          structure: {
+            key: "Group.name.string",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          key: "Group.users",
+          kind: "property",
+          name: "users",
+          optional: false,
+          structure: {
+            items: {
+              key: "Group.users.array.ref",
+              kind: "ref",
+              params: undefined,
+              ref: "User",
+            },
+            key: "Group.users.array",
+            kind: "array",
+          },
+        },
+      ],
+    },
+    User: {
+      key: "User",
+      kind: "object",
+      properties: [
+        {
+          key: "User.name",
+          kind: "property",
+          name: "name",
+          optional: false,
+          structure: {
+            key: "User.name.string",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          key: "User.age",
+          kind: "property",
+          name: "age",
+          optional: false,
+          structure: {
+            key: "User.age.number",
+            kind: "primitive",
+            type: "number",
+          },
+        },
+        {
+          key: "User.group",
+          kind: "property",
+          name: "group",
+          optional: false,
+          structure: {
+            key: "User.group.ref",
+            kind: "ref",
+            params: undefined,
+            ref: "Group",
+          },
+        },
+      ],
+    },
+  },
+}
+`;

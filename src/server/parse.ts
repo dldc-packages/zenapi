@@ -7,19 +7,20 @@ import type {
 } from "ts_morph";
 import { Node, Project, ResolutionHosts, SyntaxKind } from "ts_morph";
 import type { TTypesBase } from "../utils/types.ts";
-import { schemaRef } from "./schemaRef.ts";
+import { graph } from "./graph.ts";
 import type {
   TFunctionArgumentStructure,
   TRootStructure,
   TStructure,
-  TStructureFunctionArgument,
+  TStructureArguments,
   TStructureObject,
   TStructureObjectProperty,
-} from "./structure.ts";
-import type { TGraphRefOf } from "./types.ts";
+} from "./structure.types.ts";
+import type { TGraphOf } from "./types.ts";
 
 export interface TSchema<Types extends TTypesBase> {
-  ref: TGraphRefOf<Types>;
+  graph: TGraphOf<Types>;
+  structure: TRootStructure;
 }
 
 export type TSchemaAny = TSchema<any>;
@@ -38,8 +39,9 @@ export function parseSchema<Types extends TTypesBase>(
 
   const file = project.getSourceFileOrThrow(schemaPath);
 
-  const rootDeclarations: TRootStructure = {
+  const rootStructure: TRootStructure = {
     kind: "root",
+    key: "",
     types: {},
   };
 
@@ -49,7 +51,7 @@ export function parseSchema<Types extends TTypesBase>(
   for (const statement of statements) {
     if (Node.isInterfaceDeclaration(statement)) {
       const name = statement.getName();
-      rootDeclarations.types[name] = parseNode(statement);
+      rootStructure.types[name] = parseNode(statement, name);
       continue;
     }
     throw new Error(
@@ -58,42 +60,41 @@ export function parseSchema<Types extends TTypesBase>(
   }
 
   return {
-    ref: schemaRef(rootDeclarations),
+    graph: graph(rootStructure),
+    structure: rootStructure,
   };
 }
 
-function parseNode(
-  node: Node,
-): TStructure {
+function parseNode(node: Node, parentKey: string): TStructure {
   if (Node.isStringKeyword(node)) {
-    return { kind: "primitive", type: "string" };
+    return { kind: "primitive", key: `${parentKey}.string`, type: "string" };
   }
   if (Node.isNumberKeyword(node)) {
-    return { kind: "primitive", type: "number" };
+    return { kind: "primitive", key: `${parentKey}.number`, type: "number" };
   }
   if (Node.isBooleanKeyword(node)) {
-    return { kind: "primitive", type: "boolean" };
+    return { kind: "primitive", key: `${parentKey}.boolean`, type: "boolean" };
   }
   if (Node.isInterfaceDeclaration(node)) {
-    return parseInterfaceDeclaration(node);
+    return parseInterfaceDeclaration(node, parentKey);
   }
   // if (Node.isTypeAliasDeclaration(node)) {
   //   return parseTypeAliasDeclaration(node);
   // }
   if (Node.isTypeLiteral(node)) {
-    return parseTypeLiteral(node);
+    return parseTypeLiteral(node, parentKey);
   }
   if (Node.isFunctionTypeNode(node)) {
-    return parseFunctionTypeNode(node);
+    return parseFunctionTypeNode(node, parentKey);
   }
   if (Node.isUnionTypeNode(node)) {
-    return parseUnionTypeNode(node);
+    return parseUnionTypeNode(node, parentKey);
   }
   if (Node.isTypeReference(node)) {
-    return parseTypeReferenceNode(node);
+    return parseTypeReferenceNode(node, parentKey);
   }
   if (Node.isArrayTypeNode(node)) {
-    return parseArrayNode(node);
+    return parseArrayNode(node, parentKey);
   }
   console.log(node.print(), `at line ${node.getStartLineNumber()}`);
   throw new Error(
@@ -101,21 +102,22 @@ function parseNode(
   );
 }
 
-function parseArrayNode(
-  node: any,
-): TStructure {
+function parseArrayNode(node: any, parentKey: string): TStructure {
   const elementType = node.getElementTypeNode();
   if (!elementType) {
     throw new Error("Array node must have an element type");
   }
+  const key = `${parentKey}.array`;
   return {
     kind: "array",
-    items: parseNode(elementType),
+    key,
+    items: parseNode(elementType, key),
   };
 }
 
 function parseTypeLiteral(
   node: TypeLiteralNode,
+  parentKey: string,
 ): TStructure {
   const properties: TStructureObjectProperty[] = [];
   for (const property of node.getProperties()) {
@@ -124,51 +126,71 @@ function parseTypeLiteral(
       SyntaxKind.ColonToken,
     );
     const valueNode = colonNode.getNextSiblingOrThrow();
+    const propName = property.getName();
+    const propKey = `${parentKey}.${propName}`;
     properties.push({
-      name: property.getName(),
-      structure: parseNode(valueNode),
+      kind: "property",
+      key: propKey,
+      name: propName,
+      structure: parseNode(valueNode, propKey),
       optional: property.hasQuestionToken(),
     });
   }
-  return { kind: "object", properties };
+  return { kind: "object", key: parentKey, properties };
 }
 
 function parseFunctionTypeNode(
   node: FunctionTypeNode,
+  parentKey: string,
 ): TStructure {
-  const argumentsList: TStructureFunctionArgument[] = [];
+  const key = `${parentKey}.function`;
+  const argsKey = `${key}.arguments`;
+  const argumentsStruct: TStructureArguments = {
+    kind: "arguments",
+    key: argsKey,
+    arguments: [],
+  };
   const params = node.getParameters();
   for (const param of params) {
     const colonNode = param.getFirstChildByKindOrThrow(SyntaxKind.ColonToken);
     const valueNode = colonNode.getNextSiblingOrThrow();
     const optional = param.hasQuestionToken();
-    argumentsList.push({
-      name: param.getName(),
-      structure: parseNode(valueNode) as TFunctionArgumentStructure,
+    const argName = param.getName();
+    const argKey = `${argsKey}.${argName}`;
+    argumentsStruct.arguments.push({
+      kind: "argument",
+      key: argKey,
+      name: argName,
+      structure: parseNode(valueNode, argKey) as TFunctionArgumentStructure,
       optional,
     });
   }
   const res = node.getReturnTypeNodeOrThrow();
   return {
     kind: "function",
-    arguments: argumentsList,
-    returns: parseNode(res),
+    key,
+    arguments: argumentsStruct,
+    returns: parseNode(res, `${key}.returns`),
   };
 }
 
 function parseUnionTypeNode(
   node: UnionTypeNode,
+  parentKey: string,
 ): TStructure {
+  const key = `${parentKey}.union`;
   const types: TStructure[] = [];
   node.getTypeNodes().forEach((typeNode) => {
-    types.push(parseNode(typeNode));
+    types.push(parseNode(typeNode, key));
   });
-  return { kind: "union", types };
+  return { kind: "union", key, types };
 }
 
 function parseTypeReferenceNode(
   node: TypeReferenceNode,
+  parentKey: string,
 ): TStructure {
+  const key = `${parentKey}.ref`;
   const name = node.getTypeName();
   if (!Node.isIdentifier(name)) {
     throw new Error(
@@ -177,9 +199,10 @@ function parseTypeReferenceNode(
   }
   // get type params if generic
   const typeParams = node.getTypeArguments();
-  const params = typeParams.map((param) => parseNode(param));
+  const params = typeParams.map((param) => parseNode(param, key));
   return {
     kind: "ref",
+    key,
     ref: name.getText(),
     params: params.length > 0 ? params : undefined,
   };
@@ -193,6 +216,7 @@ function parseTypeReferenceNode(
 
 function parseInterfaceDeclaration(
   node: InterfaceDeclaration,
+  parentKey: string,
 ): TStructureObject {
   const properties: TStructureObjectProperty[] = [];
   for (const property of node.getProperties()) {
@@ -201,11 +225,15 @@ function parseInterfaceDeclaration(
       SyntaxKind.ColonToken,
     );
     const valueNode = colonNode.getNextSiblingOrThrow();
+    const propName = property.getName();
+    const propKey = `${parentKey}.${propName}`;
     properties.push({
-      name: property.getName(),
-      structure: parseNode(valueNode),
+      kind: "property",
+      key: propKey,
+      name: propName,
+      structure: parseNode(valueNode, propKey),
       optional: property.hasQuestionToken(),
     });
   }
-  return { kind: "object", properties };
+  return { kind: "object", key: parentKey, properties };
 }

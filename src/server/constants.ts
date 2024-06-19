@@ -1,4 +1,4 @@
-export const GRAPH_PATH = Symbol("GRAPH_PATH");
+export const PATH = Symbol("PATH");
 export const STRUCTURE = Symbol("STRUCTURE");
 export const SCHEMA = Symbol("SCHEMA");
 export const GRAPH_KEY = Symbol("GRAPH_KEY");

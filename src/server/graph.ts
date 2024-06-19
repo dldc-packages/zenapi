@@ -1,35 +1,47 @@
 import type { TTypesBase } from "../utils/types.ts";
-import { GET, GRAPH_PATH, STRUCTURE } from "./constants.ts";
-import type {
-  TAllStructure,
-  TRootStructure,
-  TStructure,
-  TStructureObjectProperty,
-} from "./structure.ts";
-import type { TGraphRefBase, TGraphRefOf } from "./types.ts";
+import { GET, PATH, ROOT, STRUCTURE } from "./constants.ts";
+import { getStructureProp, type TGetStructurePropResult } from "./structure.ts";
+import type { TAllStructure, TRootStructure } from "./structure.types.ts";
+import type { TGraphOf } from "./types.ts";
 
-export function schemaRef<Types extends TTypesBase>(
+export interface TGraphBase {
+  [ROOT]: TRootStructure;
+  [STRUCTURE]: TAllStructure;
+  // This is a list of all leaf structures in the path.
+  [PATH]: TAllStructure[];
+  [GET]: (
+    prop: string | number | TAllStructure,
+    skipValidation?: boolean,
+  ) => TGraphBase;
+  _<T extends TGraphBase>(next: T): T;
+}
+
+export function graph<Types extends TTypesBase>(
   rootStructure: TRootStructure,
-): TGraphRefOf<Types> {
-  return proxy(rootStructure, []) as TGraphRefOf<Types>;
+): TGraphOf<Types> {
+  return proxy(rootStructure, []) as TGraphOf<Types>;
 }
 
 function proxy(
   rootStructure: TRootStructure,
   path: TAllStructure[],
-): TGraphRefBase {
-  const cache = new WeakMap<TAllStructure, TGraphRefBase>();
+): TGraphBase {
+  const cache = new WeakMap<TAllStructure, TGraphBase>();
   const structure = path.length === 0 ? rootStructure : path[path.length - 1];
 
   function get(
     prop: string | number | TAllStructure,
     skipValidation = false,
-  ): TGraphRefBase {
-    const nextStructure = getNextStructure(prop, skipValidation);
+  ): TGraphBase {
+    const { structure: nextStructure, isRoot } = getNextStructure(
+      prop,
+      skipValidation,
+    );
     if (cache.has(nextStructure)) {
       return cache.get(nextStructure)!;
     }
-    const nextPath = [...path, nextStructure];
+    const nextPath: TAllStructure[] = isRoot ? [...path] : path.slice(0, -1);
+    nextPath.push(nextStructure);
     const result = proxy(rootStructure, nextPath);
     cache.set(nextStructure, result);
     return result;
@@ -38,20 +50,23 @@ function proxy(
   function getNextStructure(
     prop: string | number | TAllStructure,
     skipValidation: boolean,
-  ): TAllStructure {
+  ): TGetStructurePropResult {
     if (typeof prop === "string" || typeof prop === "number") {
-      return getNextStructureByKey(rootStructure, structure, prop);
+      return getStructureProp(rootStructure, structure, prop);
     }
     if (skipValidation) {
-      return prop;
+      return { structure: prop, isRoot: true };
     }
-    return validateNextStructureByRef(prop);
+    return {
+      structure: validateNextStructureByRef(prop),
+      isRoot: true,
+    };
   }
 
   function validateNextStructureByRef(prop: TAllStructure): TAllStructure {
     if (structure.kind === "ref") {
       // prop is epxected to be the matching ref
-      const refStructure = getNextStructureByKey(
+      const { structure: refStructure } = getStructureProp(
         rootStructure,
         rootStructure,
         structure.ref,
@@ -73,7 +88,7 @@ function proxy(
     {},
     {
       get(_, prop) {
-        if (prop === GRAPH_PATH) {
+        if (prop === PATH) {
           return path;
         }
         if (prop === STRUCTURE) {
@@ -82,9 +97,12 @@ function proxy(
         if (prop === GET) {
           return get;
         }
+        if (prop === ROOT) {
+          return rootStructure;
+        }
         if (prop === "_") {
-          return (sub: TGraphRefBase) => {
-            const [base, ...rest] = sub[GRAPH_PATH];
+          return (sub: TGraphBase) => {
+            const [base, ...rest] = sub[PATH];
             if (!base) {
               throw new Error("Invalid path");
             }
@@ -101,36 +119,5 @@ function proxy(
         return get(prop);
       },
     },
-  ) as TGraphRefBase;
-}
-
-function getNextStructureByKey(
-  rootStructure: TRootStructure,
-  structure: TAllStructure,
-  prop: string | number,
-): TAllStructure {
-  if (structure.kind === "object") {
-    const foundProp: TStructureObjectProperty | undefined = structure
-      .properties.find((p) => p.name === prop);
-    if (!foundProp) {
-      throw new Error(`Invalid path: ${prop} not found in ???`);
-    }
-    return foundProp.structure;
-  }
-  if (structure.kind === "root") {
-    const subStructure: TStructure = structure.types[prop];
-    if (!subStructure) {
-      throw new Error(`Invalid path: ${prop} not found at root`);
-    }
-    return subStructure;
-  }
-  if (structure.kind === "ref") {
-    // resolve ref from root
-    const refStructure = rootStructure.types[structure.ref];
-    if (!refStructure) {
-      throw new Error(`Invalid ref "${structure.ref}"`);
-    }
-    return getNextStructureByKey(rootStructure, refStructure, prop);
-  }
-  throw new Error(`Not implemented ${prop} on ${structure.kind}`);
+  ) as TGraphBase;
 }

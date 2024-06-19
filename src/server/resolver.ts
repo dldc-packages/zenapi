@@ -1,13 +1,14 @@
-import type { TGraphRefBase, TMiddleware } from "./types.ts";
+import type { TGraphBase } from "./graph.ts";
+import type { TMiddleware } from "./types.ts";
 
 export interface TResolver {
-  ref: TGraphRefBase;
+  path: TGraphBase;
   middlewares: TMiddleware[];
 }
 
 export function resolver(
-  ref: TGraphRefBase,
+  path: TGraphBase,
   ...middlewares: TMiddleware[]
 ): TResolver {
-  return { ref, middlewares };
+  return { path, middlewares };
 }

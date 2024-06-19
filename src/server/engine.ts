@@ -1,9 +1,9 @@
-import * as v from "@valibot/valibot";
-import type { TSchemaAny } from "./parseSchema.ts";
-import { type TNormalizedPath } from "./path.ts";
+import { build, type TBuildFromOperator } from "./build.ts";
+import { ROOT } from "./constants.ts";
+import { ApiContext } from "./context.ts";
+import { DEFAULT_OPERATORS } from "./operators.ts";
+import type { TSchemaAny } from "./parse.ts";
 import type { TResolver } from "./resolver.ts";
-import { DEFAULT_TRANSFORMS } from "./transforms.ts";
-import type { TMiddleware, TTRansformResolver } from "./types.ts";
 
 export interface TEngine {
   schema: TSchemaAny;
@@ -13,16 +13,19 @@ export interface TEngine {
 export interface TEngineOptions {
   schema: TSchemaAny;
   resolvers: TResolver[];
-  transforms?: Record<string, TTRansformResolver>;
+  operators?: Record<string, TBuildFromOperator>;
+  entry: string;
 }
 
 export function createEngine(
-  { schema, resolvers, transforms: userTransforms = {} }: TEngineOptions,
+  { schema, resolvers, operators: userOperators = {}, entry }: TEngineOptions,
 ): TEngine {
-  // const resolversResolved = validateSchema(schema, resolvers);
-  const transforms: Record<string, TTRansformResolver> = {
-    ...DEFAULT_TRANSFORMS,
-    ...userTransforms,
+  const rootStructure = schema.structure;
+  const graph = schema.graph;
+  const resolversResolved = validateResolvers(schema, resolvers);
+  const operators: Record<string, TBuildFromOperator> = {
+    ...DEFAULT_OPERATORS,
+    ...userOperators,
   };
 
   return {
@@ -30,9 +33,20 @@ export function createEngine(
     run,
   };
 
-  function run(query: unknown): unknown {
-    throw new Error("Not implemented");
-    // const ctx = ApiContext.create();
+  async function run(query: unknown): Promise<unknown> {
+    const mid = build(
+      { rootGraph: graph, rootStructure, operators },
+      graph,
+      query,
+    );
+    const ctx = ApiContext.create(graph);
+    console.log("====================");
+    const result = await mid(ctx, (ctx) => Promise.resolve(ctx));
+
+    return result.value;
+
+    // const qr = queryReader(query);
+    // const ctx = ApiContext.create(rootGraph, qr);
 
     // const queryObject = v.parse(QueryObjectSchema, query);
     // const kind = queryObject.kind;
@@ -40,91 +54,32 @@ export function createEngine(
     // if (!transform) {
     //   throw new Error(`Unknown query kind: ${kind}`);
     // }
-    // return transform(query);
+    // return transform(ctx, qr);
   }
+
+  // function validate(
+  //   structure: TAllStructure,
+  //   query: unknown,
+  // ): TResolveQuery {
+  //   const queryObject = v.parse(QueryObjectSchema, query);
+  //   const kind = queryObject.kind;
+  //   const operatorValidator = operators[kind];
+  //   if (!operatorValidator) {
+  //     throw new Error(`Unknown operator kind: ${kind}`);
+  //   }
+  //   return operatorValidator(structure, query, validate);
+  // }
 }
 
-const QueryObjectSchema = v.looseObject({ kind: v.string() });
-
-interface TResolvedResolver {
-  path: TNormalizedPath;
-  middlewares: TMiddleware[];
+function validateResolvers(
+  schema: TSchemaAny,
+  resolvers: TResolver[],
+): unknown {
+  for (const { path } of resolvers) {
+    // make sure path come from the schema
+    if (path[ROOT] !== schema.structure) {
+      throw new Error(`Invalid resolver path, not using the proper schema`);
+    }
+  }
+  return {} as any;
 }
-
-/**
- * For each resolver, make sure it matches the parsed schema.
- * Build a tree of resolver for a given graphRef
- */
-// function validateSchema(
-//   schema: TSchemaAny,
-//   resolvers: TResolver[],
-// ): TResolvedResolver[] {
-//   const rootStructure = schema[SCHEMA_STRUCTURE];
-
-//   const resolversResolved = resolvers.map(({ ref, middlewares }) => {
-//     const { path, schema: resolverSchema } = unwrapSchemaRef(ref);
-//     if (resolverSchema !== schema) {
-//       throw new Error(
-//         `Resolver for ${path.join(".")} is linked to a different schema.`,
-//       );
-//     }
-//     const normalizedPath = normalizePath(schema, rootStructure, path);
-//     return { path: normalizedPath, middlewares };
-//   });
-
-//   return resolversResolved;
-// }
-
-// type TTranverseFn<K extends TStructureKind> = (
-//   structure: Extract<TAllStructure, { kind: K }>,
-//   prop: string | number,
-// ) => TAllStructure;
-
-// const TRAVERSE_BY_KIND: { [K in TAllStructure["kind"]]: TTranverseFn<K> } = {
-//   root: (structure, prop) => {
-//     const subStructure = structure.types[prop];
-//     if (!subStructure) {
-//       throw new Error(`Invalid path: ${prop} not found at root`);
-//     }
-//     return subStructure;
-//   },
-//   array: (structure, prop) => {
-//     throw new Error("Not Implemented");
-//   },
-//   object: (structure, prop) => {
-//     const foundProp = structure.properties.find((p) => p.name === prop);
-//     if (!foundProp) {
-//       throw new Error(`Invalid path: ${prop} not found in ???`);
-//     }
-//     return foundProp.structure;
-//   },
-//   ref: (structure, prop) => {
-//     const subStructure = rootStructure.types[structure.ref];
-//     return traverse(subStructure, {
-//       refs,
-//       prop,
-//       isRoot: false,
-//       rootStructure,
-//       schema,
-//     });
-//   },
-//   union: (structure, prop) => {
-//     throw new Error("Not Implemented");
-//     return { structure, refs };
-//   },
-//   primitive: (structure, prop) => {
-//     throw new Error("Not Implemented");
-//     return { structure, refs };
-//   },
-//   function: (structure, prop) => {
-//     throw new Error("Not Implemented");
-//     return { structure, refs };
-//   },
-// };
-
-// export function traverse(
-//   structure: TAllStructure,
-//   prop: string | number,
-// ): TAllStructure {
-//   return TRAVERSE_BY_KIND[structure.kind](structure as any, prop);
-// }

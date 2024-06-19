@@ -1,6 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { obj, queryBuilder, queryToJson } from "../client.ts";
-import type { TodoListTypes } from "./schemas/types.ts";
+import type { TodoListTypes } from "./schemas/todolist.types.ts";
 
 const client = queryBuilder<TodoListTypes>();
 
