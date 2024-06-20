@@ -1,9 +1,12 @@
 import { build, type TBuildFromOperator } from "./build.ts";
-import { ROOT } from "./constants.ts";
+import { PATH, ROOT } from "./constants.ts";
 import { ApiContext } from "./context.ts";
+import type { TGraphBase } from "./graph.ts";
 import { DEFAULT_OPERATORS } from "./operators.ts";
 import type { TSchemaAny } from "./parse.ts";
 import type { TResolver } from "./resolver.ts";
+import type { TAllStructure } from "./structure.types.ts";
+import type { TMiddleware } from "./types.ts";
 
 export interface TEngine {
   schema: TSchemaAny;
@@ -22,7 +25,7 @@ export function createEngine(
 ): TEngine {
   const rootStructure = schema.structure;
   const graph = schema.graph;
-  const resolversResolved = validateResolvers(schema, resolvers);
+  const getMiddlewares = validateResolvers(schema, resolvers);
   const operators: Record<string, TBuildFromOperator> = {
     ...DEFAULT_OPERATORS,
     ...userOperators,
@@ -35,7 +38,7 @@ export function createEngine(
 
   async function run(query: unknown): Promise<unknown> {
     const mid = build(
-      { rootGraph: graph, rootStructure, operators },
+      { rootGraph: graph, rootStructure, operators, getMiddlewares },
       graph,
       query,
     );
@@ -71,15 +74,47 @@ export function createEngine(
   // }
 }
 
+interface TResolversTree {
+  middlewares: TMiddleware[];
+  children: Map<TAllStructure, TResolversTree>;
+}
+
+export type TGetMiddlewares = (graph: TGraphBase) => TMiddleware[];
+
 function validateResolvers(
   schema: TSchemaAny,
   resolvers: TResolver[],
-): unknown {
-  for (const { path } of resolvers) {
+): TGetMiddlewares {
+  const tree: TResolversTree = { middlewares: [], children: new Map() };
+
+  for (const { path, middlewares } of resolvers) {
     // make sure path come from the schema
     if (path[ROOT] !== schema.structure) {
       throw new Error(`Invalid resolver path, not using the proper schema`);
     }
+    const structPath = path[PATH].slice().reverse();
+    let current = tree;
+    for (const struct of structPath) {
+      if (!current.children.has(struct)) {
+        current.children.set(struct, { middlewares: [], children: new Map() });
+      }
+      current = current.children.get(struct)!;
+    }
+    current.middlewares.push(...middlewares);
   }
-  return {} as any;
+
+  return (graph: TGraphBase) => {
+    const structPath = graph[PATH].slice().reverse();
+    let current: TResolversTree | undefined = tree;
+    for (const struct of structPath) {
+      if (!current) {
+        return [];
+      }
+      current = current.children.get(struct);
+    }
+    if (!current) {
+      return [];
+    }
+    return current.middlewares;
+  };
 }

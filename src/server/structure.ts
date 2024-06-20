@@ -75,7 +75,9 @@ const STRUCTURE_CONFIG: TByStructureKind = {
     },
   },
   root: {
-    getMiddleware: notImplemented("root.middleware"),
+    getMiddleware: () => () => {
+      throw new Error("Root middleware should not be called");
+    },
     getProp: (_rootStructure, structure, prop) => {
       const subStructure: TStructure = structure.types[prop];
       if (!subStructure) {
@@ -83,7 +85,9 @@ const STRUCTURE_CONFIG: TByStructureKind = {
       }
       return { structure: subStructure, isRoot: true };
     },
-    getValue: notImplemented("root.getValues"),
+    getValue: () => {
+      throw new Error("Root value should not be accessed");
+    },
   },
   ref: {
     getMiddleware: (rootStructure, structure) => {
@@ -102,23 +106,49 @@ const STRUCTURE_CONFIG: TByStructureKind = {
     getValue: notImplemented("ref.getValues"),
   },
   array: {
-    getMiddleware: notImplemented("array.middleware"),
+    getMiddleware: () => async (ctx, next) => {
+      const res = await next(ctx);
+      const value = res.value;
+      if (value === undefined) {
+        return res.withValue([]);
+      }
+      if (!Array.isArray(value)) {
+        throw new Error("Expected array");
+      }
+      return res;
+    },
     getProp: (_rootStructure, structure, prop) => {
       if (prop === "items") {
         return { structure: structure.items, isRoot: false };
       }
       throw new Error(`Invalid path: ${prop} not found in array`);
     },
-    getValue: notImplemented("array.getValues"),
+    getValue: (_structure, value, key) => {
+      if (typeof key === "string") {
+        throw new Error("Expected number, got string");
+      }
+      return (value as unknown[])[key];
+    },
   },
   primitive: {
-    getMiddleware: (_rootStructure, _structure) => async (ctx, next) => {
+    getMiddleware: (_rootStructure, structure) => async (ctx, next) => {
       const res = await next(ctx);
-      // TODO: throw is value is not the expected type
+      const value = res.value;
+      if (value === undefined) {
+        throw new Error("Value is undefined");
+      }
+      // deno-lint-ignore valid-typeof
+      if (typeof value !== structure.type) {
+        throw new Error(`Expected ${structure.type}, got ${typeof value}`);
+      }
       return res;
     },
-    getProp: notImplemented("primitive.getProp"),
-    getValue: notImplemented("primitive.getValues"),
+    getProp: () => {
+      throw new Error("Primitive has no properties");
+    },
+    getValue: () => {
+      throw new Error("Cannot get value of primitive");
+    },
   },
   union: {
     getMiddleware: notImplemented("union.middleware"),

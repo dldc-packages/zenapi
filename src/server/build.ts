@@ -2,6 +2,7 @@ import * as v from "@valibot/valibot";
 import { compose } from "./compose.ts";
 import { GET, STRUCTURE } from "./constants.ts";
 import { ApiContext } from "./context.ts";
+import type { TGetMiddlewares } from "./engine.ts";
 import type { TGraphBase } from "./graph.ts";
 import { getStructureMiddleware, getStructureValue } from "./structure.ts";
 import type { TRootStructure } from "./structure.types.ts";
@@ -17,6 +18,7 @@ interface TBuildResolverContext {
   rootGraph: TGraphBase;
   rootStructure: TRootStructure;
   operators: Record<string, TBuildFromOperator>;
+  getMiddlewares: TGetMiddlewares;
 }
 
 const QueryObjectSchema = v.looseObject({ kind: v.string() });
@@ -49,7 +51,6 @@ export function buildFromPath(
   path: (string | number)[],
 ): TMiddleware {
   const [prop, ...rest] = path;
-  console.log("buildFromPath", prop, rest);
   if (!prop) {
     throw new Error("Path cannot be empty");
   }
@@ -57,8 +58,7 @@ export function buildFromPath(
   const structure = subGraph[STRUCTURE];
   console.log(structure.kind, structure.key);
   const baseMid = getStructureMiddleware(context.rootStructure, structure);
-  // TODO, use user middleware
-  const mid = compose(baseMid);
+  const mid = compose(baseMid, ...context.getMiddlewares(subGraph));
   if (rest.length === 0) {
     return mid;
   }

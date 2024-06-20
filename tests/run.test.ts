@@ -11,25 +11,20 @@ Deno.test("run query", async () => {
     resolve("./tests/schemas/todolist.ts"),
   );
 
+  const g = schema.graph;
+
   const engine = createEngine({
     schema,
     entry: "Graph",
     resolvers: [
       resolver(
-        schema.graph.Graph.config.env.version,
-        (ctx) => ctx.withValue(1),
+        g.Graph.config.env.version,
+        (ctx) => ctx.withValue("1.0.0"),
       ),
-      resolver(
-        schema.graph.Graph.config._(schema.graph.Config).env.version,
-        (ctx) => ctx.withValue(1),
-      ),
-      resolver(schema.graph.Config.env.version, (ctx) => ctx.withValue(2)),
     ],
   });
 
   const query = client.Graph.config.env.version;
-
   const result = await engine.run(queryToJson(query));
-
-  assertEquals(result, "1");
+  assertEquals(result, "1.0.0");
 });
