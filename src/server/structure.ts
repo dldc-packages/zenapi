@@ -150,6 +150,21 @@ const STRUCTURE_CONFIG: TByStructureKind = {
       throw new Error("Cannot get value of primitive");
     },
   },
+  literal: {
+    getMiddleware: (_rootStructure, structure) => async (ctx, next) => {
+      const res = await next(ctx);
+      const value = res.value;
+      if (value === undefined) {
+        throw new Error("Value is undefined");
+      }
+      if (value !== structure.type) {
+        throw new Error(`Expected ${structure.type}, got ${value}`);
+      }
+      return res;
+    },
+    getProp: notImplemented("literal.getProp"),
+    getValue: notImplemented("literal.getValues"),
+  },
   union: {
     getMiddleware: notImplemented("union.middleware"),
     getProp: notImplemented("union.getProp"),

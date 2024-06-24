@@ -25,10 +25,16 @@ export interface TStructureUnion {
   types: TStructure[];
 }
 
+export interface TStructureLiteral {
+  kind: "literal";
+  key: string;
+  type: string | number | boolean | null;
+}
+
 export interface TStructurePrimitive {
   kind: "primitive";
   key: string;
-  type: "string" | "number" | "boolean" | "null" | "undefined";
+  type: "string" | "number" | "boolean";
 }
 
 export interface TStructureArray {
@@ -42,7 +48,8 @@ export type TFunctionArgumentStructure =
   | TStructureRef
   | TStructureUnion
   | TStructurePrimitive
-  | TStructureArray;
+  | TStructureArray
+  | TStructureLiteral;
 
 export interface TStructureArguments {
   kind: "arguments";
@@ -77,7 +84,8 @@ export type TStructure =
   | TStructureUnion
   | TStructureFunction
   | TStructurePrimitive
-  | TStructureArray;
+  | TStructureArray
+  | TStructureLiteral;
 
 export type TAllStructure =
   | TStructure

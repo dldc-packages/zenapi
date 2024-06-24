@@ -17,6 +17,7 @@
   "tasks": {
     "test:run": "deno test -A",
     "test:watch": "deno test -A --watch",
+    "test:update-snapshots": "deno test -A -- --update",
     "bump": "deno run -A jsr:@mys/bump@1",
     "update": "deno run --allow-read=. --allow-write=. --allow-net https://deno.land/x/udd@0.8.2/main.ts *.ts deno.jsonc",
     "check": "deno fmt --check . && deno lint . && deno task test"

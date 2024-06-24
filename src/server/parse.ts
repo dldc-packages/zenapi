@@ -1,11 +1,20 @@
 import type {
   FunctionTypeNode,
   InterfaceDeclaration,
+  LiteralTypeNode,
+  TypeAliasDeclaration,
   TypeLiteralNode,
   TypeReferenceNode,
   UnionTypeNode,
 } from "ts_morph";
-import { Node, Project, ResolutionHosts, SyntaxKind } from "ts_morph";
+import {
+  Node,
+  NullLiteral,
+  Project,
+  ResolutionHosts,
+  StringLiteral,
+  SyntaxKind,
+} from "ts_morph";
 import type { TTypesBase } from "../utils/types.ts";
 import { graph } from "./graph.ts";
 import type {
@@ -29,7 +38,7 @@ export type TSchemaAny = TSchema<any>;
  * Pass the path to the schema file as well as the the types to be used in the schema.
  */
 export function parseSchema<Types extends TTypesBase>(
-  schemaPath: string,
+  schemaPath: string
 ): TSchema<Types> {
   const project = new Project({
     resolutionHost: ResolutionHosts.deno,
@@ -54,8 +63,13 @@ export function parseSchema<Types extends TTypesBase>(
       rootStructure.types[name] = parseNode(statement, name);
       continue;
     }
+    if (Node.isTypeAliasDeclaration(statement)) {
+      const name = statement.getName();
+      rootStructure.types[name] = parseNode(statement, name);
+      continue;
+    }
     throw new Error(
-      `Unsupported statement: ${statement.getKindName()} at line ${statement.getStartLineNumber()}`,
+      `Unsupported statement: ${statement.getKindName()} at line ${statement.getStartLineNumber()}`
     );
   }
 
@@ -78,9 +92,9 @@ function parseNode(node: Node, parentKey: string): TStructure {
   if (Node.isInterfaceDeclaration(node)) {
     return parseInterfaceDeclaration(node, parentKey);
   }
-  // if (Node.isTypeAliasDeclaration(node)) {
-  //   return parseTypeAliasDeclaration(node);
-  // }
+  if (Node.isTypeAliasDeclaration(node)) {
+    return parseTypeAliasDeclaration(node, parentKey);
+  }
   if (Node.isTypeLiteral(node)) {
     return parseTypeLiteral(node, parentKey);
   }
@@ -96,9 +110,15 @@ function parseNode(node: Node, parentKey: string): TStructure {
   if (Node.isArrayTypeNode(node)) {
     return parseArrayNode(node, parentKey);
   }
+  if (Node.isLiteralTypeNode(node)) {
+    return parseLiteralTypeNode(node, parentKey);
+  }
+  if (node.getKind() === SyntaxKind.VoidKeyword) {
+    throw new Error("Void expressions are not supported, use null instead");
+  }
   console.log(node.print(), `at line ${node.getStartLineNumber()}`);
   throw new Error(
-    `Unknown node: ${node.print()} (${node.getKindName()}) at line ${node.getStartLineNumber()}`,
+    `Unknown node: ${node.print()} (${node.getKindName()}) at line ${node.getStartLineNumber()}`
   );
 }
 
@@ -115,15 +135,51 @@ function parseArrayNode(node: any, parentKey: string): TStructure {
   };
 }
 
+function parseLiteralTypeNode(
+  node: LiteralTypeNode,
+  parentKey: string
+): TStructure {
+  const literal = node.getLiteral();
+  if (literal instanceof NullLiteral) {
+    return {
+      kind: "literal",
+      key: `${parentKey}.null`,
+      type: null,
+    };
+  }
+  if (literal instanceof StringLiteral) {
+    return {
+      kind: "literal",
+      key: `${parentKey}.string`,
+      type: JSON.parse(literal.getText()),
+    };
+  }
+  if (literal.getKind() === SyntaxKind.TrueKeyword) {
+    return {
+      kind: "literal",
+      key: `${parentKey}.true`,
+      type: true,
+    };
+  }
+  if (literal.getKind() === SyntaxKind.FalseKeyword) {
+    return {
+      kind: "literal",
+      key: `${parentKey}.false`,
+      type: false,
+    };
+  }
+  throw new Error(`Unsupported literal type: ${literal.getText()}`);
+}
+
 function parseTypeLiteral(
   node: TypeLiteralNode,
-  parentKey: string,
+  parentKey: string
 ): TStructure {
   const properties: TStructureObjectProperty[] = [];
   for (const property of node.getProperties()) {
     // get the declaration of the property
     const colonNode = property.getFirstChildByKindOrThrow(
-      SyntaxKind.ColonToken,
+      SyntaxKind.ColonToken
     );
     const valueNode = colonNode.getNextSiblingOrThrow();
     const propName = property.getName();
@@ -141,7 +197,7 @@ function parseTypeLiteral(
 
 function parseFunctionTypeNode(
   node: FunctionTypeNode,
-  parentKey: string,
+  parentKey: string
 ): TStructure {
   const key = `${parentKey}.function`;
   const argsKey = `${key}.arguments`;
@@ -176,7 +232,7 @@ function parseFunctionTypeNode(
 
 function parseUnionTypeNode(
   node: UnionTypeNode,
-  parentKey: string,
+  parentKey: string
 ): TStructure {
   const key = `${parentKey}.union`;
   const types: TStructure[] = [];
@@ -188,13 +244,13 @@ function parseUnionTypeNode(
 
 function parseTypeReferenceNode(
   node: TypeReferenceNode,
-  parentKey: string,
+  parentKey: string
 ): TStructure {
   const key = `${parentKey}.ref`;
   const name = node.getTypeName();
   if (!Node.isIdentifier(name)) {
     throw new Error(
-      `Only identifiers are supported for now, received: ${name.getKindName()}`,
+      `Only identifiers are supported for now, received: ${name.getKindName()}`
     );
   }
   // get type params if generic
@@ -208,21 +264,26 @@ function parseTypeReferenceNode(
   };
 }
 
-// function parseTypeAliasDeclaration(
-//   node: TypeAliasDeclaration,
-// ): TStructure {
-//   throw new Error("Not implemented");
-// }
+function parseTypeAliasDeclaration(
+  node: TypeAliasDeclaration,
+  parentKey: string
+): TStructure {
+  const valueNode = node.getTypeNode();
+  if (!valueNode) {
+    throw new Error("Type alias must have a type");
+  }
+  return parseNode(valueNode, parentKey);
+}
 
 function parseInterfaceDeclaration(
   node: InterfaceDeclaration,
-  parentKey: string,
+  parentKey: string
 ): TStructureObject {
   const properties: TStructureObjectProperty[] = [];
   for (const property of node.getProperties()) {
     // get the declaration of the property
     const colonNode = property.getFirstChildByKindOrThrow(
-      SyntaxKind.ColonToken,
+      SyntaxKind.ColonToken
     );
     const valueNode = colonNode.getNextSiblingOrThrow();
     const propName = property.getName();
@@ -234,6 +295,12 @@ function parseInterfaceDeclaration(
       structure: parseNode(valueNode, propKey),
       optional: property.hasQuestionToken(),
     });
+  }
+  const methods = node.getMethods();
+  if (methods.length > 0) {
+    throw new Error(
+      "Methods are not supported yet, pleaseuse property: () => void; instead."
+    );
   }
   return { kind: "object", key: parentKey, properties };
 }

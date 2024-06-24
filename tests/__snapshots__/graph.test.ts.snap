@@ -68,6 +68,22 @@ snapshot[`snapshot structure 1`] = `
         },
       ],
     },
+    Role: {
+      key: "Role.union",
+      kind: "union",
+      types: [
+        {
+          key: "Role.union.string",
+          kind: "literal",
+          type: "admin",
+        },
+        {
+          key: "Role.union.string",
+          kind: "literal",
+          type: "user",
+        },
+      ],
+    },
     User: {
       key: "User",
       kind: "object",
@@ -89,9 +105,20 @@ snapshot[`snapshot structure 1`] = `
           name: "age",
           optional: false,
           structure: {
-            key: "User.age.number",
-            kind: "primitive",
-            type: "number",
+            key: "User.age.union",
+            kind: "union",
+            types: [
+              {
+                key: "User.age.union.number",
+                kind: "primitive",
+                type: "number",
+              },
+              {
+                key: "User.age.union.null",
+                kind: "literal",
+                type: null,
+              },
+            ],
           },
         },
         {

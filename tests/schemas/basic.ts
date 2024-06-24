@@ -1,6 +1,8 @@
+export type Role = "admin" | "user";
+
 export interface User {
   name: string;
-  age: number;
+  age: number | null;
   group: Group;
 }
 
