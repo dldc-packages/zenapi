@@ -18,49 +18,41 @@ import type {
 export function query<Types extends TTypesBase>(): TQueryOf<
   Types
 > {
-  return proxy("absolute", [], []);
+  return proxy([], []);
 }
 
 type TPath = readonly any[];
 
-type TKind = "absolute" | "relative";
-
-function proxy(kind: TKind, path: TPath, variables: TVariables): any {
+function proxy(path: TPath, variables: TVariables): any {
   return new Proxy(
     () => {},
     {
       get(_, prop) {
         if (prop === TO_JSON) {
-          if (kind === "absolute") {
-            return [["$", ...path], variables];
-          }
           return [path, variables];
         }
         if (prop === "_") {
-          return ((fnOrQuery) => {
-            if (typeof fnOrQuery !== "function") {
+          return ((select) => {
+            if (typeof select !== "function") {
               throw new Error("Invalid query function");
             }
-            const children = fnOrQuery(proxy("relative", [], []));
+            const children = select(proxy([], []));
             const [childrenJson, childVariables] = queryToJson(children);
-            return proxy(kind, [...path, ...childrenJson], [
+            return proxy([...path, ...childrenJson], [
               ...variables,
               ...childVariables,
             ]);
-          }) satisfies TQuerySelectFn<any, any>;
+          }) satisfies TQuerySelectFn<any>;
         }
         if (prop === "toString") {
           return () => {
-            return JSON.stringify({ kind, path });
+            return JSON.stringify(path);
           };
         }
-        return proxy(kind, [...path, prop], variables);
+        return proxy([...path, prop], variables);
       },
       apply(_target, _thisArg, parameters) {
-        return proxy(kind, [...path, "()"], [
-          ...variables,
-          parameters,
-        ]);
+        return proxy([...path, "()"], [...variables, parameters]);
       },
     },
   );
@@ -94,9 +86,3 @@ export function obj<T extends Record<string, TQueryAny>>(
 
   return staticQuery([{ kind: "object", data: dataJson }], variables) as any;
 }
-
-// export function oneOf<T extends readonly TQuery<any>[]>(
-//   ...queries: T
-// ): TQuery<T[number][typeof RESULT]> {
-//   return { data: queries } as any;
-// }

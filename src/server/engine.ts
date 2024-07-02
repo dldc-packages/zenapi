@@ -43,10 +43,11 @@ export function createEngine(
     let variableCount = 0;
     const mid = prepare(
       {
-        getNextVariableIndex: () => variableCount++,
+        entry,
         rootGraph: graph,
         rootStructure,
         operators,
+        getNextVariableIndex: () => variableCount++,
         getResolvers,
         getValidators,
       },

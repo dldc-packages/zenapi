@@ -2,54 +2,45 @@ import * as v from "@valibot/valibot";
 import { prepare, type TPrepareFromOperator } from "./prepare.ts";
 import type { TMiddleware } from "./types.ts";
 
-export const absoluteOperator: TPrepareFromOperator = (
-  context,
-  _structure,
-  _graph,
-  query,
-): TMiddleware | null => {
-  const [queryItem, ...rest] = query;
-  if (queryItem !== "$") {
-    return null;
-  }
-  return prepare(context, context.rootStructure, context.rootGraph, rest);
-};
-
-const CallOperatorSchema = v.strictObject({
-  kind: v.literal("call"),
-  label: v.string(),
+const ObjOperatorSchema = v.strictObject({
+  kind: v.literal("object"),
+  data: v.array(
+    v.strictObject({ key: v.string(), value: v.array(v.any()) }),
+  ),
 });
 
-export const callTransform: TPrepareFromOperator = (
+export const objOperator: TPrepareFromOperator = (
   context,
-  graph,
   structure,
+  graph,
   query,
 ): TMiddleware | null => {
   const [queryItem, ...rest] = query;
-  const parsed = v.safeParse(CallOperatorSchema, queryItem);
+  const parsed = v.safeParse(ObjOperatorSchema, queryItem);
   if (!parsed.success) {
     return null;
   }
-  throw new Error("TODO: Implement call operator");
-  // const { label } = parsed.output;
-  // const structure = graph[STRUCTURE];
-  // if (structure.kind !== "function") {
-  //   throw new Error("Expected function structure");
-  // }
-  // const validator = getStructureValidator(
-  //   context,
-  //   structure.arguments,
-  //   graph[GET]("parameters"),
-  // );
-  // const resolver = getStructureResolver(
-  //   context,
-  //   structure,
-  //   graph[GET]("return"),
-  // );
-  // return compose(validator, resolver);
+  if (rest.length > 0) {
+    throw new Error("Unexpected query items after object operator.");
+  }
+  const { data } = parsed.output;
+  const prepared = data.map(({ key, value }) => {
+    return {
+      key,
+      middleware: prepare(context, structure, graph, value),
+    };
+  });
+  return async (ctx, next) => {
+    const value = await Promise.all(
+      prepared.map(async ({ key, middleware }) => {
+        const result = await middleware(ctx, next);
+        return [key, result.value] as const;
+      }),
+    );
+    return ctx.withValue(Object.fromEntries(value));
+  };
 };
 
 export const DEFAULT_OPERATORS = [
-  absoluteOperator,
+  objOperator,
 ];

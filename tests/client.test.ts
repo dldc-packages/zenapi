@@ -7,7 +7,7 @@ const client = query<TodoListTypes>();
 Deno.test("simple query", () => {
   const query = client.Graph.config.env.version;
   assertEquals(queryToJson(query), [
-    ["$", "Graph", "config", "env", "version"],
+    ["Graph", "config", "env", "version"],
     [],
   ]);
 });
@@ -16,7 +16,6 @@ Deno.test("simple nested query", () => {
   const query = client.Graph._((e) => e.config.env.version);
   assertEquals(queryToJson(query), [
     [
-      "$",
       "Graph",
       "config",
       "env",
@@ -36,8 +35,8 @@ Deno.test("root object query", () => {
     [{
       kind: "object",
       data: [
-        { key: "version1", value: ["$", "Graph", "config", "env", "version"] },
-        { key: "version2", value: ["$", "Graph", "config", "env", "version"] },
+        { key: "version1", value: ["Graph", "config", "env", "version"] },
+        { key: "version2", value: ["Graph", "config", "env", "version"] },
       ],
     }],
     [],
@@ -53,7 +52,6 @@ Deno.test("sub select", () => {
     queryToJson(query),
     [
       [
-        "$",
         "Graph",
         "config",
         "env",
@@ -76,7 +74,7 @@ Deno.test("call", () => {
     appName
   );
   assertEquals(queryToJson(query), [
-    ["$", "Graph", "apps", "all", "()", "appName"],
+    ["Graph", "apps", "all", "()", "appName"],
     [
       [{ limit: 10, page: 1 }],
     ],
@@ -96,8 +94,8 @@ Deno.test("call in obj", () => {
     [{
       kind: "object",
       data: [
-        { key: "foo", value: ["$", "Graph", "apps", "all", "()", "appName"] },
-        { key: "bar", value: ["$", "Graph", "apps", "all", "()", "appName"] },
+        { key: "foo", value: ["Graph", "apps", "all", "()", "appName"] },
+        { key: "bar", value: ["Graph", "apps", "all", "()", "appName"] },
       ],
     }],
     [
@@ -119,7 +117,6 @@ Deno.test("call in sub select", () => {
     queryToJson(query),
     [
       [
-        "$",
         "Graph",
         "apps",
         {
@@ -133,6 +130,34 @@ Deno.test("call in sub select", () => {
       [
         [{ limit: 10, page: 1 }],
         ["some-id"],
+      ],
+    ],
+  );
+});
+
+Deno.test("obj in array select", () => {
+  const query = client.Graph.apps.all({ limit: 10, page: 1 })._(({ appName }) =>
+    obj({ name1: appName, name2: appName })
+  );
+
+  assertEquals(
+    queryToJson(query),
+    [
+      [
+        "Graph",
+        "apps",
+        "all",
+        "()",
+        {
+          kind: "object",
+          data: [
+            { key: "name1", value: ["appName"] },
+            { key: "name2", value: ["appName"] },
+          ],
+        },
+      ],
+      [
+        [{ limit: 10, page: 1 }],
       ],
     ],
   );

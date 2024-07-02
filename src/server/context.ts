@@ -44,7 +44,9 @@ export class ApiContext extends Stack {
     return inputs.get(graph);
   }
 
-  getInputOrFail<G extends TGraphBaseAny>(graph: G): G[typeof TYPES]["base"] {
+  getInputOrFail<G extends TGraphBaseAny>(
+    graph: G,
+  ): G[typeof TYPES]["input"] {
     const inputs = this.getOrFail(InputsKey.Consumer);
     if (!inputs.has(graph)) {
       throw new Error(`Input for graph is not found: ${graph}`);

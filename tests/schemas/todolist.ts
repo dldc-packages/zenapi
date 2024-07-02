@@ -23,11 +23,11 @@ export interface Todo {
   done: boolean;
 }
 
-interface CoinHeads {
+export interface CoinHeads {
   foo: string;
 }
 
-interface CoinTails {
+export interface CoinTails {
   bar: string;
 }
 

@@ -4,10 +4,10 @@ import { getStructureProp, type TGetStructurePropResult } from "./structure.ts";
 import type { TAllStructure, TRootStructure } from "./structure.types.ts";
 import type { TGraphOf } from "./types.ts";
 
-export type TGraphBaseAny = TGraphBase<any>;
+export type TGraphBaseAny = TGraphBase<any, any>;
 
-export interface TGraphBase<Base> {
-  [TYPES]: { base: Base };
+export interface TGraphBase<Base, Input> {
+  [TYPES]: { base: Base; input: Input };
   [ROOT]: TRootStructure;
   [STRUCTURE]: TAllStructure;
   // This is a list of all leaf structures in the path.
@@ -21,8 +21,8 @@ export interface TGraphBase<Base> {
 
 export function graph<Types extends TTypesBase>(
   rootStructure: TRootStructure,
-): TGraphOf<Types> {
-  return proxy(rootStructure, []) as TGraphOf<Types>;
+): TGraphOf<Types, never> {
+  return proxy(rootStructure, []) as TGraphOf<Types, never>;
 }
 
 function proxy(

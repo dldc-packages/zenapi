@@ -1,8 +1,7 @@
 import type { Primitive } from "../utils/types.ts";
 import type { RESULT, TO_JSON } from "./constants.ts";
 
-export interface TQuerySelectFn<Base, Result> {
-  <T extends TQueryAny>(type: T): T;
+export interface TQuerySelectFn<Base> {
   <T extends TQueryAny>(select: (current: TQueryOf<Base>) => T): T;
 }
 
@@ -20,7 +19,7 @@ export interface TQueryBase<Result> {
 export interface TQueryBaseSelect<Base, Result> extends TQueryBase<Result> {
   [RESULT]: Result;
   [TO_JSON]: [TQueryDef, TVariables];
-  _: TQuerySelectFn<Base, Result>;
+  _: TQuerySelectFn<Base>;
 }
 
 export type TQueryOfObject<T extends Record<string, any>> =

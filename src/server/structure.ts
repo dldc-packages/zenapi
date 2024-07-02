@@ -48,11 +48,10 @@ export type TPrepareStructure<TStruct extends TAllStructure> = (
   structure: TStruct,
   graph: TGraphBaseAny,
   query: TQueryUnknown,
-) => TMiddleware;
+) => TMiddleware | null;
 
 interface TStructureConfig<TStruct extends TAllStructure> {
   prepare: TPrepareStructure<TStruct>;
-  // getValidator: TStructureGetMiddleware<TStruct>;
   getSchema: TStructureGetSchema<TStruct>;
   getProp: TStructureGetProp<TStruct>;
   getValue: TStructureGetValue<TStruct>;
@@ -73,14 +72,18 @@ const identity: TMiddleware = (ctx, next) => next(ctx);
 const STRUCTURE_CONFIG: TByStructureKind = {
   root: {
     prepare: (context, structure, graph, query) => {
+      const [queryItem] = query;
+      if (typeof queryItem !== "string") {
+        return null;
+      }
+      if (queryItem !== context.entry) {
+        throw new Error(`Invalid entry point: ${queryItem}`);
+      }
       return prepareFromPath(context, structure, graph, query);
     },
     getSchema: () => {
       throw new Error("Root schema should not be called");
     },
-    // getValidator: () => () => {
-    //   throw new Error("Root middleware should not be called");
-    // },
     getProp: (_rootStructure, structure, prop) => {
       const subStructure: TStructure = structure.types[prop];
       if (!subStructure) {
@@ -103,12 +106,6 @@ const STRUCTURE_CONFIG: TByStructureKind = {
       const refStructure = resolveRef(context.rootStructure, structure);
       return getStructureSchema(context, refStructure);
     },
-    // getValidator: (context, structure, graph) => {
-    //   const userValidators = context.getValidators(graph);
-    //   const refStructure = resolveRef(context.rootStructure, structure);
-    //   const subValidator = getStructureValidator(context, refStructure, graph);
-    //   return compose(subValidator, ...userValidators);
-    // },
     getProp: (rootStructure, structure, prop) => {
       const refStructure = resolveRef(rootStructure, structure);
       const { structure: nextStructure } = getStructureProp(
@@ -118,7 +115,9 @@ const STRUCTURE_CONFIG: TByStructureKind = {
       );
       return { structure: nextStructure, isRoot: true };
     },
-    getValue: notImplemented("ref.getValues"),
+    getValue: () => {
+      throw new Error("Ref value should not be accessed");
+    },
   },
   object: {
     prepare: (context, structure, graph, query) => {
@@ -152,43 +151,6 @@ const STRUCTURE_CONFIG: TByStructureKind = {
       );
       return v.strictObject(Object.fromEntries(properties));
     },
-    // getValidator: (context, structure, graph) => {
-    //   const userValidators = context.getValidators(graph);
-    //   const baseMid: TMiddleware = (ctx, next) => {
-    //     const value = ctx.value;
-    //     if (value === undefined) {
-    //       return next(ctx.withValue({}));
-    //     }
-    //     if (typeof value !== "object") {
-    //       throw new Error("Expected object");
-    //     }
-    //     return next(ctx);
-    //   };
-    //   const mid = compose(baseMid, ...userValidators);
-    //   const properties = structure.properties.map((prop) => {
-    //     const propGraph = graph[GET](prop.name);
-    //     return {
-    //       ...prop,
-    //       validator: getStructureValidator(context, prop.structure, propGraph),
-    //     };
-    //   });
-    //   return async (ctx, next) => {
-    //     const ctx1 = await mid(ctx, (ctx) => Promise.resolve(ctx));
-    //     const value = ctx1.value as Record<string, unknown>;
-    //     const nextValue = await Promise.all(
-    //       properties.map(async ({ validator, name }) => {
-    //         const ctx2 = await validator(
-    //           ctx1.withValue(value[name]),
-    //           (ctx) => Promise.resolve(ctx),
-    //         );
-    //         return ctx2.value;
-    //       }),
-    //     );
-    //     return next(ctx1.withValue(Object.fromEntries(
-    //       properties.map((prop, i) => [prop.name, nextValue[i]]),
-    //     )));
-    //   };
-    // },
     getProp: (_rootStructure, structure, prop) => {
       const foundProp: TStructureObjectProperty | undefined = structure
         .properties.find((p) => p.name === prop);
@@ -237,7 +199,6 @@ const STRUCTURE_CONFIG: TByStructureKind = {
       const itemSchema = getStructureSchema(context, structure.items);
       return v.array(itemSchema);
     },
-    // getValidator: notImplemented("array.getValidator"),
     getProp: (_rootStructure, structure, prop) => {
       if (prop === "items") {
         return { structure: structure.items, isRoot: false };
@@ -281,21 +242,6 @@ const STRUCTURE_CONFIG: TByStructureKind = {
           return v.boolean();
       }
     },
-    // getValidator: (context, structure, graph) => {
-    //   const userValidators = context.getValidators(graph);
-    //   const baseMid: TMiddleware = (ctx, next) => {
-    //     const value = ctx.value;
-    //     if (value === undefined) {
-    //       throw new Error("Value is undefined");
-    //     }
-    //     // deno-lint-ignore valid-typeof
-    //     if (typeof value !== structure.type) {
-    //       throw new Error(`Expected ${structure.type}, got ${typeof value}`);
-    //     }
-    //     return next(ctx);
-    //   };
-    //   return compose(baseMid, ...userValidators);
-    // },
     getProp: () => {
       throw new Error("Primitive has no properties");
     },
@@ -328,13 +274,15 @@ const STRUCTURE_CONFIG: TByStructureKind = {
       }
       return v.literal(structure.type);
     },
-    // getValidator: notImplemented("literal.getValidator"),
-    getProp: notImplemented("literal.getProp"),
-    getValue: notImplemented("literal.getValues"),
+    getProp: () => {
+      throw new Error("Literal has no properties");
+    },
+    getValue: () => {
+      throw new Error("Cannot get value of literal");
+    },
   },
   union: {
     prepare: notImplemented("union.prepare"),
-    // getValidator: notImplemented("union.getValidator"),
     getSchema: notImplemented("union.getSchema"),
     getProp: notImplemented("union.getProp"),
     getValue: notImplemented("union.getValues"),
@@ -343,13 +291,12 @@ const STRUCTURE_CONFIG: TByStructureKind = {
     prepare: (context, structure, graph, query) => {
       const [queryItem, ...rest] = query;
       if (queryItem !== "()") {
-        throw new Error("Invalid query for function");
+        return null;
       }
       const variableIndex = context.getNextVariableIndex();
       const userResolvers = context.getResolvers(graph);
       const mid = compose(...userResolvers);
       const returnGraph = graph[GET]("return");
-      const parametersGraph = graph[GET]("parameters");
       const argsSchema = getStructureSchema(context, structure.arguments);
       const sub = prepare(context, structure.returns, returnGraph, rest);
       return async (ctx, next) => {
@@ -359,7 +306,7 @@ const STRUCTURE_CONFIG: TByStructureKind = {
         const parsed = v.parse(argsSchema, args);
         const prevInputs = ctx.getOrFail(ApiContext.InputsKey.Consumer);
         const inputs = new Map(prevInputs);
-        inputs.set(parametersGraph, parsed);
+        inputs.set(graph, parsed);
         const parentRes = await mid(
           ctx.with(ApiContext.InputsKey.Provider(inputs)).withValue(baseValue),
           (ctx) => Promise.resolve(ctx),
@@ -368,20 +315,20 @@ const STRUCTURE_CONFIG: TByStructureKind = {
       };
     },
     getSchema: notImplemented("function.getSchema"),
-    // getValidator: notImplemented("function.getValidator"),
     getProp: (_rootStructure, structure, prop) => {
       if (prop === "return") {
         return { structure: structure.returns, isRoot: false };
       }
-      if (prop === "parameters") {
-        return { structure: structure.arguments, isRoot: false };
-      }
       throw new Error(`Invalid path: ${prop} not found in function`);
     },
-    getValue: notImplemented("function.getValues"),
+    getValue: () => {
+      throw new Error("Cannot get value of function");
+    },
   },
   arguments: {
-    prepare: notImplemented("arguments.prepare"),
+    prepare: () => {
+      throw new Error(`Cannot prepare arguments`);
+    },
     getSchema: (context, structure) => {
       const argsSchema = structure.arguments.map((arg) => {
         const argSchema = getStructureSchema(context, arg.structure);
@@ -389,43 +336,12 @@ const STRUCTURE_CONFIG: TByStructureKind = {
       });
       return v.tuple(argsSchema);
     },
-    // getValidator: (context, structure, graph) => {
-    //   const userValidators = context.getValidators(graph);
-    //   const mid = compose(...userValidators);
-    //   const argsValidators = structure.arguments.map((arg, i) => {
-    //     const argGraph = graph[GET](i);
-    //     return {
-    //       ...arg,
-    //       validator: getStructureValidator(context, arg.structure, argGraph),
-    //     };
-    //   });
-    //   return async (ctx, next) => {
-    //     const ctx1 = await mid(ctx, (ctx) => Promise.resolve(ctx));
-    //     const argsValues = ctx1.value as unknown[];
-    //     const nextValue = await Promise.all(
-    //       argsValidators.map(async ({ validator }, i) => {
-    //         const value = argsValues[i];
-    //         const ctx2 = await validator(
-    //           ctx1.withValue(value),
-    //           (ctx) => Promise.resolve(ctx),
-    //         );
-    //         return ctx2.value;
-    //       }),
-    //     );
-    //     return next(ctx1.withValue(nextValue));
-    //   };
-    // },
-    getProp: (_rootStructure, structure, prop) => {
-      if (typeof prop !== "number") {
-        throw new Error("Invalid path");
-      }
-      if (prop >= structure.arguments.length) {
-        throw new Error(`Invalid path: ${prop} not found in arguments`);
-      }
-      const arg = structure.arguments[prop];
-      return { structure: arg.structure, isRoot: false };
+    getProp: () => {
+      throw new Error(`Cannot get prop of arguments`);
     },
-    getValue: notImplemented("arguments.getValues"),
+    getValue: () => {
+      throw new Error("Cannot get value of arguments");
+    },
   },
 };
 
@@ -448,20 +364,6 @@ export function getStructureValue(
 ): unknown {
   return STRUCTURE_CONFIG.object.getValue(structure as any, value, key);
 }
-
-// export function getStructureValidator(
-//   context: TPrepareContext,
-//   structure: TAllStructure,
-//   graph: TGraphBaseAny,
-// ): TMiddleware {
-//   const baseMid = STRUCTURE_CONFIG[structure.kind].getValidator(
-//     context,
-//     structure as any,
-//     graph,
-//   );
-//   const validators = context.getValidators(graph);
-//   return compose(baseMid, ...validators);
-// }
 
 export function getStructureSchema(
   context: TPrepareContext,
@@ -486,7 +388,7 @@ export function prepareStructure(
   structure: TAllStructure,
   graph: TGraphBaseAny,
   query: TQueryUnknown,
-): TMiddleware {
+): TMiddleware | null {
   const prepare = STRUCTURE_CONFIG[structure.kind].prepare;
   if (!prepare) {
     throw new Error(`No prepare function for ${structure.kind}`);
@@ -500,10 +402,10 @@ function prepareFromPath(
   graph: TGraphBaseAny,
   query: TQueryUnknown,
   resolver: TMiddleware = identity,
-): TMiddleware {
+): TMiddleware | null {
   const [queryItem, ...rest] = query;
   if (typeof queryItem !== "string" && typeof queryItem !== "number") {
-    throw new Error("Invalid query");
+    return null;
   }
   const userResolvers = context.getResolvers(graph);
   const mid = compose(resolver, ...userResolvers);

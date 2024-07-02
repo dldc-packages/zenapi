@@ -28,7 +28,7 @@ import type {
 import type { TGraphOf } from "./types.ts";
 
 export interface TSchema<Types extends TTypesBase> {
-  graph: TGraphOf<Types>;
+  graph: TGraphOf<Types, never>;
   structure: TRootStructure;
 }
 
@@ -116,7 +116,7 @@ function parseNode(node: Node, parentKey: string): TStructure {
   if (node.getKind() === SyntaxKind.VoidKeyword) {
     throw new Error("Void expressions are not supported, use null instead");
   }
-  console.log(node.print(), `at line ${node.getStartLineNumber()}`);
+  console.info(node.print(), `at line ${node.getStartLineNumber()}`);
   throw new Error(
     `Unknown node: ${node.print()} (${node.getKindName()}) at line ${node.getStartLineNumber()}`,
   );

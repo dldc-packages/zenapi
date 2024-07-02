@@ -15,10 +15,11 @@ export type TPrepareFromOperator = (
 ) => TMiddleware | null;
 
 export interface TPrepareContext {
-  getNextVariableIndex: () => number;
+  entry: string;
   rootGraph: TGraphBaseAny;
   rootStructure: TRootStructure;
   operators: TPrepareFromOperator[];
+  getNextVariableIndex: () => number;
   getResolvers: TGetMiddlewares;
   getValidators: TGetMiddlewares;
 }
@@ -29,6 +30,10 @@ export function prepare(
   graph: TGraphBaseAny,
   query: TQueryUnknown,
 ): TMiddleware {
+  const prepared = prepareStructure(context, structure, graph, query);
+  if (prepared) {
+    return prepared;
+  }
   // try each operator first
   for (const operator of context.operators) {
     const mid = operator(context, structure, graph, query);
@@ -36,6 +41,5 @@ export function prepare(
       return mid;
     }
   }
-  // if no operator matches, prepare structure
-  return prepareStructure(context, structure, graph, query);
+  throw new Error(`Unsupported query: ${JSON.stringify(query)}`);
 }
