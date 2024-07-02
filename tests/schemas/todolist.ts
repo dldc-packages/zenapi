@@ -34,6 +34,9 @@ interface CoinTails {
 export interface Config {
   env: {
     version: string;
+    num: number;
+    str: string;
+    bool: boolean;
   };
 }
 

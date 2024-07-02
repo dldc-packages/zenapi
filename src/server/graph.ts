@@ -1,10 +1,13 @@
 import type { TTypesBase } from "../utils/types.ts";
-import { GET, PATH, ROOT, STRUCTURE } from "./constants.ts";
+import { GET, PATH, ROOT, STRUCTURE, type TYPES } from "./constants.ts";
 import { getStructureProp, type TGetStructurePropResult } from "./structure.ts";
 import type { TAllStructure, TRootStructure } from "./structure.types.ts";
 import type { TGraphOf } from "./types.ts";
 
-export interface TGraphBase {
+export type TGraphBaseAny = TGraphBase<any>;
+
+export interface TGraphBase<Base> {
+  [TYPES]: { base: Base };
   [ROOT]: TRootStructure;
   [STRUCTURE]: TAllStructure;
   // This is a list of all leaf structures in the path.
@@ -12,8 +15,8 @@ export interface TGraphBase {
   [GET]: (
     prop: string | number | TAllStructure,
     skipValidation?: boolean,
-  ) => TGraphBase;
-  _<T extends TGraphBase>(next: T): T;
+  ) => TGraphBaseAny;
+  _<T extends TGraphBaseAny>(next: T): T;
 }
 
 export function graph<Types extends TTypesBase>(
@@ -25,14 +28,14 @@ export function graph<Types extends TTypesBase>(
 function proxy(
   rootStructure: TRootStructure,
   path: TAllStructure[],
-): TGraphBase {
-  const cache = new WeakMap<TAllStructure, TGraphBase>();
+): TGraphBaseAny {
+  const cache = new WeakMap<TAllStructure, TGraphBaseAny>();
   const structure = path.length === 0 ? rootStructure : path[path.length - 1];
 
   function get(
     prop: string | number | TAllStructure,
     skipValidation = false,
-  ): TGraphBase {
+  ): TGraphBaseAny {
     const { structure: nextStructure, isRoot } = getNextStructure(
       prop,
       skipValidation,
@@ -65,7 +68,7 @@ function proxy(
 
   function validateNextStructureByRef(prop: TAllStructure): TAllStructure {
     if (structure.kind === "ref") {
-      // prop is epxected to be the matching ref
+      // prop is expected to be the matching ref
       const { structure: refStructure } = getStructureProp(
         rootStructure,
         rootStructure,
@@ -79,7 +82,20 @@ function proxy(
       return prop;
     }
     if (structure.kind === "union") {
-      throw new Error("Union not implemented");
+      // Prop is expected to be one of the union refs
+      for (const unionItem of structure.types) {
+        if (unionItem.kind === "ref") {
+          const { structure: refStructure } = getStructureProp(
+            rootStructure,
+            rootStructure,
+            unionItem.ref,
+          );
+          if (prop === refStructure) {
+            return prop;
+          }
+        }
+      }
+      throw new Error(`Invalid path: ${prop.kind} is not a valid union type`);
     }
     throw new Error("Not implemented");
   }
@@ -101,23 +117,31 @@ function proxy(
           return rootStructure;
         }
         if (prop === "_") {
-          return (sub: TGraphBase) => {
+          return (sub: TGraphBaseAny) => {
             const [base, ...rest] = sub[PATH];
             if (!base) {
               throw new Error("Invalid path");
             }
-            let result = get(base);
-            for (const prop of rest) {
-              result = result[GET](prop, true);
+            if (rest.length > 0) {
+              throw new Error("_() expect a top level type");
             }
-            return result;
+            return get(base);
+            // for (const prop of rest) {
+            //   result = result[GET](prop, true);
+            // }
+          };
+        }
+        if (prop === Symbol.toPrimitive) {
+          return () => {
+            return structure.key;
           };
         }
         if (typeof prop === "symbol") {
-          throw new Error(`Unsupported symbol property: ${String(prop)}`);
+          console.info(prop);
+          throw new Error(`Unsupported symbol property`);
         }
         return get(prop);
       },
     },
-  ) as TGraphBase;
+  ) as TGraphBaseAny;
 }

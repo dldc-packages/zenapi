@@ -1,6 +1,4 @@
 export interface TStructureObjectProperty {
-  kind: "property";
-  key: string;
   name: string;
   structure: TStructure;
   optional: boolean;
@@ -54,12 +52,10 @@ export type TFunctionArgumentStructure =
 export interface TStructureArguments {
   kind: "arguments";
   key: string;
-  arguments: TStructureArgument[];
+  arguments: TStructureArgumentItem[];
 }
 
-export interface TStructureArgument {
-  kind: "argument";
-  key: string;
+export interface TStructureArgumentItem {
   name: string;
   structure: TFunctionArgumentStructure;
   optional: boolean;
@@ -90,7 +86,6 @@ export type TStructure =
 export type TAllStructure =
   | TStructure
   | TRootStructure
-  | TStructureArguments
-  | TStructureArgument;
+  | TStructureArguments;
 
 export type TStructureKind = TAllStructure["kind"];

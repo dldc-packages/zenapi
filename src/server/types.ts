@@ -7,28 +7,26 @@ export type TMiddleware = (
   next: (ctx: ApiContext) => Promise<ApiContext>,
 ) => ApiContext | Promise<ApiContext>;
 
-export type TGraphOf<T> = T extends Primitive ? TGraphRefValue
-  : T extends (...args: any) => any
-    ? TGraphFunction<Parameters<T>, ReturnType<T>>
+export type TGraphOf<T> = T extends Primitive ? TGraphRefValue<T>
+  : T extends (...args: any) => any ? TGraphFunction<T>
   : T extends Array<infer U> ? TGraphArray<U>
   : T extends Record<string, any> ? TGraphObject<T>
-  : TGraphBase;
+  : TGraphBase<T>;
 
-export interface TGraphRefValue extends TGraphBase {
+export interface TGraphRefValue<T> extends TGraphBase<T> {
 }
 
 export interface TGraphFunction<
-  Params extends any[],
-  Result,
-> extends TGraphBase {
-  args: TGraphOf<Params>;
-  result: TGraphOf<Result>;
+  Fn extends (...args: any) => any,
+> extends TGraphBase<Fn> {
+  parameters: TGraphOf<Parameters<Fn>>;
+  return: TGraphOf<ReturnType<Fn>>;
 }
 
-export interface TGraphArray<T> extends TGraphBase {
+export interface TGraphArray<T> extends TGraphBase<T[]> {
   items: TGraphOf<T>;
 }
 
-export type TGraphObject<T> =
-  & TGraphBase
+export type TGraphObject<T extends Record<string, any>> =
+  & TGraphBase<T>
   & { [K in keyof T]: TGraphOf<T[K]> };

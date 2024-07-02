@@ -4,6 +4,7 @@ export interface User {
   name: string;
   age: number | null;
   group: Group;
+  maybeGroup: Group | null;
 }
 
 export interface Group {

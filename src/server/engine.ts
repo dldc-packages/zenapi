@@ -1,99 +1,102 @@
-import { build, type TBuildFromOperator } from "./build.ts";
 import { PATH, ROOT } from "./constants.ts";
 import { ApiContext } from "./context.ts";
-import type { TGraphBase } from "./graph.ts";
+import type { TGraphBaseAny } from "./graph.ts";
+import type { THandler } from "./handlers.ts";
 import { DEFAULT_OPERATORS } from "./operators.ts";
 import type { TSchemaAny } from "./parse.ts";
-import type { TResolver } from "./resolver.ts";
+import { prepare, type TPrepareFromOperator } from "./prepare.ts";
 import type { TAllStructure } from "./structure.types.ts";
 import type { TMiddleware } from "./types.ts";
 
 export interface TEngine {
   schema: TSchemaAny;
-  run: (query: unknown) => unknown;
+  run: (query: unknown, variables: unknown) => Promise<unknown>;
 }
 
 export interface TEngineOptions {
   schema: TSchemaAny;
-  resolvers: TResolver[];
-  operators?: Record<string, TBuildFromOperator>;
+  handlers: THandler[];
+  operators?: TPrepareFromOperator[];
   entry: string;
 }
 
 export function createEngine(
-  { schema, resolvers, operators: userOperators = {}, entry }: TEngineOptions,
+  { schema, handlers, operators: userOperators = [], entry }: TEngineOptions,
 ): TEngine {
   const rootStructure = schema.structure;
   const graph = schema.graph;
-  const getMiddlewares = validateResolvers(schema, resolvers);
-  const operators: Record<string, TBuildFromOperator> = {
-    ...DEFAULT_OPERATORS,
+  const { getResolvers, getValidators } = validateHandlers(schema, handlers);
+  const operators: TPrepareFromOperator[] = [
     ...userOperators,
-  };
+    ...DEFAULT_OPERATORS,
+  ];
 
   return {
     schema,
     run,
   };
 
-  async function run(query: unknown): Promise<unknown> {
-    const mid = build(
-      { rootGraph: graph, rootStructure, operators, getMiddlewares },
+  async function run(query: unknown, variables: unknown): Promise<unknown> {
+    if (!Array.isArray(query)) {
+      throw new Error("Query must be an array");
+    }
+    let variableCount = 0;
+    const mid = prepare(
+      {
+        getNextVariableIndex: () => variableCount++,
+        rootGraph: graph,
+        rootStructure,
+        operators,
+        getResolvers,
+        getValidators,
+      },
+      rootStructure,
       graph,
       query,
     );
-    const ctx = ApiContext.create(graph);
-    console.log("====================");
+    if (!Array.isArray(variables)) {
+      throw new Error("Variables must be an array");
+    }
+    if (variables.length !== variableCount) {
+      throw new Error(
+        `Expected ${variableCount} variables, but got ${variables.length}`,
+      );
+    }
+    const ctx = ApiContext.create(graph, variables);
     const result = await mid(ctx, (ctx) => Promise.resolve(ctx));
-
     return result.value;
-
-    // const qr = queryReader(query);
-    // const ctx = ApiContext.create(rootGraph, qr);
-
-    // const queryObject = v.parse(QueryObjectSchema, query);
-    // const kind = queryObject.kind;
-    // const transform = transforms?.[kind];
-    // if (!transform) {
-    //   throw new Error(`Unknown query kind: ${kind}`);
-    // }
-    // return transform(ctx, qr);
   }
-
-  // function validate(
-  //   structure: TAllStructure,
-  //   query: unknown,
-  // ): TResolveQuery {
-  //   const queryObject = v.parse(QueryObjectSchema, query);
-  //   const kind = queryObject.kind;
-  //   const operatorValidator = operators[kind];
-  //   if (!operatorValidator) {
-  //     throw new Error(`Unknown operator kind: ${kind}`);
-  //   }
-  //   return operatorValidator(structure, query, validate);
-  // }
 }
 
-interface TResolversTree {
+interface THandlersTree {
   middlewares: TMiddleware[];
-  children: Map<TAllStructure, TResolversTree>;
+  children: Map<TAllStructure, THandlersTree>;
 }
 
-export type TGetMiddlewares = (graph: TGraphBase) => TMiddleware[];
+export type TGetMiddlewares = (graph: TGraphBaseAny) => TMiddleware[];
 
-function validateResolvers(
+export interface TGetHandlers {
+  getResolvers: TGetMiddlewares;
+  getValidators: TGetMiddlewares;
+}
+
+function validateHandlers(
   schema: TSchemaAny,
-  resolvers: TResolver[],
-): TGetMiddlewares {
-  const tree: TResolversTree = { middlewares: [], children: new Map() };
+  handlers: THandler[],
+): TGetHandlers {
+  const resolversTree: THandlersTree = { middlewares: [], children: new Map() };
+  const validatorsTree: THandlersTree = {
+    middlewares: [],
+    children: new Map(),
+  };
 
-  for (const { path, middlewares } of resolvers) {
+  for (const { kind, middlewares, path } of handlers) {
     // make sure path come from the schema
     if (path[ROOT] !== schema.structure) {
       throw new Error(`Invalid resolver path, not using the proper schema`);
     }
     const structPath = path[PATH].slice().reverse();
-    let current = tree;
+    let current = kind === "resolver" ? resolversTree : validatorsTree;
     for (const struct of structPath) {
       if (!current.children.has(struct)) {
         current.children.set(struct, { middlewares: [], children: new Map() });
@@ -103,9 +106,14 @@ function validateResolvers(
     current.middlewares.push(...middlewares);
   }
 
-  return (graph: TGraphBase) => {
+  return {
+    getResolvers: (graph: TGraphBaseAny) => get(resolversTree, graph),
+    getValidators: (graph: TGraphBaseAny) => get(validatorsTree, graph),
+  };
+
+  function get(tree: THandlersTree, graph: TGraphBaseAny): TMiddleware[] {
     const structPath = graph[PATH].slice().reverse();
-    let current: TResolversTree | undefined = tree;
+    let current: THandlersTree | undefined = tree;
     for (const struct of structPath) {
       if (!current) {
         return [];
@@ -116,5 +124,5 @@ function validateResolvers(
       return [];
     }
     return current.middlewares;
-  };
+  }
 }

@@ -2,7 +2,7 @@ import { composeAdvanced } from "@dldc/compose";
 import type { TMiddleware } from "../../server.ts";
 import type { ApiContext } from "./context.ts";
 
-export function compose(...middlewares: TMiddleware[]): TMiddleware {
+export function compose(...middlewares: (TMiddleware | null)[]): TMiddleware {
   return composeAdvanced<
     ApiContext,
     Promise<ApiContext> | ApiContext,
