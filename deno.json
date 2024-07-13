@@ -1,6 +1,6 @@
 {
   "name": "@dldc/zenapi",
-  "version": "4.0.0-0",
+  "version": "4.0.0",
   "exports": {
     "./client": "./client.ts",
     "./server": "./server.ts"
