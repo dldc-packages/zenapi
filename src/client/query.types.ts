@@ -45,19 +45,21 @@ export interface TQueryArraySelectFn<Item, ParentNullable extends boolean> {
 // Check if the type contains null or undefined
 
 // Utility type to check if a type T contains null
-type IsNull<T> = null extends T ? true : false;
+type ContainsNull<T> = null extends T ? true : false;
 // Utility type to check if a type T contains undefined
 type IsUndefined<T> = undefined extends T ? true : false;
 // Combined utility type to check if a type T contains null or undefined
-type IsNil<T> = IsNull<T> extends true ? true
+type ContainsNil<T> = ContainsNull<T> extends true ? true
   : IsUndefined<T> extends true ? true
   : false;
 
 export type TQueryOfNested<
   T,
   ParentNullable extends boolean,
-> = ParentNullable extends true ? TQueryOf<NonNullable<T>, true>
-  : IsNil<T> extends true ? TQueryOf<NonNullable<T>, true>
+> = T extends null ? TQueryBase<null> // Handle null value
+  : T extends undefined ? TQueryBase<null> // Handle undefined value
+  : ParentNullable extends true ? TQueryOf<NonNullable<T>, true>
+  : ContainsNil<T> extends true ? TQueryOf<NonNullable<T>, true>
   : TQueryOf<T, false>;
 
 export type TQueryOf<T, Nullable extends boolean> = T extends Primitive
