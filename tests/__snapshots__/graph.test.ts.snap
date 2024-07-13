@@ -1,0 +1,522 @@
+export const snapshot = {};
+
+snapshot[`todolist snapshot structure 1`] = `
+{
+  key: "",
+  kind: "root",
+  types: {
+    App: {
+      key: "App",
+      kind: "object",
+      properties: [
+        {
+          name: "appName",
+          optional: false,
+          structure: {
+            key: "App.appName",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "todos",
+          optional: false,
+          structure: {
+            items: {
+              key: "App.todos.items",
+              kind: "ref",
+              params: undefined,
+              ref: "Todo",
+            },
+            key: "App.todos",
+            kind: "array",
+          },
+        },
+      ],
+    },
+    CoinHeads: {
+      key: "CoinHeads",
+      kind: "object",
+      properties: [
+        {
+          name: "foo",
+          optional: false,
+          structure: {
+            key: "CoinHeads.foo",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+      ],
+    },
+    CoinTails: {
+      key: "CoinTails",
+      kind: "object",
+      properties: [
+        {
+          name: "bar",
+          optional: false,
+          structure: {
+            key: "CoinTails.bar",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+      ],
+    },
+    Config: {
+      key: "Config",
+      kind: "object",
+      properties: [
+        {
+          name: "env",
+          optional: false,
+          structure: {
+            key: "Config.env",
+            kind: "object",
+            properties: [
+              {
+                name: "version",
+                optional: false,
+                structure: {
+                  key: "Config.env.version",
+                  kind: "primitive",
+                  type: "string",
+                },
+              },
+              {
+                name: "num",
+                optional: false,
+                structure: {
+                  key: "Config.env.num",
+                  kind: "primitive",
+                  type: "number",
+                },
+              },
+              {
+                name: "str",
+                optional: false,
+                structure: {
+                  key: "Config.env.str",
+                  kind: "primitive",
+                  type: "string",
+                },
+              },
+              {
+                name: "bool",
+                optional: false,
+                structure: {
+                  key: "Config.env.bool",
+                  kind: "primitive",
+                  type: "boolean",
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+    Graph: {
+      key: "Graph",
+      kind: "object",
+      properties: [
+        {
+          name: "auth",
+          optional: false,
+          structure: {
+            key: "Graph.auth",
+            kind: "nullable",
+            type: {
+              key: "Graph.auth.type",
+              kind: "object",
+              properties: [
+                {
+                  name: "user",
+                  optional: false,
+                  structure: {
+                    key: "Graph.auth.type.user",
+                    kind: "ref",
+                    params: undefined,
+                    ref: "User",
+                  },
+                },
+              ],
+            },
+          },
+        },
+        {
+          name: "users",
+          optional: false,
+          structure: {
+            key: "Graph.users",
+            kind: "object",
+            properties: [
+              {
+                name: "byId",
+                optional: false,
+                structure: {
+                  arguments: {
+                    arguments: [
+                      {
+                        name: "id",
+                        optional: false,
+                        structure: {
+                          key: "Graph.users.byId.arguments.id",
+                          kind: "primitive",
+                          type: "string",
+                        },
+                      },
+                    ],
+                    key: "Graph.users.byId.arguments",
+                    kind: "arguments",
+                  },
+                  key: "Graph.users.byId",
+                  kind: "function",
+                  returns: {
+                    key: "Graph.users.byId.returns",
+                    kind: "ref",
+                    params: undefined,
+                    ref: "User",
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          name: "apps",
+          optional: false,
+          structure: {
+            key: "Graph.apps",
+            kind: "object",
+            properties: [
+              {
+                name: "all",
+                optional: false,
+                structure: {
+                  arguments: {
+                    arguments: [
+                      {
+                        name: "pagination",
+                        optional: true,
+                        structure: {
+                          key: "Graph.apps.all.arguments.pagination",
+                          kind: "ref",
+                          params: undefined,
+                          ref: "PaginationParams",
+                        },
+                      },
+                    ],
+                    key: "Graph.apps.all.arguments",
+                    kind: "arguments",
+                  },
+                  key: "Graph.apps.all",
+                  kind: "function",
+                  returns: {
+                    items: {
+                      key: "Graph.apps.all.returns.items",
+                      kind: "ref",
+                      params: undefined,
+                      ref: "App",
+                    },
+                    key: "Graph.apps.all.returns",
+                    kind: "array",
+                  },
+                },
+              },
+              {
+                name: "byId",
+                optional: false,
+                structure: {
+                  arguments: {
+                    arguments: [
+                      {
+                        name: "id",
+                        optional: false,
+                        structure: {
+                          key: "Graph.apps.byId.arguments.id",
+                          kind: "primitive",
+                          type: "string",
+                        },
+                      },
+                    ],
+                    key: "Graph.apps.byId.arguments",
+                    kind: "arguments",
+                  },
+                  key: "Graph.apps.byId",
+                  kind: "function",
+                  returns: {
+                    key: "Graph.apps.byId.returns",
+                    kind: "ref",
+                    params: undefined,
+                    ref: "App",
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          name: "flip",
+          optional: false,
+          structure: {
+            key: "Graph.flip",
+            kind: "union",
+            types: [
+              {
+                key: "Graph.flip.0",
+                kind: "ref",
+                params: undefined,
+                ref: "CoinHeads",
+              },
+              {
+                key: "Graph.flip.1",
+                kind: "ref",
+                params: undefined,
+                ref: "CoinTails",
+              },
+            ],
+          },
+        },
+        {
+          name: "config",
+          optional: false,
+          structure: {
+            key: "Graph.config",
+            kind: "ref",
+            params: undefined,
+            ref: "Config",
+          },
+        },
+      ],
+    },
+    PaginationParams: {
+      key: "PaginationParams",
+      kind: "object",
+      properties: [
+        {
+          name: "page",
+          optional: true,
+          structure: {
+            key: "PaginationParams.page",
+            kind: "primitive",
+            type: "number",
+          },
+        },
+        {
+          name: "limit",
+          optional: true,
+          structure: {
+            key: "PaginationParams.limit",
+            kind: "primitive",
+            type: "number",
+          },
+        },
+      ],
+    },
+    Todo: {
+      key: "Todo",
+      kind: "object",
+      properties: [
+        {
+          name: "todoName",
+          optional: false,
+          structure: {
+            key: "Todo.todoName",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "done",
+          optional: false,
+          structure: {
+            key: "Todo.done",
+            kind: "primitive",
+            type: "boolean",
+          },
+        },
+      ],
+    },
+    User: {
+      key: "User",
+      kind: "object",
+      properties: [
+        {
+          name: "userName",
+          optional: false,
+          structure: {
+            key: "User.userName",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "app",
+          optional: false,
+          structure: {
+            key: "User.app",
+            kind: "ref",
+            params: undefined,
+            ref: "App",
+          },
+        },
+      ],
+    },
+  },
+}
+`;
+
+snapshot[`snapshot structure 1`] = `
+{
+  key: "",
+  kind: "root",
+  types: {
+    Graph: {
+      key: "Graph",
+      kind: "object",
+      properties: [
+        {
+          name: "group",
+          optional: false,
+          structure: {
+            key: "Graph.group",
+            kind: "ref",
+            params: undefined,
+            ref: "Group",
+          },
+        },
+        {
+          name: "user",
+          optional: false,
+          structure: {
+            key: "Graph.user",
+            kind: "ref",
+            params: undefined,
+            ref: "User",
+          },
+        },
+        {
+          name: "randomItem",
+          optional: false,
+          structure: {
+            key: "Graph.randomItem",
+            kind: "union",
+            types: [
+              {
+                key: "Graph.randomItem.0",
+                kind: "ref",
+                params: undefined,
+                ref: "User",
+              },
+              {
+                key: "Graph.randomItem.1",
+                kind: "ref",
+                params: undefined,
+                ref: "Group",
+              },
+            ],
+          },
+        },
+      ],
+    },
+    Group: {
+      key: "Group",
+      kind: "object",
+      properties: [
+        {
+          name: "name",
+          optional: false,
+          structure: {
+            key: "Group.name",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "users",
+          optional: false,
+          structure: {
+            items: {
+              key: "Group.users.items",
+              kind: "ref",
+              params: undefined,
+              ref: "User",
+            },
+            key: "Group.users",
+            kind: "array",
+          },
+        },
+      ],
+    },
+    Role: {
+      key: "Role",
+      kind: "union",
+      types: [
+        {
+          key: "Role.0",
+          kind: "literal",
+          type: "admin",
+        },
+        {
+          key: "Role.1",
+          kind: "literal",
+          type: "user",
+        },
+      ],
+    },
+    User: {
+      key: "User",
+      kind: "object",
+      properties: [
+        {
+          name: "name",
+          optional: false,
+          structure: {
+            key: "User.name",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "age",
+          optional: false,
+          structure: {
+            key: "User.age",
+            kind: "nullable",
+            type: {
+              key: "User.age.type",
+              kind: "primitive",
+              type: "number",
+            },
+          },
+        },
+        {
+          name: "group",
+          optional: false,
+          structure: {
+            key: "User.group",
+            kind: "ref",
+            params: undefined,
+            ref: "Group",
+          },
+        },
+        {
+          name: "maybeGroup",
+          optional: false,
+          structure: {
+            key: "User.maybeGroup",
+            kind: "nullable",
+            type: {
+              key: "User.maybeGroup.type",
+              kind: "ref",
+              params: undefined,
+              ref: "Group",
+            },
+          },
+        },
+      ],
+    },
+  },
+}
+`;
