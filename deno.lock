@@ -5,15 +5,17 @@
       "jsr:@dldc/compose@^6.0.2": "jsr:@dldc/compose@6.0.2",
       "jsr:@dldc/erreur@^7.1.1": "jsr:@dldc/erreur@7.1.1",
       "jsr:@dldc/stack@^6.0.2": "jsr:@dldc/stack@6.0.2",
-      "jsr:@std/assert@1.0.0-rc.1": "jsr:@std/assert@1.0.0-rc.1",
+      "jsr:@std/assert@1.0.0-rc.2": "jsr:@std/assert@1.0.0-rc.2",
       "jsr:@std/assert@^0.225.2": "jsr:@std/assert@0.225.3",
       "jsr:@std/assert@^0.225.3": "jsr:@std/assert@0.225.3",
-      "jsr:@std/fmt@^0.225.4": "jsr:@std/fmt@0.225.4",
-      "jsr:@std/fs@^0.229.2": "jsr:@std/fs@0.229.3",
-      "jsr:@std/internal@^1.0.0": "jsr:@std/internal@1.0.0",
-      "jsr:@std/path@1.0.0-rc.1": "jsr:@std/path@1.0.0-rc.1",
-      "jsr:@std/path@^0.225.1": "jsr:@std/path@0.225.1",
-      "jsr:@std/testing@^0.225.1": "jsr:@std/testing@0.225.1",
+      "jsr:@std/assert@^0.226.0": "jsr:@std/assert@0.226.0",
+      "jsr:@std/fmt@^0.225.4": "jsr:@std/fmt@0.225.5",
+      "jsr:@std/fs@^1.0.0-rc.1": "jsr:@std/fs@1.0.0-rc.3",
+      "jsr:@std/internal@^1.0.0": "jsr:@std/internal@1.0.1",
+      "jsr:@std/path@1.0.0-rc.2": "jsr:@std/path@1.0.0-rc.2",
+      "jsr:@std/path@1.0.0-rc.3": "jsr:@std/path@1.0.0-rc.3",
+      "jsr:@std/path@^0.225.1": "jsr:@std/path@0.225.2",
+      "jsr:@std/testing@^0.225.3": "jsr:@std/testing@0.225.3",
       "jsr:@valibot/valibot@^0.31.1": "jsr:@valibot/valibot@0.31.1"
     },
     "jsr": {
@@ -38,20 +40,26 @@
           "jsr:@std/internal@^1.0.0"
         ]
       },
-      "@std/assert@1.0.0-rc.1": {
-        "integrity": "f2f1f1d5b5eab3a2165744996c42b3c501688d887a015067e12267fe5e6fb804"
+      "@std/assert@0.226.0": {
+        "integrity": "0dfb5f7c7723c18cec118e080fec76ce15b4c31154b15ad2bd74822603ef75b3"
       },
-      "@std/fmt@0.225.4": {
-        "integrity": "584c681cf422b70e28959b57e59012823609c087384cbf12d05f67814797fda3"
+      "@std/assert@1.0.0-rc.2": {
+        "integrity": "0484eab1d76b55fca1c3beaff485a274e67dd3b9f065edcbe70030dfc0b964d3"
       },
-      "@std/fs@0.229.3": {
-        "integrity": "783bca21f24da92e04c3893c9e79653227ab016c48e96b3078377ebd5222e6eb",
+      "@std/fmt@0.225.5": {
+        "integrity": "38aa42528584873378a521f7842c1a1e99f0235d3f7d3db5ca02795312f439b8"
+      },
+      "@std/fs@1.0.0-rc.3": {
+        "integrity": "50a0a4366e7e2bd444ed0831757e3d9dd39b1d24612764bbb9ac7725169903f4",
         "dependencies": [
-          "jsr:@std/path@1.0.0-rc.1"
+          "jsr:@std/path@1.0.0-rc.3"
         ]
       },
       "@std/internal@1.0.0": {
         "integrity": "ac6a6dfebf838582c4b4f61a6907374e27e05bedb6ce276e0f1608fe84e7cd9a"
+      },
+      "@std/internal@1.0.1": {
+        "integrity": "6f8c7544d06a11dd256c8d6ba54b11ed870aac6c5aeafff499892662c57673e6"
       },
       "@std/path@0.225.1": {
         "integrity": "8c3220635a73730eb51fe43de9e10b79e2724a5bb8638b9355d35ae012fd9429",
@@ -59,17 +67,26 @@
           "jsr:@std/assert@^0.225.2"
         ]
       },
-      "@std/path@1.0.0-rc.1": {
-        "integrity": "b8c00ae2f19106a6bb7cbf1ab9be52aa70de1605daeb2dbdc4f87a7cbaf10ff6"
-      },
-      "@std/testing@0.225.1": {
-        "integrity": "1a11119553fc33410abe8566731ae513c53e73db040cedbf901858fbd7587819",
+      "@std/path@0.225.2": {
+        "integrity": "0f2db41d36b50ef048dcb0399aac720a5348638dd3cb5bf80685bf2a745aa506",
         "dependencies": [
-          "jsr:@std/assert@1.0.0-rc.1",
+          "jsr:@std/assert@^0.226.0"
+        ]
+      },
+      "@std/path@1.0.0-rc.2": {
+        "integrity": "39f20d37a44d1867abac8d91c169359ea6e942237a45a99ee1e091b32b921c7d"
+      },
+      "@std/path@1.0.0-rc.3": {
+        "integrity": "672b8f88b3b58b6e932052ae412f40fc063940fcdb228d12f80353bc6aff38c1"
+      },
+      "@std/testing@0.225.3": {
+        "integrity": "348c24d0479d44ab3dbb4f26170f242e19f24051b45935d4a9e7ca0ab7e37780",
+        "dependencies": [
+          "jsr:@std/assert@1.0.0-rc.2",
           "jsr:@std/fmt@^0.225.4",
-          "jsr:@std/fs@^0.229.2",
+          "jsr:@std/fs@^1.0.0-rc.1",
           "jsr:@std/internal@^1.0.0",
-          "jsr:@std/path@1.0.0-rc.1"
+          "jsr:@std/path@1.0.0-rc.2"
         ]
       },
       "@valibot/valibot@0.31.1": {
@@ -177,7 +194,7 @@
       "jsr:@dldc/stack@^6.0.2",
       "jsr:@std/assert@^0.225.3",
       "jsr:@std/path@^0.225.1",
-      "jsr:@std/testing@^0.225.1",
+      "jsr:@std/testing@^0.225.3",
       "jsr:@valibot/valibot@^0.31.1"
     ]
   }

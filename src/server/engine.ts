@@ -1,31 +1,39 @@
 import { PATH, ROOT } from "./constants.ts";
 import { ApiContext } from "./context.ts";
 import type { TGraphBaseAny } from "./graph.ts";
-import type { THandler } from "./handlers.ts";
 import { DEFAULT_OPERATORS } from "./operators.ts";
 import type { TSchemaAny } from "./parse.ts";
 import { prepare, type TPrepareFromOperator } from "./prepare.ts";
+import type { TResolver } from "./resolver.ts";
 import type { TAllStructure } from "./structure.types.ts";
 import type { TMiddleware } from "./types.ts";
 
+export type TExtendsContext = (
+  ctx: ApiContext,
+) => ApiContext | Promise<ApiContext>;
+
 export interface TEngine {
   schema: TSchemaAny;
-  run: (query: unknown, variables: unknown) => Promise<unknown>;
+  run: (
+    query: unknown,
+    variables: unknown,
+    extendsCtx?: TExtendsContext,
+  ) => Promise<unknown>;
 }
 
 export interface TEngineOptions {
   schema: TSchemaAny;
-  handlers: THandler[];
+  resolvers: TResolver[];
   operators?: TPrepareFromOperator[];
   entry: string;
 }
 
 export function createEngine(
-  { schema, handlers, operators: userOperators = [], entry }: TEngineOptions,
+  { schema, resolvers, operators: userOperators = [], entry }: TEngineOptions,
 ): TEngine {
   const rootStructure = schema.structure;
   const graph = schema.graph;
-  const { getResolvers, getValidators } = validateHandlers(schema, handlers);
+  const { getResolvers } = validateResolvers(schema, resolvers);
   const operators: TPrepareFromOperator[] = [
     ...userOperators,
     ...DEFAULT_OPERATORS,
@@ -36,7 +44,11 @@ export function createEngine(
     run,
   };
 
-  async function run(query: unknown, variables: unknown): Promise<unknown> {
+  async function run(
+    query: unknown,
+    variables: unknown,
+    extendsCtx?: TExtendsContext,
+  ): Promise<unknown> {
     if (!Array.isArray(query)) {
       throw new Error("Query must be an array");
     }
@@ -49,9 +61,7 @@ export function createEngine(
         operators,
         getNextVariableIndex: () => variableCount++,
         getResolvers,
-        getValidators,
       },
-      rootStructure,
       graph,
       query,
     );
@@ -64,7 +74,8 @@ export function createEngine(
       );
     }
     const ctx = ApiContext.create(graph, variables);
-    const result = await mid(ctx, (ctx) => Promise.resolve(ctx));
+    const extendedCtx = extendsCtx ? await extendsCtx(ctx) : ctx;
+    const result = await mid(extendedCtx, (ctx) => Promise.resolve(ctx));
     return result.value;
   }
 }
@@ -78,26 +89,21 @@ export type TGetMiddlewares = (graph: TGraphBaseAny) => TMiddleware[];
 
 export interface TGetHandlers {
   getResolvers: TGetMiddlewares;
-  getValidators: TGetMiddlewares;
 }
 
-function validateHandlers(
+function validateResolvers(
   schema: TSchemaAny,
-  handlers: THandler[],
+  resolvers: TResolver[],
 ): TGetHandlers {
   const resolversTree: THandlersTree = { middlewares: [], children: new Map() };
-  const validatorsTree: THandlersTree = {
-    middlewares: [],
-    children: new Map(),
-  };
 
-  for (const { kind, middlewares, path } of handlers) {
+  for (const { middlewares, path } of resolvers) {
     // make sure path come from the schema
     if (path[ROOT] !== schema.structure) {
       throw new Error(`Invalid resolver path, not using the proper schema`);
     }
     const structPath = path[PATH].slice().reverse();
-    let current = kind === "resolver" ? resolversTree : validatorsTree;
+    let current = resolversTree;
     for (const struct of structPath) {
       if (!current.children.has(struct)) {
         current.children.set(struct, { middlewares: [], children: new Map() });
@@ -109,21 +115,22 @@ function validateHandlers(
 
   return {
     getResolvers: (graph: TGraphBaseAny) => get(resolversTree, graph),
-    getValidators: (graph: TGraphBaseAny) => get(validatorsTree, graph),
   };
 
   function get(tree: THandlersTree, graph: TGraphBaseAny): TMiddleware[] {
     const structPath = graph[PATH].slice().reverse();
+    const middlewares: TMiddleware[] = [];
     let current: THandlersTree | undefined = tree;
     for (const struct of structPath) {
       if (!current) {
         return [];
       }
+      middlewares.push(...current.middlewares);
       current = current.children.get(struct);
     }
-    if (!current) {
-      return [];
+    if (current) {
+      middlewares.push(...current.middlewares);
     }
-    return current.middlewares;
+    return middlewares;
   }
 }

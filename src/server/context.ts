@@ -1,13 +1,16 @@
-import type { TStackCoreValue } from "@dldc/stack";
+import type { TKey, TStackCoreValue } from "@dldc/stack";
 import { createKey, createKeyWithDefault, Stack } from "@dldc/stack";
 import type { TVariables } from "../client/query.types.ts";
 import type { TYPES } from "./constants.ts";
 import type { TGraphBaseAny } from "./graph.ts";
 
-const GraphKey = createKey<TGraphBaseAny>("graph");
-const ValueKey = createKeyWithDefault<unknown>("value", undefined);
-const VariablesKey = createKey<TVariables>("variables");
-const InputsKey = createKeyWithDefault<Map<TGraphBaseAny, unknown>>(
+const GraphKey: TKey<TGraphBaseAny, false> = createKey("graph");
+const ValueKey: TKey<unknown, true> = createKeyWithDefault<unknown>(
+  "value",
+  undefined,
+);
+const VariablesKey: TKey<TVariables, false> = createKey("variables");
+const InputsKey: TKey<Map<TGraphBaseAny, unknown>, true> = createKeyWithDefault(
   "inputs",
   new Map(),
 );
@@ -39,7 +42,7 @@ export class ApiContext extends Stack {
 
   getInput<G extends TGraphBaseAny>(
     graph: G,
-  ): G[typeof TYPES]["base"] | undefined {
+  ): G[typeof TYPES]["input"] | undefined {
     const inputs = this.getOrFail(InputsKey.Consumer);
     return inputs.get(graph);
   }

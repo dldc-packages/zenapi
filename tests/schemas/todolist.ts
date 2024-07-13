@@ -41,6 +41,7 @@ export interface Config {
 }
 
 export interface Graph {
+  auth: { user: User } | null;
   users: {
     byId: (id: string) => User;
   };

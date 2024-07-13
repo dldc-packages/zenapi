@@ -41,13 +41,20 @@ export interface TStructureArray {
   items: TStructure;
 }
 
+export interface TStructureNullable {
+  kind: "nullable";
+  key: string;
+  type: TStructure;
+}
+
 export type TFunctionArgumentStructure =
   | TStructureObject
   | TStructureRef
   | TStructureUnion
   | TStructurePrimitive
   | TStructureArray
-  | TStructureLiteral;
+  | TStructureLiteral
+  | TStructureNullable;
 
 export interface TStructureArguments {
   kind: "arguments";
@@ -81,7 +88,8 @@ export type TStructure =
   | TStructureFunction
   | TStructurePrimitive
   | TStructureArray
-  | TStructureLiteral;
+  | TStructureLiteral
+  | TStructureNullable;
 
 export type TAllStructure =
   | TStructure

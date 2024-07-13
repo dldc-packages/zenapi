@@ -121,6 +121,30 @@ snapshot[`todolist snapshot structure 1`] = `
       kind: "object",
       properties: [
         {
+          name: "auth",
+          optional: false,
+          structure: {
+            key: "Graph.auth",
+            kind: "nullable",
+            type: {
+              key: "Graph.auth.type",
+              kind: "object",
+              properties: [
+                {
+                  name: "user",
+                  optional: false,
+                  structure: {
+                    key: "Graph.auth.type.user",
+                    kind: "ref",
+                    params: undefined,
+                    ref: "User",
+                  },
+                },
+              ],
+            },
+          },
+        },
+        {
           name: "users",
           optional: false,
           structure: {
@@ -240,13 +264,13 @@ snapshot[`todolist snapshot structure 1`] = `
             kind: "union",
             types: [
               {
-                key: "Graph.flip.union",
+                key: "Graph.flip.0",
                 kind: "ref",
                 params: undefined,
                 ref: "CoinHeads",
               },
               {
-                key: "Graph.flip.union",
+                key: "Graph.flip.1",
                 kind: "ref",
                 params: undefined,
                 ref: "CoinTails",
@@ -372,6 +396,28 @@ snapshot[`snapshot structure 1`] = `
             ref: "User",
           },
         },
+        {
+          name: "randomItem",
+          optional: false,
+          structure: {
+            key: "Graph.randomItem",
+            kind: "union",
+            types: [
+              {
+                key: "Graph.randomItem.0",
+                kind: "ref",
+                params: undefined,
+                ref: "User",
+              },
+              {
+                key: "Graph.randomItem.1",
+                kind: "ref",
+                params: undefined,
+                ref: "Group",
+              },
+            ],
+          },
+        },
       ],
     },
     Group: {
@@ -408,12 +454,12 @@ snapshot[`snapshot structure 1`] = `
       kind: "union",
       types: [
         {
-          key: "Role.union",
+          key: "Role.0",
           kind: "literal",
           type: "admin",
         },
         {
-          key: "Role.union",
+          key: "Role.1",
           kind: "literal",
           type: "user",
         },
@@ -437,19 +483,12 @@ snapshot[`snapshot structure 1`] = `
           optional: false,
           structure: {
             key: "User.age",
-            kind: "union",
-            types: [
-              {
-                key: "User.age.union",
-                kind: "primitive",
-                type: "number",
-              },
-              {
-                key: "User.age.union",
-                kind: "literal",
-                type: null,
-              },
-            ],
+            kind: "nullable",
+            type: {
+              key: "User.age.type",
+              kind: "primitive",
+              type: "number",
+            },
           },
         },
         {
@@ -467,20 +506,13 @@ snapshot[`snapshot structure 1`] = `
           optional: false,
           structure: {
             key: "User.maybeGroup",
-            kind: "union",
-            types: [
-              {
-                key: "User.maybeGroup.union",
-                kind: "ref",
-                params: undefined,
-                ref: "Group",
-              },
-              {
-                key: "User.maybeGroup.union",
-                kind: "literal",
-                type: null,
-              },
-            ],
+            kind: "nullable",
+            type: {
+              key: "User.maybeGroup.type",
+              kind: "ref",
+              params: undefined,
+              ref: "Group",
+            },
           },
         },
       ],

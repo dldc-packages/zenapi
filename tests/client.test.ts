@@ -162,3 +162,66 @@ Deno.test("obj in array select", () => {
     ],
   );
 });
+
+Deno.test("nested object", () => {
+  const query = client.Graph.auth._(({ user: { userName } }) =>
+    obj({ user: obj({ userName }) })
+  );
+
+  assertEquals(
+    queryToJson(query),
+    [
+      [
+        "Graph",
+        "auth",
+        {
+          kind: "object",
+          data: [
+            {
+              key: "user",
+              value: [
+                {
+                  data: [{ key: "userName", value: ["user", "userName"] }],
+                  kind: "object",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      [],
+    ],
+  );
+});
+
+Deno.test("better nested object", () => {
+  const query = client.Graph.auth._(({ user }) =>
+    obj({ user: user._(({ userName }) => obj({ userName })) })
+  );
+
+  assertEquals(
+    queryToJson(query),
+    [
+      [
+        "Graph",
+        "auth",
+        {
+          kind: "object",
+          data: [
+            {
+              key: "user",
+              value: [
+                "user",
+                {
+                  kind: "object",
+                  data: [{ key: "userName", value: ["userName"] }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+      [],
+    ],
+  );
+});

@@ -5,19 +5,11 @@ import type {
   TQueryBase,
   TQueryDef,
   TQueryOf,
-  TQuerySelectFn,
+  TQueryOfObjectSelectFn,
   TVariables,
 } from "./query.types.ts";
 
-/**
- * TODO:
- * - Store external data (variables) outside of the query and point to them using a stable ref (hash the path ?)
- * - Make sure to properly handle the _() function
- */
-
-export function query<Types extends TTypesBase>(): TQueryOf<
-  Types
-> {
+export function query<Types extends TTypesBase>(): TQueryOf<Types, false> {
   return proxy([], []);
 }
 
@@ -25,6 +17,7 @@ type TPath = readonly any[];
 
 function proxy(path: TPath, variables: TVariables): any {
   return new Proxy(
+    // target needs to be a function to allow the apply trap
     () => {},
     {
       get(_, prop) {
@@ -42,7 +35,7 @@ function proxy(path: TPath, variables: TVariables): any {
               ...variables,
               ...childVariables,
             ]);
-          }) satisfies TQuerySelectFn<any>;
+          }) satisfies TQueryOfObjectSelectFn<any, boolean>;
         }
         if (prop === "toString") {
           return () => {

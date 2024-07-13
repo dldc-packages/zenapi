@@ -15,4 +15,5 @@ export interface Group {
 export interface Graph {
   group: Group;
   user: User;
+  randomItem: User | Group;
 }

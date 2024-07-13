@@ -24,6 +24,7 @@ import type {
   TStructureArguments,
   TStructureObject,
   TStructureObjectProperty,
+  TStructureUnion,
 } from "./structure.types.ts";
 import type { TGraphOf } from "./types.ts";
 
@@ -37,7 +38,7 @@ export type TSchemaAny = TSchema<any>;
 /**
  * Pass the path to the schema file as well as the the types to be used in the schema.
  */
-export function parseSchema<Types extends TTypesBase>(
+export function parse<Types extends TTypesBase>(
   schemaPath: string,
 ): TSchema<Types> {
   const project = new Project({
@@ -212,11 +213,43 @@ function parseUnionTypeNode(
   node: UnionTypeNode,
   key: string,
 ): TStructure {
-  const types: TStructure[] = [];
-  node.getTypeNodes().forEach((typeNode) => {
-    types.push(parseNode(typeNode, `${key}.union`));
+  // Check if it's a nullable
+  let subTypes = node.getTypeNodes();
+  const hasNull = subTypes.some((typeNode) => {
+    if (Node.isLiteralTypeNode(typeNode)) {
+      return typeNode.getLiteral() instanceof NullLiteral;
+    }
+    return false;
   });
-  return { kind: "union", key: key, types };
+  if (hasNull) {
+    subTypes = subTypes.filter((typeNode) => {
+      if (Node.isLiteralTypeNode(typeNode)) {
+        return !(typeNode.getLiteral() instanceof NullLiteral);
+      }
+      return true;
+    });
+    if (subTypes.length === 1) {
+      return {
+        kind: "nullable",
+        key,
+        type: parseNode(subTypes[0], `${key}.type`),
+      };
+    }
+  }
+  // union
+  const types: TStructure[] = [];
+  subTypes.forEach((typeNode, i) => {
+    types.push(parseNode(typeNode, `${key}.${i}`));
+  });
+  const union: TStructureUnion = {
+    kind: "union",
+    key,
+    types,
+  };
+  if (hasNull) {
+    return { kind: "nullable", key, type: union };
+  }
+  return union;
 }
 
 function parseTypeReferenceNode(

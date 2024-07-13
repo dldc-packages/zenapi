@@ -11,7 +11,6 @@ const ObjOperatorSchema = v.strictObject({
 
 export const objOperator: TPrepareFromOperator = (
   context,
-  structure,
   graph,
   query,
 ): TMiddleware | null => {
@@ -25,10 +24,7 @@ export const objOperator: TPrepareFromOperator = (
   }
   const { data } = parsed.output;
   const prepared = data.map(({ key, value }) => {
-    return {
-      key,
-      middleware: prepare(context, structure, graph, value),
-    };
+    return { key, middleware: prepare(context, graph, value) };
   });
   return async (ctx, next) => {
     const value = await Promise.all(

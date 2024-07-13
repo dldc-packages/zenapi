@@ -1,12 +1,12 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { obj, query, queryToJson } from "../client.ts";
-import { createEngine, parseSchema, resolver } from "../server.ts";
+import { createEngine, parse, resolver } from "../server.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
 
 const client = query<TodoListTypes>();
 
-const schema = parseSchema<TodoListTypes>(
+const schema = parse<TodoListTypes>(
   resolve("./tests/schemas/todolist.ts"),
 );
 
@@ -15,7 +15,7 @@ const g = schema.graph;
 const engine = createEngine({
   schema,
   entry: "Graph",
-  handlers: [
+  resolvers: [
     resolver(
       g.Graph.config.env.version,
       (ctx) => {
@@ -103,4 +103,32 @@ Deno.test("run query with object as subquery", async () => {
     name1: "app2",
     name2: "app2",
   }]);
+});
+
+Deno.test("run query on entire object should throw 1", async () => {
+  const query = client.Graph.apps.all({ limit: 10, page: 1 })._(({ todos }) =>
+    todos
+  );
+  const [queryDef, variables] = queryToJson(query);
+  await assertRejects(async () => {
+    await engine.run(queryDef, variables);
+  });
+});
+
+Deno.test("run query on entire object should throw 2", async () => {
+  const query = client.Graph.apps;
+  const [queryDef, variables] = queryToJson(query);
+  await assertRejects(async () => {
+    await engine.run(queryDef, variables);
+  });
+});
+
+Deno.test("run query on entire object should throw 3", async () => {
+  const query = client.Graph.apps.all({ limit: 10, page: 1 })._(({ todos }) =>
+    obj({ todos })
+  );
+  const [queryDef, variables] = queryToJson(query);
+  await assertRejects(async () => {
+    await engine.run(queryDef, variables);
+  });
 });

@@ -1,21 +1,20 @@
 import type { TTypesBase } from "../utils/types.ts";
-import { GET, PATH, ROOT, STRUCTURE, type TYPES } from "./constants.ts";
-import { getStructureProp, type TGetStructurePropResult } from "./structure.ts";
+import { GET, PATH, REF, ROOT, STRUCTURE, type TYPES } from "./constants.ts";
+import { getStructureProp, resolveRef } from "./getGraphProp.ts";
 import type { TAllStructure, TRootStructure } from "./structure.types.ts";
 import type { TGraphOf } from "./types.ts";
 
-export type TGraphBaseAny = TGraphBase<any, any>;
+export type TGraphBaseAny = TGraphBase<any>;
 
-export interface TGraphBase<Base, Input> {
-  [TYPES]: { base: Base; input: Input };
+export interface TGraphBase<Input> {
+  [TYPES]: { input: Input };
   [ROOT]: TRootStructure;
   [STRUCTURE]: TAllStructure;
   // This is a list of all leaf structures in the path.
   [PATH]: TAllStructure[];
-  [GET]: (
-    prop: string | number | TAllStructure,
-    skipValidation?: boolean,
-  ) => TGraphBaseAny;
+  [GET]: (prop: string | number | symbol | TAllStructure) => TGraphBaseAny;
+  // Shortcut to [GET](REF)
+  [REF]: TGraphBaseAny;
   _<T extends TGraphBaseAny>(next: T): T;
 }
 
@@ -29,54 +28,46 @@ function proxy(
   rootStructure: TRootStructure,
   path: TAllStructure[],
 ): TGraphBaseAny {
-  const cache = new WeakMap<TAllStructure, TGraphBaseAny>();
+  const cache = new Map<
+    string | number | symbol | TAllStructure,
+    TGraphBaseAny
+  >();
   const structure = path.length === 0 ? rootStructure : path[path.length - 1];
 
   function get(
-    prop: string | number | TAllStructure,
-    skipValidation = false,
+    prop: string | number | symbol | TAllStructure,
   ): TGraphBaseAny {
-    const { structure: nextStructure, isRoot } = getNextStructure(
-      prop,
-      skipValidation,
-    );
-    if (cache.has(nextStructure)) {
-      return cache.get(nextStructure)!;
+    if (cache.has(prop)) {
+      return cache.get(prop)!;
     }
-    const nextPath: TAllStructure[] = isRoot ? [...path] : path.slice(0, -1);
-    nextPath.push(nextStructure);
+    const nextTails = getNextTail(prop);
+    const nextPath: TAllStructure[] = path.slice(0, -1);
+    nextPath.push(...nextTails);
     const result = proxy(rootStructure, nextPath);
-    cache.set(nextStructure, result);
+    cache.set(prop, result);
     return result;
   }
 
-  function getNextStructure(
-    prop: string | number | TAllStructure,
-    skipValidation: boolean,
-  ): TGetStructurePropResult {
-    if (typeof prop === "string" || typeof prop === "number") {
+  function getNextTail(
+    prop: string | number | symbol | TAllStructure,
+  ): TAllStructure[] {
+    if (
+      typeof prop === "string" || typeof prop === "number" ||
+      typeof prop === "symbol"
+    ) {
       return getStructureProp(rootStructure, structure, prop);
     }
-    if (skipValidation) {
-      return { structure: prop, isRoot: true };
-    }
-    return {
-      structure: validateNextStructureByRef(prop),
-      isRoot: true,
-    };
+    // Get by ref
+    return [structure, validateNextStructureByRef(prop)];
   }
 
   function validateNextStructureByRef(prop: TAllStructure): TAllStructure {
     if (structure.kind === "ref") {
       // prop is expected to be the matching ref
-      const { structure: refStructure } = getStructureProp(
-        rootStructure,
-        rootStructure,
-        structure.ref,
-      );
-      if (prop !== refStructure) {
+      const resolved = resolveRef(rootStructure, structure);
+      if (resolved !== prop) {
         throw new Error(
-          `Invalid path: expected ${structure.ref} but got ${refStructure.kind}`,
+          `Invalid path: expected ${structure.key} but got ${resolved.key}`,
         );
       }
       return prop;
@@ -85,19 +76,17 @@ function proxy(
       // Prop is expected to be one of the union refs
       for (const unionItem of structure.types) {
         if (unionItem.kind === "ref") {
-          const { structure: refStructure } = getStructureProp(
-            rootStructure,
-            rootStructure,
-            unionItem.ref,
-          );
-          if (prop === refStructure) {
+          const resolved = resolveRef(rootStructure, unionItem);
+          if (prop === resolved) {
             return prop;
           }
         }
       }
       throw new Error(`Invalid path: ${prop.kind} is not a valid union type`);
     }
-    throw new Error("Not implemented");
+    throw new Error(
+      `Cannot access by structure reference in ${structure.kind}`,
+    );
   }
 
   return new Proxy(
@@ -112,6 +101,9 @@ function proxy(
         }
         if (prop === GET) {
           return get;
+        }
+        if (prop === REF) {
+          return get(REF);
         }
         if (prop === ROOT) {
           return rootStructure;
@@ -135,10 +127,6 @@ function proxy(
           return () => {
             return structure.key;
           };
-        }
-        if (typeof prop === "symbol") {
-          console.info(prop);
-          throw new Error(`Unsupported symbol property`);
         }
         return get(prop);
       },
