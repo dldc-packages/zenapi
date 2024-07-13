@@ -62,6 +62,7 @@ export function createEngine(
         getNextVariableIndex: () => variableCount++,
         getResolvers,
       },
+      { localTypes: {}, paramerters: [] },
       graph,
       query,
     );

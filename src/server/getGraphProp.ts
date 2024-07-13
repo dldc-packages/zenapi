@@ -7,10 +7,12 @@ import type {
   TStructureObjectProperty,
   TStructureRef,
 } from "./structure.types.ts";
+import type { TLocalTypes } from "./types.ts";
 
 // Receive the last structure of the path, return the next tail
 export type TStructureGetProp<TStruct extends TAllStructure> = (
   rootStructure: TRootStructure,
+  localTypes: TLocalTypes,
   structure: TStruct,
   prop: string | number | symbol,
 ) => TAllStructure[];
@@ -20,19 +22,22 @@ type TGetPropByStructureKind = {
 };
 
 const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
-  root: (_rootStructure, structure, prop) => {
+  root: (_rootStructure, _localTypes, structure, prop) => {
     if (typeof prop !== "string") {
       throw new Error("Invalid path: expected string");
     }
-    const keys = Object.keys(structure.types);
-    if (!keys.includes(prop)) {
+    const item = structure.types.find((t) => t.name === prop);
+    if (!item) {
       throw new Error(`Invalid path: "${prop}" not found at root`);
     }
-    const subStructure: TStructure = structure.types[prop];
-    return [subStructure];
+    return [item];
   },
-  ref: (rootStructure, structure, prop) => {
-    const refStructure = resolveRef(rootStructure, structure);
+  ref: (rootStructure, localTypes, structure, prop) => {
+    const { structure: refStructure, localTypes: nextLocalTypes } = resolveRef(
+      rootStructure,
+      localTypes,
+      structure,
+    );
     if (prop === REF) {
       return [structure, refStructure];
     }
@@ -41,12 +46,13 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
     }
     const nextStructure = getStructureProp(
       rootStructure,
+      nextLocalTypes,
       refStructure,
       prop,
     );
     return [structure, ...nextStructure];
   },
-  object: (_rootStructure, structure, prop) => {
+  interface: (_rootStructure, _localTypes, structure, prop) => {
     if (typeof prop !== "string") {
       throw new Error("Invalid path: expected string");
     }
@@ -57,7 +63,21 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
     }
     return [foundProp.structure];
   },
-  array: (_rootStructure, structure, prop) => {
+  alias: () => {
+    throw new Error("Alias not implemented yet");
+  },
+  object: (_rootStructure, _localTypes, structure, prop) => {
+    if (typeof prop !== "string") {
+      throw new Error("Invalid path: expected string");
+    }
+    const foundProp: TStructureObjectProperty | undefined = structure
+      .properties.find((p) => p.name === prop);
+    if (!foundProp) {
+      throw new Error(`Invalid path: ${prop} not found in ${structure.key}`);
+    }
+    return [foundProp.structure];
+  },
+  array: (_rootStructure, _localTypes, structure, prop) => {
     if (typeof prop !== "string") {
       throw new Error("Invalid path: expected string");
     }
@@ -72,7 +92,7 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
   literal: () => {
     throw new Error("Literal has no properties");
   },
-  nullable: (rootStructure, structure, prop) => {
+  nullable: (rootStructure, localTypes, structure, prop) => {
     if (prop === REF) {
       return [structure.type];
     }
@@ -81,12 +101,12 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
         `Invalid path: expected string received ${String(prop)}`,
       );
     }
-    return getStructureProp(rootStructure, structure.type, prop);
+    return getStructureProp(rootStructure, localTypes, structure.type, prop);
   },
   union: (_rootStructure, _structure, _prop) => {
     throw new Error("Not implemented");
   },
-  function: (_rootStructure, structure, prop) => {
+  function: (_rootStructure, _localTypes, structure, prop) => {
     if (typeof prop !== "string") {
       throw new Error("Invalid path: expected string");
     }
@@ -102,22 +122,63 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
 
 export function getStructureProp(
   rootStructure: TRootStructure,
+  localTypes: TLocalTypes,
   structure: TAllStructure,
   prop: string | number | symbol,
 ): TAllStructure[] {
   return GET_STRUCTURE_PROP[structure.kind](
     rootStructure,
+    localTypes,
     structure as any,
     prop,
   );
 }
 
+export interface TResolvedRef {
+  structure: TAllStructure;
+  localTypes: TLocalTypes;
+}
+
 export function resolveRef(
   rootStructure: TRootStructure,
+  localTypes: TLocalTypes,
   structure: TStructureRef,
-): TAllStructure {
-  const refStructure = rootStructure.types[structure.ref];
+): TResolvedRef {
+  const subStructure = resolveRefStructure(
+    rootStructure,
+    localTypes,
+    structure,
+  );
+  if (subStructure.kind !== "alias" && subStructure.kind !== "interface") {
+    return { structure: subStructure, localTypes };
+  }
+  // Resolve local types
+  if (structure.params.length !== subStructure.parameters.length) {
+    throw new Error(
+      `Invalid number of parameters: expected ${subStructure.parameters.length} but got ${structure.params.length}`,
+    );
+  }
+  const nextLocalTypes: TLocalTypes = { ...localTypes };
+  subStructure.parameters.forEach((name, index) => {
+    nextLocalTypes[name] = structure.params[index];
+  });
+  return { structure: subStructure, localTypes: nextLocalTypes };
+}
+
+function resolveRefStructure(
+  rootStructure: TRootStructure,
+  localTypes: TLocalTypes,
+  structure: TStructureRef,
+): TStructure {
+  const localStructure = localTypes[structure.ref];
+  if (localStructure) {
+    return localStructure;
+  }
+  const refStructure = rootStructure.types.find((t) =>
+    t.name === structure.ref
+  );
   if (!refStructure) {
+    console.log({ localTypes });
     throw new Error(`Invalid ref "${structure.ref}"`);
   }
   return refStructure;

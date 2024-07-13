@@ -4,10 +4,65 @@ snapshot[`todolist snapshot structure 1`] = `
 {
   key: "",
   kind: "root",
-  types: {
-    App: {
+  types: [
+    {
+      key: "PaginationParams",
+      kind: "interface",
+      name: "PaginationParams",
+      parameters: [],
+      properties: [
+        {
+          name: "page",
+          optional: true,
+          structure: {
+            key: "PaginationParams.page",
+            kind: "primitive",
+            type: "number",
+          },
+        },
+        {
+          name: "limit",
+          optional: true,
+          structure: {
+            key: "PaginationParams.limit",
+            kind: "primitive",
+            type: "number",
+          },
+        },
+      ],
+    },
+    {
+      key: "User",
+      kind: "interface",
+      name: "User",
+      parameters: [],
+      properties: [
+        {
+          name: "userName",
+          optional: false,
+          structure: {
+            key: "User.userName",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "app",
+          optional: false,
+          structure: {
+            key: "User.app",
+            kind: "ref",
+            params: [],
+            ref: "App",
+          },
+        },
+      ],
+    },
+    {
       key: "App",
-      kind: "object",
+      kind: "interface",
+      name: "App",
+      parameters: [],
       properties: [
         {
           name: "appName",
@@ -25,7 +80,7 @@ snapshot[`todolist snapshot structure 1`] = `
             items: {
               key: "App.todos.items",
               kind: "ref",
-              params: undefined,
+              params: [],
               ref: "Todo",
             },
             key: "App.todos",
@@ -34,9 +89,37 @@ snapshot[`todolist snapshot structure 1`] = `
         },
       ],
     },
-    CoinHeads: {
+    {
+      key: "Todo",
+      kind: "interface",
+      name: "Todo",
+      parameters: [],
+      properties: [
+        {
+          name: "todoName",
+          optional: false,
+          structure: {
+            key: "Todo.todoName",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "done",
+          optional: false,
+          structure: {
+            key: "Todo.done",
+            kind: "primitive",
+            type: "boolean",
+          },
+        },
+      ],
+    },
+    {
       key: "CoinHeads",
-      kind: "object",
+      kind: "interface",
+      name: "CoinHeads",
+      parameters: [],
       properties: [
         {
           name: "foo",
@@ -49,9 +132,11 @@ snapshot[`todolist snapshot structure 1`] = `
         },
       ],
     },
-    CoinTails: {
+    {
       key: "CoinTails",
-      kind: "object",
+      kind: "interface",
+      name: "CoinTails",
+      parameters: [],
       properties: [
         {
           name: "bar",
@@ -64,9 +149,11 @@ snapshot[`todolist snapshot structure 1`] = `
         },
       ],
     },
-    Config: {
+    {
       key: "Config",
-      kind: "object",
+      kind: "interface",
+      name: "Config",
+      parameters: [],
       properties: [
         {
           name: "env",
@@ -116,9 +203,11 @@ snapshot[`todolist snapshot structure 1`] = `
         },
       ],
     },
-    Graph: {
+    {
       key: "Graph",
-      kind: "object",
+      kind: "interface",
+      name: "Graph",
+      parameters: [],
       properties: [
         {
           name: "auth",
@@ -136,7 +225,7 @@ snapshot[`todolist snapshot structure 1`] = `
                   structure: {
                     key: "Graph.auth.type.user",
                     kind: "ref",
-                    params: undefined,
+                    params: [],
                     ref: "User",
                   },
                 },
@@ -175,7 +264,7 @@ snapshot[`todolist snapshot structure 1`] = `
                   returns: {
                     key: "Graph.users.byId.returns",
                     kind: "ref",
-                    params: undefined,
+                    params: [],
                     ref: "User",
                   },
                 },
@@ -202,7 +291,7 @@ snapshot[`todolist snapshot structure 1`] = `
                         structure: {
                           key: "Graph.apps.all.arguments.pagination",
                           kind: "ref",
-                          params: undefined,
+                          params: [],
                           ref: "PaginationParams",
                         },
                       },
@@ -216,7 +305,7 @@ snapshot[`todolist snapshot structure 1`] = `
                     items: {
                       key: "Graph.apps.all.returns.items",
                       kind: "ref",
-                      params: undefined,
+                      params: [],
                       ref: "App",
                     },
                     key: "Graph.apps.all.returns",
@@ -248,7 +337,7 @@ snapshot[`todolist snapshot structure 1`] = `
                   returns: {
                     key: "Graph.apps.byId.returns",
                     kind: "ref",
-                    params: undefined,
+                    params: [],
                     ref: "App",
                   },
                 },
@@ -266,13 +355,13 @@ snapshot[`todolist snapshot structure 1`] = `
               {
                 key: "Graph.flip.0",
                 kind: "ref",
-                params: undefined,
+                params: [],
                 ref: "CoinHeads",
               },
               {
                 key: "Graph.flip.1",
                 kind: "ref",
-                params: undefined,
+                params: [],
                 ref: "CoinTails",
               },
             ],
@@ -284,86 +373,13 @@ snapshot[`todolist snapshot structure 1`] = `
           structure: {
             key: "Graph.config",
             kind: "ref",
-            params: undefined,
+            params: [],
             ref: "Config",
           },
         },
       ],
     },
-    PaginationParams: {
-      key: "PaginationParams",
-      kind: "object",
-      properties: [
-        {
-          name: "page",
-          optional: true,
-          structure: {
-            key: "PaginationParams.page",
-            kind: "primitive",
-            type: "number",
-          },
-        },
-        {
-          name: "limit",
-          optional: true,
-          structure: {
-            key: "PaginationParams.limit",
-            kind: "primitive",
-            type: "number",
-          },
-        },
-      ],
-    },
-    Todo: {
-      key: "Todo",
-      kind: "object",
-      properties: [
-        {
-          name: "todoName",
-          optional: false,
-          structure: {
-            key: "Todo.todoName",
-            kind: "primitive",
-            type: "string",
-          },
-        },
-        {
-          name: "done",
-          optional: false,
-          structure: {
-            key: "Todo.done",
-            kind: "primitive",
-            type: "boolean",
-          },
-        },
-      ],
-    },
-    User: {
-      key: "User",
-      kind: "object",
-      properties: [
-        {
-          name: "userName",
-          optional: false,
-          structure: {
-            key: "User.userName",
-            kind: "primitive",
-            type: "string",
-          },
-        },
-        {
-          name: "app",
-          optional: false,
-          structure: {
-            key: "User.app",
-            kind: "ref",
-            params: undefined,
-            ref: "App",
-          },
-        },
-      ],
-    },
-  },
+  ],
 }
 `;
 
@@ -371,103 +387,34 @@ snapshot[`snapshot structure 1`] = `
 {
   key: "",
   kind: "root",
-  types: {
-    Graph: {
-      key: "Graph",
-      kind: "object",
-      properties: [
-        {
-          name: "group",
-          optional: false,
-          structure: {
-            key: "Graph.group",
-            kind: "ref",
-            params: undefined,
-            ref: "Group",
-          },
-        },
-        {
-          name: "user",
-          optional: false,
-          structure: {
-            key: "Graph.user",
-            kind: "ref",
-            params: undefined,
-            ref: "User",
-          },
-        },
-        {
-          name: "randomItem",
-          optional: false,
-          structure: {
-            key: "Graph.randomItem",
-            kind: "union",
-            types: [
-              {
-                key: "Graph.randomItem.0",
-                kind: "ref",
-                params: undefined,
-                ref: "User",
-              },
-              {
-                key: "Graph.randomItem.1",
-                kind: "ref",
-                params: undefined,
-                ref: "Group",
-              },
-            ],
-          },
-        },
-      ],
-    },
-    Group: {
-      key: "Group",
-      kind: "object",
-      properties: [
-        {
-          name: "name",
-          optional: false,
-          structure: {
-            key: "Group.name",
-            kind: "primitive",
-            type: "string",
-          },
-        },
-        {
-          name: "users",
-          optional: false,
-          structure: {
-            items: {
-              key: "Group.users.items",
-              kind: "ref",
-              params: undefined,
-              ref: "User",
-            },
-            key: "Group.users",
-            kind: "array",
-          },
-        },
-      ],
-    },
-    Role: {
+  types: [
+    {
       key: "Role",
-      kind: "union",
-      types: [
-        {
-          key: "Role.0",
-          kind: "literal",
-          type: "admin",
-        },
-        {
-          key: "Role.1",
-          kind: "literal",
-          type: "user",
-        },
-      ],
+      kind: "alias",
+      name: "Role",
+      parameters: [],
+      type: {
+        key: "Role",
+        kind: "union",
+        types: [
+          {
+            key: "Role.0",
+            kind: "literal",
+            type: "admin",
+          },
+          {
+            key: "Role.1",
+            kind: "literal",
+            type: "user",
+          },
+        ],
+      },
     },
-    User: {
+    {
       key: "User",
-      kind: "object",
+      kind: "interface",
+      name: "User",
+      parameters: [],
       properties: [
         {
           name: "name",
@@ -497,7 +444,7 @@ snapshot[`snapshot structure 1`] = `
           structure: {
             key: "User.group",
             kind: "ref",
-            params: undefined,
+            params: [],
             ref: "Group",
           },
         },
@@ -510,13 +457,94 @@ snapshot[`snapshot structure 1`] = `
             type: {
               key: "User.maybeGroup.type",
               kind: "ref",
-              params: undefined,
+              params: [],
               ref: "Group",
             },
           },
         },
       ],
     },
-  },
+    {
+      key: "Group",
+      kind: "interface",
+      name: "Group",
+      parameters: [],
+      properties: [
+        {
+          name: "name",
+          optional: false,
+          structure: {
+            key: "Group.name",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "users",
+          optional: false,
+          structure: {
+            items: {
+              key: "Group.users.items",
+              kind: "ref",
+              params: [],
+              ref: "User",
+            },
+            key: "Group.users",
+            kind: "array",
+          },
+        },
+      ],
+    },
+    {
+      key: "Graph",
+      kind: "interface",
+      name: "Graph",
+      parameters: [],
+      properties: [
+        {
+          name: "group",
+          optional: false,
+          structure: {
+            key: "Graph.group",
+            kind: "ref",
+            params: [],
+            ref: "Group",
+          },
+        },
+        {
+          name: "user",
+          optional: false,
+          structure: {
+            key: "Graph.user",
+            kind: "ref",
+            params: [],
+            ref: "User",
+          },
+        },
+        {
+          name: "randomItem",
+          optional: false,
+          structure: {
+            key: "Graph.randomItem",
+            kind: "union",
+            types: [
+              {
+                key: "Graph.randomItem.0",
+                kind: "ref",
+                params: [],
+                ref: "User",
+              },
+              {
+                key: "Graph.randomItem.1",
+                kind: "ref",
+                params: [],
+                ref: "Group",
+              },
+            ],
+          },
+        },
+      ],
+    },
+  ],
 }
 `;

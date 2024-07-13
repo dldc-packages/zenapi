@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { assertSnapshot } from "@std/testing/snapshot";
-import { parse, type TGraphBase, type TStructureObject } from "../server.ts";
+import { parse, type TGraphBase, type TStructureInterface } from "../server.ts";
 import { PATH, REF } from "../src/server/constants.ts";
 import type { BasicTypes } from "./schemas/basic.types.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
@@ -24,34 +24,38 @@ Deno.test("snapshot structure", async (test) => {
 Deno.test("g.User.age", () => {
   const p1 = g.User.age;
   const path = p1[PATH];
+  const userStructure = schema.structure.types.find((t) =>
+    t.name === "User"
+  )! as TStructureInterface;
   const userAgeStructure =
-    (schema.structure.types.User as TStructureObject).properties.find((p) =>
-      p.name === "age"
-    )!.structure;
+    userStructure.properties.find((p) => p.name === "age")!.structure;
   assertEquals(path, [userAgeStructure]);
 });
 
 Deno.test("g.User.group", () => {
   const p2 = g.User.group;
   const path = p2[PATH];
+  const userStructure = schema.structure.types.find((t) =>
+    t.name === "User"
+  )! as TStructureInterface;
   const userGroupStructure =
-    (schema.structure.types.User as TStructureObject).properties.find((p) =>
-      p.name === "group"
-    )!.structure;
+    userStructure.properties.find((p) => p.name === "group")!.structure;
   assertEquals(path, [userGroupStructure]);
 });
 
 Deno.test("g.User.group.name", () => {
   const p3 = g.User.group.name;
   const path = p3[PATH];
+  const userStructure = schema.structure.types.find((t) =>
+    t.name === "User"
+  )! as TStructureInterface;
   const userGroupStructure =
-    (schema.structure.types.User as TStructureObject).properties.find((p) =>
-      p.name === "group"
-    )!.structure;
+    userStructure.properties.find((p) => p.name === "group")!.structure;
+  const groupStructure = schema.structure.types.find((t) =>
+    t.name === "Group"
+  )! as TStructureInterface;
   const groupNameStructure =
-    (schema.structure.types.Group as TStructureObject).properties.find((p) =>
-      p.name === "name"
-    )!.structure;
+    groupStructure.properties.find((p) => p.name === "name")!.structure;
   assertEquals(path, [userGroupStructure, groupNameStructure]);
 });
 

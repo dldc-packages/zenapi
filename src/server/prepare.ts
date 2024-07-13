@@ -1,7 +1,7 @@
 import type { TGetMiddlewares } from "./engine.ts";
 import type { TGraphBaseAny } from "./graph.ts";
 import type { TRootStructure } from "./structure.types.ts";
-import type { TMiddleware } from "./types.ts";
+import type { TMiddleware, TParamsContext } from "./types.ts";
 
 import * as v from "@valibot/valibot";
 import { compose } from "./compose.ts";
@@ -15,6 +15,7 @@ export type TQueryUnknown = unknown[];
 // Return null if query is not valid
 export type TPrepareFromOperator = (
   context: TPrepareContext,
+  params: TParamsContext,
   graph: TGraphBaseAny,
   query: TQueryUnknown,
 ) => TMiddleware | null;
@@ -30,6 +31,7 @@ export interface TPrepareContext {
 
 export function prepare(
   context: TPrepareContext,
+  params: TParamsContext,
   graph: TGraphBaseAny,
   query: TQueryUnknown,
 ): TMiddleware {
@@ -38,13 +40,13 @@ export function prepare(
   if (!prepare) {
     throw new Error(`No prepare function for ${structure.kind}`);
   }
-  const prepared = prepare(context, graph, query);
+  const prepared = prepare(context, params, graph, query);
   if (prepared) {
     return prepared;
   }
   // try each operator
   for (const operator of context.operators) {
-    const mid = operator(context, graph, query);
+    const mid = operator(context, params, graph, query);
     if (mid) {
       return mid;
     }
@@ -59,6 +61,7 @@ export type TStructureGetSchema<TStruct extends TAllStructure> = (
 
 export type TPrepareStructure = (
   context: TPrepareContext,
+  params: TParamsContext,
   graph: TGraphBaseAny,
   query: TQueryUnknown,
 ) => TMiddleware | null;
@@ -77,7 +80,7 @@ function getRecordProp(value: unknown, prop: string | number) {
 }
 
 const PREPARE_BY_STRUCTURE: TByStructureKind = {
-  root: (context, graph, query) => {
+  root: (context, params, graph, query) => {
     const [queryItem] = query;
     if (typeof queryItem !== "string") {
       return null;
@@ -85,28 +88,64 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
     if (queryItem !== context.entry) {
       throw new Error(`Invalid entry point: ${queryItem}`);
     }
-    return prepareObjectLike(context, graph, query, identity);
+    return prepareObjectLike(context, params, graph, query, identity);
   },
-  ref: (context, graph, query) => {
+  interface: (context, params, graph, query) => {
+    return prepareObjectLike(
+      context,
+      params,
+      graph,
+      query,
+      async (ctx, next) => {
+        const resolved = await next(ctx);
+        const value = resolved.value;
+        if (value === undefined) {
+          return resolved.withValue({});
+        }
+        if (typeof value !== "object") {
+          throw new Error("Expected object");
+        }
+        return resolved;
+      },
+    );
+  },
+  alias: () => {
+    throw new Error("Alias not implemented yet");
+  },
+  ref: (context, params, graph, query) => {
+    const structure = graph[STRUCTURE];
+    if (structure.kind !== "ref") {
+      throw new Error("Invalid structure");
+    }
     const subGraph = graph[GET](REF);
     const userResolvers = context.getResolvers(graph);
-    const subMid = prepare(context, subGraph, query);
+    const nextParams: TParamsContext = {
+      ...params,
+      paramerters: structure.params ?? [],
+    };
+    const subMid = prepare(context, nextParams, subGraph, query);
     return compose(...userResolvers, subMid);
   },
-  object: (context, graph, query) => {
-    return prepareObjectLike(context, graph, query, async (ctx, next) => {
-      const resolved = await next(ctx);
-      const value = resolved.value;
-      if (value === undefined) {
-        return resolved.withValue({});
-      }
-      if (typeof value !== "object") {
-        throw new Error("Expected object");
-      }
-      return resolved;
-    });
+  object: (context, params, graph, query) => {
+    return prepareObjectLike(
+      context,
+      params,
+      graph,
+      query,
+      async (ctx, next) => {
+        const resolved = await next(ctx);
+        const value = resolved.value;
+        if (value === undefined) {
+          return resolved.withValue({});
+        }
+        if (typeof value !== "object") {
+          throw new Error("Expected object");
+        }
+        return resolved;
+      },
+    );
   },
-  array: (context, graph, query) => {
+  array: (context, params, graph, query) => {
     const baseMid: TMiddleware = async (ctx, next) => {
       const res = await next(ctx);
       const value = res.value;
@@ -121,7 +160,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
     const userResolvers = context.getResolvers(graph);
     const mid = compose(baseMid, ...userResolvers);
     const subGraph = graph[GET]("items");
-    const sub = prepare(context, subGraph, query);
+    const sub = prepare(context, params, subGraph, query);
     return async (ctx, next) => {
       const res = await mid(ctx, (ctx) => Promise.resolve(ctx));
       const value = res.value as unknown[];
@@ -134,7 +173,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       return res.withValue(nextValue);
     };
   },
-  primitive: (context, graph, query) => {
+  primitive: (context, _params, graph, query) => {
     if (query.length > 0) {
       throw new Error("Invalid query for primitive");
     }
@@ -157,7 +196,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
     const userResolvers = context.getResolvers(graph);
     return compose(baseMid, ...userResolvers);
   },
-  literal: (context, graph, query) => {
+  literal: (context, _params, graph, query) => {
     if (query.length > 0) {
       throw new Error("Invalid query for primitive");
     }
@@ -179,7 +218,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
     const userResolvers = context.getResolvers(graph);
     return compose(baseMid, ...userResolvers);
   },
-  nullable: (context, graph, query) => {
+  nullable: (context, params, graph, query) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "nullable") {
       throw new Error("Invalid structure");
@@ -195,7 +234,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
     const userResolvers = context.getResolvers(graph);
     const mid = compose(baseMid, ...userResolvers);
     const subGraph = graph[REF];
-    const sub = prepare(context, subGraph, query);
+    const sub = prepare(context, params, subGraph, query);
     return async (ctx, next) => {
       const res = await mid(ctx, (ctx) => Promise.resolve(ctx));
       const value = res.value;
@@ -208,7 +247,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   union: () => {
     throw new Error("Union not implemented");
   },
-  function: (context, graph, query) => {
+  function: (context, params, graph, query) => {
     const [queryItem, ...rest] = query;
     if (queryItem !== "()") {
       return null;
@@ -221,8 +260,8 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
     const userResolvers = context.getResolvers(graph);
     const mid = compose(...userResolvers);
     const returnGraph = graph[GET]("return");
-    const argsSchema = getStructureSchema(context, structure.arguments);
-    const sub = prepare(context, returnGraph, rest);
+    const argsSchema = getStructureSchema(context, params, structure.arguments);
+    const sub = prepare(context, params, returnGraph, rest);
     return async (ctx, next) => {
       const baseValue = ctx.value;
       const variables = ctx.getOrFail(ApiContext.VariablesKey.Consumer);
@@ -250,6 +289,7 @@ export type TStructureGetValue = (
 
 function prepareObjectLike(
   context: TPrepareContext,
+  params: TParamsContext,
   graph: TGraphBaseAny,
   query: TQueryUnknown,
   resolver: TMiddleware = identity,
@@ -261,7 +301,7 @@ function prepareObjectLike(
   const userResolvers = context.getResolvers(graph);
   const mid = compose(resolver, ...userResolvers);
   const subGraph = graph[GET](queryItem);
-  const subMid = prepare(context, subGraph, rest);
+  const subMid = prepare(context, params, subGraph, rest);
   return async (ctx, next) => {
     const parentRes = await mid(ctx, (ctx) => Promise.resolve(ctx));
     const subValue = getRecordProp(parentRes.value, queryItem);

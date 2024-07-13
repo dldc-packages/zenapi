@@ -21,8 +21,9 @@ import type {
   TFunctionArgumentStructure,
   TRootStructure,
   TStructure,
+  TStructureAlias,
   TStructureArguments,
-  TStructureObject,
+  TStructureInterface,
   TStructureObjectProperty,
   TStructureUnion,
 } from "./structure.types.ts";
@@ -52,26 +53,26 @@ export function parse<Types extends TTypesBase>(
   const rootStructure: TRootStructure = {
     kind: "root",
     key: "",
-    types: {},
+    types: [],
   };
 
   // find all statements in the file
   const statements = file.getStatements();
 
   for (const statement of statements) {
-    if (Node.isInterfaceDeclaration(statement)) {
-      const name = statement.getName();
-      rootStructure.types[name] = parseNode(statement, name);
-      continue;
+    const struct = parseNode(statement, "");
+    if (struct.kind !== "interface" && struct.kind !== "alias") {
+      throw new Error(
+        `Only interfaces and type aliases are supported at the root level, found: ${struct.kind}`,
+      );
     }
-    if (Node.isTypeAliasDeclaration(statement)) {
-      const name = statement.getName();
-      rootStructure.types[name] = parseNode(statement, name);
-      continue;
-    }
-    throw new Error(
-      `Unsupported statement: ${statement.getKindName()} at line ${statement.getStartLineNumber()}`,
+    const alreadyExists = rootStructure.types.find(
+      (s) => s.name === struct.name,
     );
+    if (alreadyExists) {
+      throw new Error(`Duplicate type name: ${struct.name}`);
+    }
+    rootStructure.types.push(struct);
   }
 
   return {
@@ -269,25 +270,44 @@ function parseTypeReferenceNode(
     kind: "ref",
     key,
     ref: name.getText(),
-    params: params.length > 0 ? params : undefined,
+    params,
   };
 }
 
 function parseTypeAliasDeclaration(
   node: TypeAliasDeclaration,
-  key: string,
-): TStructure {
+  _parentKey: string,
+): TStructureAlias {
+  const name = node.getName();
+  const key = name;
   const valueNode = node.getTypeNode();
   if (!valueNode) {
     throw new Error("Type alias must have a type");
   }
-  return parseNode(valueNode, key);
+  const parameters = node.getTypeParameters().map((param) => {
+    const defType = param.getDefault();
+    if (defType) {
+      throw new Error(
+        "Type parameters with default values are not supported yet.",
+      );
+    }
+    return param.getName();
+  });
+  return {
+    kind: "alias",
+    key,
+    name,
+    type: parseNode(valueNode, key),
+    parameters,
+  };
 }
 
 function parseInterfaceDeclaration(
   node: InterfaceDeclaration,
-  key: string,
-): TStructureObject {
+  _parentKey: string,
+): TStructureInterface {
+  const name = node.getName();
+  const key = name;
   const properties: TStructureObjectProperty[] = [];
   for (const property of node.getProperties()) {
     // get the declaration of the property
@@ -309,5 +329,14 @@ function parseInterfaceDeclaration(
       "Methods are not supported yet, pleaseuse property: () => void; instead.",
     );
   }
-  return { kind: "object", key: key, properties };
+  const parameters = node.getTypeParameters().map((param) => {
+    const defType = param.getDefault();
+    if (defType) {
+      throw new Error(
+        "Type parameters with default values are not supported yet.",
+      );
+    }
+    return param.getName();
+  });
+  return { kind: "interface", key, name, properties, parameters };
 }

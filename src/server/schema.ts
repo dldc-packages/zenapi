@@ -2,11 +2,17 @@ import * as v from "@valibot/valibot";
 import { resolveRef } from "./getGraphProp.ts";
 import type { TGraphBaseAny } from "./graph.ts";
 import type { TPrepareContext, TQueryUnknown } from "./prepare.ts";
-import type { TAllStructure, TStructureKind } from "./structure.types.ts";
-import type { TMiddleware } from "./types.ts";
+import type {
+  TAllStructure,
+  TStructureInterface,
+  TStructureKind,
+  TStructureObject,
+} from "./structure.types.ts";
+import type { TMiddleware, TParamsContext } from "./types.ts";
 
 export type TStructureGetSchema<TStruct extends TAllStructure> = (
   context: TPrepareContext,
+  params: TParamsContext,
   structure: TStruct,
 ) => v.BaseSchema<any, any, any>;
 
@@ -22,31 +28,46 @@ type TByStructureKind = {
   >;
 };
 
+function objectLikeSchema(
+  context: TPrepareContext,
+  params: TParamsContext,
+  structure: TStructureInterface | TStructureObject,
+) {
+  const properties = structure.properties.map(
+    ({ name, optional, structure }) => {
+      const propSchema = getStructureSchema(context, params, structure);
+      return [
+        name,
+        optional ? v.optional(propSchema) : propSchema,
+      ] as const;
+    },
+  );
+  return v.strictObject(Object.fromEntries(properties));
+}
+
 const SCHEMA_BY_STRUCTURE: TByStructureKind = {
   root: () => {
     throw new Error("Root schema should not be called");
   },
-  ref: (context, structure) => {
-    const refStructure = resolveRef(context.rootStructure, structure);
-    return getStructureSchema(context, refStructure);
+  alias: (context, params, structure) => {
+    return getStructureSchema(context, params, structure.type);
   },
-  object: (context, structure) => {
-    const properties = structure.properties.map(
-      ({ name, optional, structure }) => {
-        const propSchema = getStructureSchema(context, structure);
-        return [
-          name,
-          optional ? v.optional(propSchema) : propSchema,
-        ] as const;
-      },
+  ref: (context, params, structure) => {
+    const { structure: refStructure, localTypes } = resolveRef(
+      context.rootStructure,
+      params.localTypes,
+      structure,
     );
-    return v.strictObject(Object.fromEntries(properties));
+    const nextParams: TParamsContext = { ...params, localTypes };
+    return getStructureSchema(context, nextParams, refStructure);
   },
-  array: (context, structure) => {
-    const itemSchema = getStructureSchema(context, structure.items);
+  interface: objectLikeSchema,
+  object: objectLikeSchema,
+  array: (context, params, structure) => {
+    const itemSchema = getStructureSchema(context, params, structure.items);
     return v.array(itemSchema);
   },
-  primitive: (_context, structure) => {
+  primitive: (_context, _params, structure) => {
     switch (structure.type) {
       case "string":
         return v.string();
@@ -56,14 +77,14 @@ const SCHEMA_BY_STRUCTURE: TByStructureKind = {
         return v.boolean();
     }
   },
-  literal: (_context, structure) => {
+  literal: (_context, _localTypes, structure) => {
     if (structure.type === null) {
       return v.null_();
     }
     return v.literal(structure.type);
   },
-  nullable: (context, structure) => {
-    const subSchema = getStructureSchema(context, structure.type);
+  nullable: (context, localTypes, structure) => {
+    const subSchema = getStructureSchema(context, localTypes, structure.type);
     return v.optional(subSchema);
   },
   union: () => {
@@ -72,9 +93,9 @@ const SCHEMA_BY_STRUCTURE: TByStructureKind = {
   function: () => {
     throw new Error("Cannot get schema of function");
   },
-  arguments: (context, structure) => {
+  arguments: (context, localTypes, structure) => {
     const argsSchema = structure.arguments.map((arg) => {
-      const argSchema = getStructureSchema(context, arg.structure);
+      const argSchema = getStructureSchema(context, localTypes, arg.structure);
       return arg.optional ? v.optional(argSchema) : argSchema;
     });
     return v.tuple(argsSchema);
@@ -83,7 +104,8 @@ const SCHEMA_BY_STRUCTURE: TByStructureKind = {
 
 export function getStructureSchema(
   context: TPrepareContext,
+  params: TParamsContext,
   structure: TAllStructure,
 ): v.BaseSchema<any, any, any> {
-  return SCHEMA_BY_STRUCTURE[structure.kind](context, structure as any);
+  return SCHEMA_BY_STRUCTURE[structure.kind](context, params, structure as any);
 }

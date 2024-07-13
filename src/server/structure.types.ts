@@ -4,6 +4,24 @@ export interface TStructureObjectProperty {
   optional: boolean;
 }
 
+export interface TStructureInterface {
+  kind: "interface";
+  key: string;
+  name: string;
+  properties: TStructureObjectProperty[];
+  parameters: string[];
+}
+
+export interface TStructureAlias {
+  kind: "alias";
+  key: string;
+  name: string;
+  parameters: string[];
+  type: TStructure;
+}
+
+export type TTopLevelStructure = TStructureInterface | TStructureAlias;
+
 export interface TStructureObject {
   kind: "object";
   key: string;
@@ -14,7 +32,7 @@ export interface TStructureRef {
   kind: "ref";
   key: string;
   ref: string;
-  params?: TStructure[];
+  params: TStructure[];
 }
 
 export interface TStructureUnion {
@@ -78,7 +96,7 @@ export interface TStructureFunction {
 export type TRootStructure = {
   kind: "root";
   key: string;
-  types: Record<string, TStructure>;
+  types: TTopLevelStructure[];
 };
 
 export type TStructure =
@@ -89,7 +107,9 @@ export type TStructure =
   | TStructurePrimitive
   | TStructureArray
   | TStructureLiteral
-  | TStructureNullable;
+  | TStructureNullable
+  | TStructureInterface
+  | TStructureAlias;
 
 export type TAllStructure =
   | TStructure
