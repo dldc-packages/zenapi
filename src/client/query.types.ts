@@ -56,8 +56,8 @@ type ContainsNil<T> = ContainsNull<T> extends true ? true
 export type TQueryOfNested<
   T,
   ParentNullable extends boolean,
-> = T extends null ? TQueryBase<null> // Handle null value
-  : T extends undefined ? TQueryBase<null> // Handle undefined value
+> = [T] extends [null] ? TQueryBase<null> // Handle null value
+  : [T] extends [undefined] ? TQueryBase<null> // Handle undefined value
   : ParentNullable extends true ? TQueryOf<NonNullable<T>, true>
   : ContainsNil<T> extends true ? TQueryOf<NonNullable<T>, true>
   : TQueryOf<T, false>;

@@ -48,3 +48,15 @@ Deno.test("children select in nullable optional object", () => {
   const q = client.foo._((s) => obj({ bar: s.bar }));
   assertType<IsExact<typeof q, TQueryBase<{ bar: string } | null>>>(true);
 });
+
+Deno.test("null value should return null", () => {
+  const client = query<{ foo: null }>();
+  const q = client.foo;
+  assertType<IsExact<typeof q, TQueryBase<null>>>(true);
+});
+
+Deno.test("undefined value should return null", () => {
+  const client = query<{ foo: undefined }>();
+  const q = client.foo;
+  assertType<IsExact<typeof q, TQueryBase<null>>>(true);
+});
