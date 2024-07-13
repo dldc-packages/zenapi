@@ -6,7 +6,7 @@ import type {
   TypeLiteralNode,
   TypeReferenceNode,
   UnionTypeNode,
-} from "ts_morph";
+} from "@ts-morph/ts-morph";
 import {
   Node,
   NullLiteral,
@@ -14,7 +14,7 @@ import {
   ResolutionHosts,
   StringLiteral,
   SyntaxKind,
-} from "ts_morph";
+} from "@ts-morph/ts-morph";
 import type { TTypesBase } from "../utils/types.ts";
 import { graph } from "./graph.ts";
 import type {
