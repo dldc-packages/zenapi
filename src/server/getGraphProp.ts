@@ -1,4 +1,6 @@
-import { REF } from "./constants.ts";
+import { pushTail, replaceTail } from "../utils/tail.ts";
+import { GET, REF } from "./constants.ts";
+import { graphInternal, type TGraphBaseAny, type TGraphGet } from "./graph.ts";
 import type {
   TAllStructure,
   TRootStructure,
@@ -9,20 +11,26 @@ import type {
 } from "./structure.types.ts";
 import type { TLocalTypes } from "./types.ts";
 
+export interface TStructureGetPropParams<TStruct extends TAllStructure> {
+  rootStructure: TRootStructure;
+  get: TGraphGet;
+  localTypes: TLocalTypes;
+  path: TAllStructure[];
+  structure: TStruct;
+  prop: string | number | symbol;
+}
+
 // Receive the last structure of the path, return the next tail
 export type TStructureGetProp<TStruct extends TAllStructure> = (
-  rootStructure: TRootStructure,
-  localTypes: TLocalTypes,
-  structure: TStruct,
-  prop: string | number | symbol,
-) => TAllStructure[];
+  params: TStructureGetPropParams<TStruct>,
+) => TGraphBaseAny;
 
 type TGetPropByStructureKind = {
   [K in TStructureKind]: TStructureGetProp<Extract<TAllStructure, { kind: K }>>;
 };
 
 const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
-  root: (_rootStructure, _localTypes, structure, prop) => {
+  root: ({ rootStructure, localTypes, path, structure, prop }) => {
     if (typeof prop !== "string") {
       throw new Error("Invalid path: expected string");
     }
@@ -30,29 +38,30 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
     if (!item) {
       throw new Error(`Invalid path: "${prop}" not found at root`);
     }
-    return [item];
+    return graphInternal({
+      rootStructure,
+      localTypes,
+      path: replaceTail(path, [item]),
+    });
   },
-  ref: (rootStructure, localTypes, structure, prop) => {
+  ref: ({ rootStructure, get, localTypes, path, structure, prop }) => {
     const { structure: refStructure, localTypes: nextLocalTypes } = resolveRef(
       rootStructure,
       localTypes,
       structure,
     );
-    if (prop === REF) {
-      return [structure, refStructure];
-    }
-    if (typeof prop !== "string") {
-      throw new Error("Invalid path: expected string");
-    }
-    const nextStructure = getStructureProp(
+    const resolved = graphInternal({
       rootStructure,
-      nextLocalTypes,
-      refStructure,
-      prop,
-    );
-    return [structure, ...nextStructure];
+      localTypes: nextLocalTypes,
+      path: pushTail(path, refStructure),
+    });
+    if (prop === REF) {
+      return resolved;
+    }
+    const sub = get(REF);
+    return sub[GET](prop);
   },
-  interface: (_rootStructure, _localTypes, structure, prop) => {
+  interface: ({ rootStructure, localTypes, path, structure, prop }) => {
     if (typeof prop !== "string") {
       throw new Error("Invalid path: expected string");
     }
@@ -61,12 +70,16 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
     if (!foundProp) {
       throw new Error(`Invalid path: ${prop} not found in ${structure.key}`);
     }
-    return [foundProp.structure];
+    return graphInternal({
+      rootStructure,
+      localTypes,
+      path: replaceTail(path, [foundProp.structure]),
+    });
   },
   alias: () => {
     throw new Error("Alias not implemented yet");
   },
-  object: (_rootStructure, _localTypes, structure, prop) => {
+  object: ({ rootStructure, localTypes, path, structure, prop }) => {
     if (typeof prop !== "string") {
       throw new Error("Invalid path: expected string");
     }
@@ -75,14 +88,22 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
     if (!foundProp) {
       throw new Error(`Invalid path: ${prop} not found in ${structure.key}`);
     }
-    return [foundProp.structure];
+    return graphInternal({
+      rootStructure,
+      localTypes,
+      path: replaceTail(path, [foundProp.structure]),
+    });
   },
-  array: (_rootStructure, _localTypes, structure, prop) => {
+  array: ({ rootStructure, localTypes, path, structure, prop }) => {
     if (typeof prop !== "string") {
       throw new Error("Invalid path: expected string");
     }
     if (prop === "items") {
-      return [structure.items];
+      return graphInternal({
+        rootStructure,
+        localTypes,
+        path: replaceTail(path, [structure.items]),
+      });
     }
     throw new Error(`Invalid path: ${prop} not found in array`);
   },
@@ -92,26 +113,35 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
   literal: () => {
     throw new Error("Literal has no properties");
   },
-  nullable: (rootStructure, localTypes, structure, prop) => {
+  nullable: ({ rootStructure, get, localTypes, path, structure, prop }) => {
     if (prop === REF) {
-      return [structure.type];
+      return graphInternal({
+        rootStructure,
+        localTypes,
+        path: replaceTail(path, [structure.type]),
+      });
     }
     if (typeof prop !== "string") {
       throw new Error(
         `Invalid path: expected string received ${String(prop)}`,
       );
     }
-    return getStructureProp(rootStructure, localTypes, structure.type, prop);
+    const sub = get(REF);
+    return sub[GET](prop);
   },
-  union: (_rootStructure, _structure, _prop) => {
+  union: () => {
     throw new Error("Not implemented");
   },
-  function: (_rootStructure, _localTypes, structure, prop) => {
+  function: ({ rootStructure, localTypes, path, structure, prop }) => {
     if (typeof prop !== "string") {
       throw new Error("Invalid path: expected string");
     }
     if (prop === "return") {
-      return [structure.returns];
+      return graphInternal({
+        rootStructure,
+        localTypes,
+        path: replaceTail(path, [structure.returns]),
+      });
     }
     throw new Error(`Invalid path: ${prop} not found in function`);
   },
@@ -121,17 +151,9 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
 };
 
 export function getStructureProp(
-  rootStructure: TRootStructure,
-  localTypes: TLocalTypes,
-  structure: TAllStructure,
-  prop: string | number | symbol,
-): TAllStructure[] {
-  return GET_STRUCTURE_PROP[structure.kind](
-    rootStructure,
-    localTypes,
-    structure as any,
-    prop,
-  );
+  params: TStructureGetPropParams<TAllStructure>,
+): TGraphBaseAny {
+  return GET_STRUCTURE_PROP[params.structure.kind](params as any);
 }
 
 export interface TResolvedRef {

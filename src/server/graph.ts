@@ -1,3 +1,4 @@
+import { pushTail } from "../utils/tail.ts";
 import type { TTypesBase } from "../utils/types.ts";
 import { GET, PATH, REF, ROOT, STRUCTURE, type TYPES } from "./constants.ts";
 import { getStructureProp, resolveRef } from "./getGraphProp.ts";
@@ -6,13 +7,17 @@ import type { TGraphOf, TLocalTypes } from "./types.ts";
 
 export type TGraphBaseAny = TGraphBase<any>;
 
+export type TGraphGet = (
+  prop: string | number | symbol | TAllStructure,
+) => TGraphBaseAny;
+
 export interface TGraphBase<Input> {
   [TYPES]: { input: Input };
   [ROOT]: TRootStructure;
   [STRUCTURE]: TAllStructure;
   // This is a list of all leaf structures in the path.
   [PATH]: TAllStructure[];
-  [GET]: (prop: string | number | symbol | TAllStructure) => TGraphBaseAny;
+  [GET]: TGraphGet;
   // Shortcut to [GET](REF)
   [REF]: TGraphBaseAny;
   _<T extends TGraphBaseAny>(next: T): T;
@@ -21,19 +26,27 @@ export interface TGraphBase<Input> {
 export function graph<Types extends TTypesBase>(
   rootStructure: TRootStructure,
 ): TGraphOf<Types, never> {
-  return proxy(rootStructure, {}, []) as TGraphOf<Types, never>;
+  return graphInternal({
+    rootStructure,
+    localTypes: {},
+    path: [rootStructure],
+  }) as TGraphOf<Types, never>;
 }
 
-function proxy(
-  rootStructure: TRootStructure,
-  localTypes: TLocalTypes,
-  path: TAllStructure[],
+export interface TGraphInternalParams {
+  rootStructure: TRootStructure;
+  localTypes: TLocalTypes;
+  path: TAllStructure[];
+}
+
+export type TGraphCacheKey = string | number | symbol | TAllStructure;
+export type TGraphCache = Map<TGraphCacheKey, TGraphBaseAny>;
+
+export function graphInternal(
+  { rootStructure, localTypes, path }: TGraphInternalParams,
 ): TGraphBaseAny {
-  const cache = new Map<
-    string | number | symbol | TAllStructure,
-    TGraphBaseAny
-  >();
-  const structure = path.length === 0 ? rootStructure : path[path.length - 1];
+  const cache: TGraphCache = new Map();
+  const structure = path[path.length - 1];
 
   function get(
     prop: string | number | symbol | TAllStructure,
@@ -41,25 +54,38 @@ function proxy(
     if (cache.has(prop)) {
       return cache.get(prop)!;
     }
-    const nextTails = getNextTail(prop);
-    const nextPath: TAllStructure[] = path.slice(0, -1);
-    nextPath.push(...nextTails);
-    const result = proxy(rootStructure, localTypes, nextPath);
+    // const nextTails = getNextTail(prop);
+    // const nextPath: TAllStructure[] = path.slice(0, -1);
+    // nextPath.push(...nextTails);
+    const result = getUncached(prop);
     cache.set(prop, result);
     return result;
   }
 
-  function getNextTail(
+  function getUncached(
     prop: string | number | symbol | TAllStructure,
-  ): TAllStructure[] {
+  ): TGraphBaseAny {
     if (
       typeof prop === "string" || typeof prop === "number" ||
       typeof prop === "symbol"
     ) {
-      return getStructureProp(rootStructure, localTypes, structure, prop);
+      return getStructureProp({
+        rootStructure,
+        localTypes,
+        path,
+        structure,
+        prop,
+        get,
+      });
     }
     // Get by ref
-    return [structure, validateNextStructureByRef(prop)];
+    return graphInternal(
+      {
+        rootStructure,
+        localTypes,
+        path: pushTail(path, validateNextStructureByRef(prop)),
+      },
+    );
   }
 
   function validateNextStructureByRef(prop: TAllStructure): TAllStructure {
