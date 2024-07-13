@@ -12,7 +12,7 @@ const schema = parse<GenericTypes>(
 
 const g = schema.graph;
 
-Deno.test("Fails if no resolver", () => {
+Deno.test("Fails if no resolver", async () => {
   const engine = createEngine({
     schema,
     entry: "Graph",
@@ -26,7 +26,11 @@ Deno.test("Fails if no resolver", () => {
     })
   );
   const [queryDef, variables] = queryToJson(query);
-  assertRejects(() => engine.run(queryDef, variables));
+  const err = await assertRejects(() => engine.run(queryDef, variables));
+  assertEquals(
+    (err as Error).message,
+    "Value is undefined at Paginated.total",
+  );
 });
 
 Deno.test("get generic results", async () => {
@@ -89,4 +93,34 @@ Deno.test("Resolver in generic", async () => {
     total: 0,
     data: [],
   });
+});
+
+Deno.test("Fails if a property is missing", async () => {
+  const engine = createEngine({
+    schema,
+    entry: "Graph",
+    resolvers: [
+      resolver(
+        g.Paginated,
+        (ctx) => {
+          return ctx.withValue({
+            data: [],
+          });
+        },
+      ),
+    ],
+  });
+
+  const query = client.Graph.todos._(({ total, data }) =>
+    obj({
+      total,
+      data: data._(({ name, done }) => obj({ name, done })),
+    })
+  );
+  const [queryDef, variables] = queryToJson(query);
+  const err = await assertRejects(() => engine.run(queryDef, variables));
+  assertEquals(
+    (err as Error).message,
+    "Value is undefined at Paginated.total",
+  );
 });
