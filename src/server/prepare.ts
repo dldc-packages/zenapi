@@ -109,8 +109,20 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       },
     );
   },
-  alias: () => {
-    throw new Error("Alias not implemented yet");
+  alias: (context, params, graph, query) => {
+    const structure = graph[STRUCTURE];
+    // throw new Error("Not implemented");
+    if (structure.kind !== "alias") {
+      throw new Error("Invalid structure");
+    }
+    const subGraph = graph[GET](REF);
+    const userResolvers = context.getResolvers(graph);
+    const mid = compose(...userResolvers);
+    const sub = prepare(context, params, subGraph, query);
+    return async (ctx, next) => {
+      const res = await mid(ctx, (ctx) => Promise.resolve(ctx));
+      return sub(res, next);
+    };
   },
   ref: (context, params, graph, query) => {
     const structure = graph[STRUCTURE];
@@ -123,8 +135,12 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       ...params,
       paramerters: structure.params ?? [],
     };
+    const mid = compose(...userResolvers);
     const subMid = prepare(context, nextParams, subGraph, query);
-    return compose(...userResolvers, subMid);
+    return async (ctx, next) => {
+      const res = await mid(ctx, (ctx) => Promise.resolve(ctx));
+      return subMid(res, next);
+    };
   },
   object: (context, params, graph, query) => {
     return prepareObjectLike(
@@ -244,8 +260,35 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       return sub(res, next);
     };
   },
-  union: () => {
-    throw new Error("Union not implemented");
+  union: (context, params, graph, query) => {
+    const structure = graph[STRUCTURE];
+    if (structure.kind !== "union") {
+      throw new Error("Invalid structure");
+    }
+    const userResolvers = context.getResolvers(graph);
+    const mid = compose(...userResolvers);
+    const subs = structure.types.map((subStructure) => {
+      const subGraph = graph[GET](subStructure);
+      return ({
+        mid: prepare(context, params, subGraph, query),
+        graph: subGraph,
+        structure: subStructure,
+      });
+    });
+    return async (ctx, next) => {
+      const res = await mid(ctx, (ctx) => Promise.resolve(ctx));
+      // TODO: don't brut force to find the right resolver
+      // but instead, use the value to find the right resolver
+      // or maybe add a ctx.withType() method ?
+      for (const { mid } of subs) {
+        try {
+          return await mid(res, next);
+        } catch {
+          continue;
+        }
+      }
+      throw new Error("Invalid query");
+    };
   },
   function: (context, params, graph, query) => {
     const [queryItem, ...rest] = query;

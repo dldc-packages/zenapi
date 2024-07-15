@@ -1,7 +1,6 @@
-import { pushTail } from "../utils/tail.ts";
 import type { TTypesBase } from "../utils/types.ts";
 import { GET, PATH, REF, ROOT, STRUCTURE, type TYPES } from "./constants.ts";
-import { getStructureProp, resolveRef } from "./getGraphProp.ts";
+import { getStructureProp } from "./getGraphProp.ts";
 import type { TAllStructure, TRootStructure } from "./structure.types.ts";
 import type { TGraphOf, TLocalTypes } from "./types.ts";
 
@@ -54,66 +53,16 @@ export function graphInternal(
     if (cache.has(prop)) {
       return cache.get(prop)!;
     }
-    // const nextTails = getNextTail(prop);
-    // const nextPath: TAllStructure[] = path.slice(0, -1);
-    // nextPath.push(...nextTails);
-    const result = getUncached(prop);
+    const result = getStructureProp({
+      rootStructure,
+      localTypes,
+      path,
+      structure,
+      prop,
+      get,
+    });
     cache.set(prop, result);
     return result;
-  }
-
-  function getUncached(
-    prop: string | number | symbol | TAllStructure,
-  ): TGraphBaseAny {
-    if (
-      typeof prop === "string" || typeof prop === "number" ||
-      typeof prop === "symbol"
-    ) {
-      return getStructureProp({
-        rootStructure,
-        localTypes,
-        path,
-        structure,
-        prop,
-        get,
-      });
-    }
-    // Get by ref
-    return graphInternal(
-      {
-        rootStructure,
-        localTypes,
-        path: pushTail(path, validateNextStructureByRef(prop)),
-      },
-    );
-  }
-
-  function validateNextStructureByRef(prop: TAllStructure): TAllStructure {
-    if (structure.kind === "ref") {
-      // prop is expected to be the matching ref
-      const resolved = resolveRef(rootStructure, localTypes, structure);
-      if (resolved.structure !== prop) {
-        throw new Error(
-          `Invalid path: expected ${structure.key} but got ${resolved.structure.key}`,
-        );
-      }
-      return prop;
-    }
-    if (structure.kind === "union") {
-      // Prop is expected to be one of the union refs
-      for (const unionItem of structure.types) {
-        if (unionItem.kind === "ref") {
-          const resolved = resolveRef(rootStructure, localTypes, unionItem);
-          if (resolved.structure === prop) {
-            return prop;
-          }
-        }
-      }
-      throw new Error(`Invalid path: ${prop.kind} is not a valid union type`);
-    }
-    throw new Error(
-      `Cannot access by structure reference in ${structure.kind}`,
-    );
   }
 
   return new Proxy(

@@ -1,13 +1,19 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
-import { obj, query, queryToJson } from "../client.ts";
-import { createEngine, parse, resolver } from "../server.ts";
-import type { GenericTypes } from "./schemas/generic.types.ts";
+import { obj, query, queryToJson } from "../../client.ts";
+import { createEngine, parse, resolver } from "../../server.ts";
+import type { Graph, Paginated, TodoItem } from "./graph.ts";
 
-const client = query<GenericTypes>();
+export interface AllTypes {
+  Graph: Graph;
+  Paginated: Paginated<any>;
+  TodoItem: TodoItem;
+}
 
-const schema = parse<GenericTypes>(
-  resolve("./tests/schemas/generic.ts"),
+const client = query<AllTypes>();
+
+const schema = parse<AllTypes>(
+  resolve("./tests/generics/graph.ts"),
 );
 
 const g = schema.graph;

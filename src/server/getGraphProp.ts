@@ -17,7 +17,7 @@ export interface TStructureGetPropParams<TStruct extends TAllStructure> {
   localTypes: TLocalTypes;
   path: TAllStructure[];
   structure: TStruct;
-  prop: string | number | symbol;
+  prop: string | number | symbol | TAllStructure;
 }
 
 // Receive the last structure of the path, return the next tail
@@ -58,6 +58,15 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
     if (prop === REF) {
       return resolved;
     }
+    if (typeof prop === "object") {
+      if (prop !== refStructure) {
+        throw new Error(
+          `Invalid path: expected ${structure.key} but got ${refStructure.key}`,
+        );
+      }
+      return resolved;
+    }
+    // otherwise, get prop from resolved
     const sub = get(REF);
     return sub[GET](prop);
   },
@@ -76,8 +85,15 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
       path: replaceTail(path, [foundProp.structure]),
     });
   },
-  alias: () => {
-    throw new Error("Alias not implemented yet");
+  alias: ({ rootStructure, localTypes, path, structure, prop, get }) => {
+    if (prop === REF) {
+      return graphInternal({
+        rootStructure,
+        localTypes,
+        path: replaceTail(path, [structure.type]),
+      });
+    }
+    return get(REF)[GET](prop);
   },
   object: ({ rootStructure, localTypes, path, structure, prop }) => {
     if (typeof prop !== "string") {
@@ -129,8 +145,31 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
     const sub = get(REF);
     return sub[GET](prop);
   },
-  union: () => {
-    throw new Error("Not implemented");
+  union: ({ rootStructure, localTypes, structure, prop, path }) => {
+    if (typeof prop !== "object") {
+      throw new Error("Invalid path: expected object");
+    }
+    // Prop is expected to be one of the union item or a resolved ref
+    for (const unionItem of structure.types) {
+      if (unionItem === prop) {
+        return graphInternal({
+          rootStructure,
+          localTypes,
+          path: pushTail(path, unionItem),
+        });
+      }
+      if (unionItem.kind === "ref") {
+        const resolved = resolveRef(rootStructure, localTypes, unionItem);
+        if (resolved.structure === prop) {
+          return graphInternal({
+            rootStructure,
+            localTypes: resolved.localTypes,
+            path: pushTail(path, resolved.structure),
+          });
+        }
+      }
+    }
+    throw new Error(`Invalid path: ${prop.kind} is not a valid union type`);
   },
   function: ({ rootStructure, localTypes, path, structure, prop }) => {
     if (typeof prop !== "string") {
@@ -153,6 +192,10 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
 export function getStructureProp(
   params: TStructureGetPropParams<TAllStructure>,
 ): TGraphBaseAny {
+  if (params.prop === "type") {
+    throw new Error(`Cannot get prop of type`);
+  }
+
   return GET_STRUCTURE_PROP[params.structure.kind](params as any);
 }
 
@@ -200,7 +243,6 @@ function resolveRefStructure(
     t.name === structure.ref
   );
   if (!refStructure) {
-    console.log({ localTypes });
     throw new Error(`Invalid ref "${structure.ref}"`);
   }
   return refStructure;
