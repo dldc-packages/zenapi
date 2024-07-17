@@ -305,7 +305,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
     const returnGraph = graph[GET]("return");
     const argsSchema = getStructureSchema(context, params, structure.arguments);
     const sub = prepare(context, params, returnGraph, rest);
-    return async (ctx, next) => {
+    return async (ctx) => {
       const baseValue = ctx.value;
       const variables = ctx.getOrFail(ApiContext.VariablesKey.Consumer);
       const args = variables[variableIndex];
@@ -319,7 +319,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
         ctx.with(ApiContext.InputsKey.Provider(inputs)).withValue(baseValue),
         (ctx) => Promise.resolve(ctx),
       );
-      return sub(parentRes, next);
+      return sub(parentRes, (ctx) => Promise.resolve(ctx));
     };
   },
   arguments: () => {
