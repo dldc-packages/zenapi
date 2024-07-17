@@ -98,12 +98,12 @@ function validateResolvers(
 ): TGetHandlers {
   const resolversTree: THandlersTree = { middlewares: [], children: new Map() };
 
-  for (const { middlewares, path } of resolvers) {
+  for (const { middlewares, path: graph } of resolvers) {
     // make sure path come from the schema
-    if (path[ROOT] !== schema.structure) {
+    if (graph[ROOT] !== schema.structure) {
       throw new Error(`Invalid resolver path, not using the proper schema`);
     }
-    const structPath = path[PATH].slice().reverse();
+    const structPath = graph[PATH].slice().reverse();
     let current = resolversTree;
     for (const struct of structPath) {
       if (!current.children.has(struct)) {

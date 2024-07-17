@@ -6,7 +6,7 @@ import type { TMiddleware, TParamsContext } from "./types.ts";
 import * as v from "@valibot/valibot";
 import { compose } from "./compose.ts";
 import { GET, REF, STRUCTURE } from "./constants.ts";
-import { ApiContext } from "./context.ts";
+import { ApiContext, type TInputItem } from "./context.ts";
 import { getStructureSchema } from "./schema.ts";
 import type { TAllStructure, TStructureKind } from "./structure.types.ts";
 
@@ -224,7 +224,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       const res = await next(ctx);
       const value = res.value;
       if (value === undefined) {
-        throw new Error("Value is undefined");
+        throw new Error(`Value is undefined at ${structure.key}`);
       }
       if (value !== structure.type) {
         throw new Error(`Expected ${structure.type}, got ${value}`);
@@ -311,13 +311,15 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       const args = variables[variableIndex];
       const parsed = v.parse(argsSchema, args);
       const prevInputs = ctx.getOrFail(ApiContext.InputsKey.Consumer);
-      const inputs = new Map(prevInputs);
-      inputs.set(graph, parsed);
+      const inputs: TInputItem[] = [...prevInputs, {
+        path: ctx.graph,
+        inputs: parsed,
+      }];
       const parentRes = await mid(
         ctx.with(ApiContext.InputsKey.Provider(inputs)).withValue(baseValue),
         (ctx) => Promise.resolve(ctx),
       );
-      return sub(parentRes.withValue(parentRes.value), next);
+      return sub(parentRes, next);
     };
   },
   arguments: () => {

@@ -1,6 +1,22 @@
 import { assertEquals } from "@std/assert";
-import { obj, query, queryToJson } from "../client.ts";
-import type { TodoListTypes } from "./schemas/todolist.types.ts";
+import { obj, query, queryToJson } from "../../client.ts";
+import type {
+  App,
+  CoinHeads,
+  CoinTails,
+  Config,
+  Graph,
+  User,
+} from "./graph.ts";
+
+export interface TodoListTypes {
+  Graph: Graph;
+  App: App;
+  Config: Config;
+  User: User;
+  CoinHeads: CoinHeads;
+  CoinTails: CoinTails;
+}
 
 const client = query<TodoListTypes>();
 

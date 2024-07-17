@@ -109,3 +109,15 @@ export function graphInternal(
     },
   ) as TGraphBaseAny;
 }
+
+/**
+ * Check if the path of item match the end of the base path.
+ */
+export function graphMatch(base: TGraphBaseAny, item: TGraphBaseAny): boolean {
+  const basePathRereved = base[PATH].slice().reverse();
+  const itemPathRereved = item[PATH].slice().reverse();
+  if (basePathRereved.length < itemPathRereved.length) {
+    return false;
+  }
+  return itemPathRereved.every((item, i) => basePathRereved[i] === item);
+}

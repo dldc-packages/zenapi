@@ -2,7 +2,12 @@ import type { TKey, TStackCoreValue } from "@dldc/stack";
 import { createKey, createKeyWithDefault, Stack } from "@dldc/stack";
 import type { TVariables } from "../client/query.types.ts";
 import type { TYPES } from "./constants.ts";
-import type { TGraphBaseAny } from "./graph.ts";
+import { graphMatch, type TGraphBaseAny } from "./graph.ts";
+
+export interface TInputItem {
+  path: TGraphBaseAny;
+  inputs: unknown[];
+}
 
 const GraphKey: TKey<TGraphBaseAny, false> = createKey("graph");
 const ValueKey: TKey<unknown, true> = createKeyWithDefault<unknown>(
@@ -10,9 +15,9 @@ const ValueKey: TKey<unknown, true> = createKeyWithDefault<unknown>(
   undefined,
 );
 const VariablesKey: TKey<TVariables, false> = createKey("variables");
-const InputsKey: TKey<Map<TGraphBaseAny, unknown>, true> = createKeyWithDefault(
+const InputsKey: TKey<TInputItem[], true> = createKeyWithDefault(
   "inputs",
-  new Map(),
+  [] as TInputItem[],
 );
 
 export class ApiContext extends Stack {
@@ -44,17 +49,19 @@ export class ApiContext extends Stack {
     graph: G,
   ): G[typeof TYPES]["input"] | undefined {
     const inputs = this.getOrFail(InputsKey.Consumer);
-    return inputs.get(graph);
+    const found = inputs.find((input) => graphMatch(input.path, graph));
+    return found?.inputs;
   }
 
   getInputOrFail<G extends TGraphBaseAny>(
     graph: G,
   ): G[typeof TYPES]["input"] {
     const inputs = this.getOrFail(InputsKey.Consumer);
-    if (!inputs.has(graph)) {
+    const found = inputs.find((input) => graphMatch(input.path, graph));
+    if (!found) {
       throw new Error(`Input for graph is not found: ${graph}`);
     }
-    return inputs.get(graph);
+    return found.inputs;
   }
 
   withGraph(graph: TGraphBaseAny): this {
