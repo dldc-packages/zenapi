@@ -8,6 +8,9 @@ export interface TodoItem {
   done: boolean;
 }
 
+export type BaseFn<Result> = (num: number) => Result;
+
 export interface Graph {
   todos: Paginated<TodoItem>;
+  nested: BaseFn<TodoItem>;
 }

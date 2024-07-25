@@ -1,5 +1,6 @@
+import type { TTopLevelStructure } from "../../server.ts";
 import { pushTail, replaceTail } from "../utils/tail.ts";
-import { GET, REF } from "./constants.ts";
+import { GET, REF, STRUCTURE } from "./constants.ts";
 import { graphInternal, type TGraphBaseAny, type TGraphGet } from "./graph.ts";
 import type {
   TAllStructure,
@@ -44,24 +45,24 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
       path: replaceTail(path, [item]),
     });
   },
-  ref: ({ rootStructure, get, localTypes, path, structure, prop }) => {
-    const { structure: refStructure, localTypes: nextLocalTypes } = resolveRef(
+  ref: ({ rootStructure, get, localTypes, structure, prop, path }) => {
+    const resolved = resolveRef(
       rootStructure,
+      path,
       localTypes,
       structure,
     );
-    const resolved = graphInternal({
-      rootStructure,
-      localTypes: nextLocalTypes,
-      path: pushTail(path, refStructure),
-    });
+    const resolvedStructure = resolved[STRUCTURE];
+    if (resolvedStructure === structure) {
+      throw new Error("Ref resolution failed");
+    }
     if (prop === REF) {
       return resolved;
     }
     if (typeof prop === "object") {
-      if (prop !== refStructure) {
+      if (prop !== resolvedStructure) {
         throw new Error(
-          `Invalid path: expected ${structure.key} but got ${refStructure.key}`,
+          `Invalid path: expected ${structure.key} but got ${resolvedStructure.key}`,
         );
       }
       return resolved;
@@ -159,13 +160,9 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
         });
       }
       if (unionItem.kind === "ref") {
-        const resolved = resolveRef(rootStructure, localTypes, unionItem);
-        if (resolved.structure === prop) {
-          return graphInternal({
-            rootStructure,
-            localTypes: resolved.localTypes,
-            path: pushTail(path, resolved.structure),
-          });
+        const resolved = resolveRef(rootStructure, path, localTypes, unionItem);
+        if (resolved[STRUCTURE] === prop) {
+          return resolved;
         }
       }
     }
@@ -182,20 +179,34 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
         path: replaceTail(path, [structure.returns]),
       });
     }
+    if (prop === "arguments") {
+      return graphInternal({
+        rootStructure,
+        localTypes,
+        path: replaceTail(path, [structure.arguments]),
+      });
+    }
     throw new Error(`Invalid path: ${prop} not found in function`);
   },
-  arguments: () => {
-    throw new Error(`Cannot get prop of arguments`);
+  arguments: ({ rootStructure, localTypes, path, structure, prop }) => {
+    if (typeof prop !== "string") {
+      throw new Error("Invalid path: expected string");
+    }
+    const foundProp = structure.arguments.find((p) => p.name === prop);
+    if (!foundProp) {
+      throw new Error(`Invalid path: ${prop} not found in ${structure.key}`);
+    }
+    return graphInternal({
+      rootStructure,
+      localTypes,
+      path: replaceTail(path, [foundProp.structure]),
+    });
   },
 };
 
 export function getStructureProp(
   params: TStructureGetPropParams<TAllStructure>,
 ): TGraphBaseAny {
-  if (params.prop === "type") {
-    throw new Error(`Cannot get prop of type`);
-  }
-
   return GET_STRUCTURE_PROP[params.structure.kind](params as any);
 }
 
@@ -204,40 +215,85 @@ export interface TResolvedRef {
   localTypes: TLocalTypes;
 }
 
-export function resolveRef(
+function resolveRef(
   rootStructure: TRootStructure,
+  path: TAllStructure[],
   localTypes: TLocalTypes,
   structure: TStructureRef,
-): TResolvedRef {
-  const subStructure = resolveRefStructure(
+): TGraphBaseAny {
+  const resolvedStructure = resolveRefStructure(
     rootStructure,
     localTypes,
     structure,
   );
-  if (subStructure.kind !== "alias" && subStructure.kind !== "interface") {
-    return { structure: subStructure, localTypes };
+  if (resolvedStructure.kind === "root") {
+    // If the ref point to a top level structure, it's an alias or a type
+    // We need to map type parameters
+    const nextLocalTypes: TLocalTypes = {};
+    resolvedStructure.structure.parameters.forEach((name, index) => {
+      const param = structure.params[index];
+      if (param.kind !== "ref") {
+        nextLocalTypes[name] = param;
+        return;
+      }
+      // resolve ref
+      const resolvedParams = resolveRefStructure(
+        rootStructure,
+        localTypes,
+        param,
+      );
+      nextLocalTypes[name] = resolvedParams.kind === "root"
+        ? resolvedParams.structure
+        : resolvedParams.structure;
+    });
+    return graphInternal({
+      rootStructure,
+      localTypes: nextLocalTypes,
+      path: pushTail(path, resolvedStructure.structure),
+    });
   }
-  // Resolve local types
-  if (structure.params.length !== subStructure.parameters.length) {
-    throw new Error(
-      `Invalid number of parameters: expected ${subStructure.parameters.length} but got ${structure.params.length}`,
-    );
-  }
-  const nextLocalTypes: TLocalTypes = { ...localTypes };
-  subStructure.parameters.forEach((name, index) => {
-    nextLocalTypes[name] = structure.params[index];
+  // Otherwise, it's a local type, we simply push the resolved type
+  return graphInternal({
+    rootStructure,
+    localTypes,
+    path: pushTail(path, resolvedStructure.structure),
   });
-  return { structure: subStructure, localTypes: nextLocalTypes };
+  // if (
+  //   resolvedStructure.kind !== "alias" && resolvedStructure.kind !== "interface"
+  // ) {
+  //   return graphInternal({
+  //     rootStructure,
+  //     localTypes: {},
+  //     path: pushTail(path, resolvedStructure),
+  //   });
+  // }
+
+  // // Resolve local types
+  // if (structure.params.length !== resolvedStructure.parameters.length) {
+  //   throw new Error(
+  //     `Invalid number of parameters: expected ${resolvedStructure.parameters.length} but got ${structure.params.length}`,
+  //   );
+  // }
+
+  // return graphInternal({
+  //   rootStructure,
+  //   localTypes: nextLocalTypes,
+  //   path: pushTail(path, resolvedStructure),
+  // });
 }
+
+export type TResolvedRefStructure =
+  | { kind: "local"; structure: TStructure }
+  | { kind: "root"; structure: TTopLevelStructure };
 
 function resolveRefStructure(
   rootStructure: TRootStructure,
   localTypes: TLocalTypes,
   structure: TStructureRef,
-): TStructure {
+): TResolvedRefStructure {
   const localStructure = localTypes[structure.ref];
   if (localStructure) {
-    return localStructure;
+    return { kind: "local", structure: localStructure };
   }
   const refStructure = rootStructure.types.find((t) =>
     t.name === structure.ref
@@ -245,5 +301,5 @@ function resolveRefStructure(
   if (!refStructure) {
     throw new Error(`Invalid ref "${structure.ref}"`);
   }
-  return refStructure;
+  return { kind: "root", structure: refStructure };
 }

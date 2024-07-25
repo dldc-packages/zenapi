@@ -265,7 +265,9 @@ function parseTypeReferenceNode(
   }
   // get type params if generic
   const typeParams = node.getTypeArguments();
-  const params = typeParams.map((param) => parseNode(param, key));
+  const params = typeParams.map((param, index) =>
+    parseNode(param, `${key}.params.${index}`)
+  );
   return {
     kind: "ref",
     key,
@@ -297,7 +299,7 @@ function parseTypeAliasDeclaration(
     kind: "alias",
     key,
     name,
-    type: parseNode(valueNode, key),
+    type: parseNode(valueNode, `${key}.type`),
     parameters,
   };
 }

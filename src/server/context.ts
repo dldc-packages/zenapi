@@ -1,7 +1,7 @@
 import type { TKey, TStackCoreValue } from "@dldc/stack";
 import { createKey, createKeyWithDefault, Stack } from "@dldc/stack";
 import type { TVariables } from "../client/query.types.ts";
-import type { TYPES } from "./constants.ts";
+import { GET, REF, STRUCTURE, type TYPES } from "./constants.ts";
 import { graphMatch, type TGraphBaseAny } from "./graph.ts";
 
 export interface TInputItem {
@@ -45,19 +45,26 @@ export class ApiContext extends Stack {
     return this.get(ValueKey.Consumer);
   }
 
+  private getInputInternal(
+    graph: TGraphBaseAny,
+  ): TInputItem | undefined {
+    const inputs = this.getOrFail(InputsKey.Consumer);
+    const target = resolveInputTarget(graph);
+    const found = inputs.find((input) => graphMatch(input.path, target));
+    return found;
+  }
+
   getInput<G extends TGraphBaseAny>(
     graph: G,
   ): G[typeof TYPES]["input"] | undefined {
-    const inputs = this.getOrFail(InputsKey.Consumer);
-    const found = inputs.find((input) => graphMatch(input.path, graph));
+    const found = this.getInputInternal(graph);
     return found?.inputs;
   }
 
   getInputOrFail<G extends TGraphBaseAny>(
     graph: G,
   ): G[typeof TYPES]["input"] {
-    const inputs = this.getOrFail(InputsKey.Consumer);
-    const found = inputs.find((input) => graphMatch(input.path, graph));
+    const found = this.getInputInternal(graph);
     if (!found) {
       throw new Error(`Input for graph is not found: ${graph}`);
     }
@@ -71,4 +78,12 @@ export class ApiContext extends Stack {
   withValue(value: unknown): this {
     return this.with(ValueKey.Provider(value));
   }
+}
+
+function resolveInputTarget(graph: TGraphBaseAny): TGraphBaseAny {
+  const struct = graph[STRUCTURE];
+  if (struct.kind === "alias") {
+    return graph[GET](REF);
+  }
+  return graph;
 }

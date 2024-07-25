@@ -50,6 +50,9 @@ export function graphInternal(
   function get(
     prop: string | number | symbol | TAllStructure,
   ): TGraphBaseAny {
+    if (path.length > 10) {
+      throw new Error("Path too deep");
+    }
     if (cache.has(prop)) {
       return cache.get(prop)!;
     }

@@ -394,16 +394,16 @@ snapshot[`snapshot structure 1`] = `
       name: "Role",
       parameters: [],
       type: {
-        key: "Role",
+        key: "Role.type",
         kind: "union",
         types: [
           {
-            key: "Role.0",
+            key: "Role.type.0",
             kind: "literal",
             type: "admin",
           },
           {
-            key: "Role.1",
+            key: "Role.type.1",
             kind: "literal",
             type: "user",
           },

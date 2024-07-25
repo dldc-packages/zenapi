@@ -7,7 +7,7 @@ export function replaceTail<T>(
 
 export function pushTail<T>(
   array: T[],
-  tail: T,
+  ...tail: T[]
 ): T[] {
   return array.slice().concat(tail);
 }

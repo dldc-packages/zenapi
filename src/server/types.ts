@@ -1,7 +1,7 @@
 import type { Primitive } from "../utils/types.ts";
 import type { ApiContext } from "./context.ts";
 import type { TGraphBase } from "./graph.ts";
-import type { TAllStructure, TStructure } from "./structure.types.ts";
+import type { TStructure } from "./structure.types.ts";
 
 export type TMiddleware = (
   ctx: ApiContext,
@@ -27,10 +27,5 @@ export interface TGraphArray<T, Input> extends TGraphBase<Input> {
 export type TGraphObject<T extends Record<string, any>, Input> =
   & TGraphBase<Input>
   & { [K in keyof T]: TGraphOf<NonNullable<T[K]>, never> };
-
-export interface TParamsContext {
-  localTypes: TLocalTypes;
-  paramerters: TAllStructure[];
-}
 
 export type TLocalTypes = Record<string, TStructure>;

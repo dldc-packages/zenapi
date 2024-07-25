@@ -52,9 +52,8 @@ Deno.test("call query", async () => {
 });
 
 Deno.test("call query with invalid params should throw", async () => {
-  const query = client.Graph.apps.all({ limit: 10, yolo: true } as any)._((
-    { appName },
-  ) => appName);
+  const query = client.Graph.apps
+    .all({ limit: 10, yolo: true } as any)._((c) => c.appName);
   const [queryDef, variables] = queryToJson(query);
   const err = await assertRejects(
     async () => {
