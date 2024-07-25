@@ -77,7 +77,7 @@ export class ApiContext extends Stack {
     return this.with(GraphKey.Provider(graph));
   }
 
-  withValue(value: unknown): this {
+  withValue<T = unknown>(value: T): this {
     return this.with(ValueKey.Provider(value));
   }
 
