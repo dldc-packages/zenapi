@@ -7,6 +7,7 @@ import * as v from "@valibot/valibot";
 import { compose } from "./compose.ts";
 import { GET, REF, STRUCTURE } from "./constants.ts";
 import { ApiContext, type TInputItem } from "./context.ts";
+import { matchUnionType } from "./match.ts";
 import { getStructureSchema } from "./schema.ts";
 import type { TAllStructure, TStructureKind } from "./structure.types.ts";
 
@@ -107,7 +108,6 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   },
   alias: (context, graph, query) => {
     const structure = graph[STRUCTURE];
-    // throw new Error("Not implemented");
     if (structure.kind !== "alias") {
       throw new Error("Invalid structure");
     }
@@ -267,18 +267,20 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       });
     });
     return async (ctx, next) => {
-      const res = await mid(ctx, (ctx) => Promise.resolve(ctx));
-      // TODO: don't brut force to find the right resolver
-      // but instead, use the value to find the right resolver
-      // or maybe add a ctx.withType() method ?
-      for (const { mid } of subs) {
-        try {
-          return await mid(res, next);
-        } catch {
-          continue;
-        }
+      const res = await mid(
+        ctx.withValueType(null),
+        (ctx) => Promise.resolve(ctx),
+      );
+      const subGraph = matchUnionType(
+        graph,
+        res.value,
+        res.get(ApiContext.ValueTypeKey.Consumer),
+      );
+      const sub = subs.find((sub) => sub.graph === subGraph);
+      if (!sub) {
+        throw new Error("Unexpected: missing sub middleware for resolved type");
       }
-      throw new Error("Invalid query");
+      return sub.mid(res, next);
     };
   },
   function: (context, graph, query) => {

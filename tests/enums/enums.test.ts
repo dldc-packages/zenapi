@@ -17,38 +17,38 @@ const client = query<AllTypes>();
 
 const g = schema.graph;
 
-// Deno.test("Properly parse schema", () => {
-//   const roleStruct = schema.structure.types.find((s) => s.name === "UserRole");
+Deno.test("Properly parse schema", () => {
+  const roleStruct = schema.structure.types.find((s) => s.name === "UserRole");
 
-//   assertEquals(roleStruct, {
-//     "kind": "alias",
-//     "key": "UserRole",
-//     "name": "UserRole",
-//     "type": {
-//       "kind": "union",
-//       "key": "UserRole",
-//       "types": [
-//         { "kind": "literal", "key": "UserRole.0", "type": "admin" },
-//         { "kind": "literal", "key": "UserRole.1", "type": "user" },
-//         { "kind": "literal", "key": "UserRole.2", "type": "guest" },
-//       ],
-//     },
-//     "parameters": [],
-//   });
-// });
+  assertEquals(roleStruct, {
+    "kind": "alias",
+    "key": "UserRole",
+    "name": "UserRole",
+    "type": {
+      "kind": "union",
+      "key": "UserRole.type",
+      "types": [
+        { "kind": "literal", "key": "UserRole.type.0", "type": "admin" },
+        { "kind": "literal", "key": "UserRole.type.1", "type": "user" },
+        { "kind": "literal", "key": "UserRole.type.2", "type": "guest" },
+      ],
+    },
+    "parameters": [],
+  });
+});
 
-// Deno.test("Resolve enum union", async () => {
-//   const engine = createEngine({
-//     schema,
-//     entry: "Graph",
-//     resolvers: [resolver(g.Graph.role, (ctx) => ctx.withValue("admin"))],
-//   });
+Deno.test("Resolve enum union", async () => {
+  const engine = createEngine({
+    schema,
+    entry: "Graph",
+    resolvers: [resolver(g.Graph.role, (ctx) => ctx.withValue("admin"))],
+  });
 
-//   const query = client.Graph.role;
-//   const [queryDef, variables] = queryToJson(query);
-//   const result = await engine.run(queryDef, variables);
-//   assertEquals(result, "admin");
-// });
+  const query = client.Graph.role;
+  const [queryDef, variables] = queryToJson(query);
+  const result = await engine.run(queryDef, variables);
+  assertEquals(result, "admin");
+});
 
 Deno.test("Fail with invalid value", async () => {
   const engine = createEngine({
@@ -60,5 +60,8 @@ Deno.test("Fail with invalid value", async () => {
   const query = client.Graph.role;
   const [queryDef, variables] = queryToJson(query);
   const err = await assertRejects(() => engine.run(queryDef, variables));
-  assertEquals((err as Error).message, "Invalid query");
+  assertEquals(
+    (err as Error).message,
+    "No match for union UserRole.type, use ctx.withValueType to specify the type",
+  );
 });

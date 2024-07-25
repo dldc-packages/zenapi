@@ -112,15 +112,15 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
     });
   },
   array: ({ rootStructure, localTypes, path, structure, prop }) => {
-    if (typeof prop !== "string") {
-      throw new Error("Invalid path: expected string");
-    }
-    if (prop === "items") {
+    if (prop === REF || prop === "items") {
       return graphInternal({
         rootStructure,
         localTypes,
         path: replaceTail(path, [structure.items]),
       });
+    }
+    if (typeof prop !== "string") {
+      throw new Error("Invalid path: expected string");
     }
     throw new Error(`Invalid path: ${prop} not found in array`);
   },

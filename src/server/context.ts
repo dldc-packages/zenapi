@@ -19,12 +19,14 @@ const InputsKey: TKey<TInputItem[], true> = createKeyWithDefault(
   "inputs",
   [] as TInputItem[],
 );
+const ValueTypeKey: TKey<TGraphBaseAny | null, false> = createKey("valueType");
 
 export class ApiContext extends Stack {
   static readonly GraphKey = GraphKey;
   static readonly ValueKey = ValueKey;
   static readonly VariablesKey = VariablesKey;
   static readonly InputsKey = InputsKey;
+  static readonly ValueTypeKey = ValueTypeKey;
 
   static create(graph: TGraphBaseAny, variables: TVariables): ApiContext {
     return new ApiContext().with(
@@ -77,6 +79,10 @@ export class ApiContext extends Stack {
 
   withValue(value: unknown): this {
     return this.with(ValueKey.Provider(value));
+  }
+
+  withValueType(graph: TGraphBaseAny | null): this {
+    return this.with(ValueTypeKey.Provider(graph));
   }
 }
 

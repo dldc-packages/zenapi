@@ -78,8 +78,16 @@ const SCHEMA_BY_STRUCTURE: TByStructureKind = {
     const subSchema = getStructureSchema(context, graph[GET](REF));
     return v.optional(subSchema);
   },
-  union: () => {
-    throw new Error("Union not implemented");
+  union: (context, graph) => {
+    const structure = graph[STRUCTURE];
+    if (structure.kind !== "union") {
+      throw new Error("Invalid structure kind");
+    }
+    const unionSchema = structure.types.map((unionItem) => {
+      const unionGraph = graph[GET](unionItem);
+      return getStructureSchema(context, unionGraph);
+    });
+    return v.union(unionSchema);
   },
   function: () => {
     throw new Error("Cannot get schema of function");
