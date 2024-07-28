@@ -2,29 +2,27 @@ import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { assertSnapshot } from "@std/testing/snapshot";
 import { parse, type TGraphBase, type TStructureInterface } from "../server.ts";
-import { PATH, REF } from "../src/server/constants.ts";
+import { PATH, REF, ROOT } from "../src/server/constants.ts";
 import type { BasicTypes } from "./schemas/basic.types.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
 
 Deno.test("todolist snapshot structure", async (test) => {
-  const schema = parse<TodoListTypes>(
+  const graph = parse<TodoListTypes>(
     resolve("./tests/schemas/todolist.ts"),
   );
-  await assertSnapshot(test, schema.structure);
+  await assertSnapshot(test, graph[ROOT]);
 });
 
-const schema = parse<BasicTypes>(resolve("./tests/schemas/basic.ts"));
-
-const g = schema.graph;
+const graph = parse<BasicTypes>(resolve("./tests/schemas/basic.ts"));
 
 Deno.test("snapshot structure", async (test) => {
-  await assertSnapshot(test, schema.structure);
+  await assertSnapshot(test, graph[ROOT]);
 });
 
 Deno.test("g.User.age", () => {
-  const p1 = g.User.age;
+  const p1 = graph.User.age;
   const path = p1[PATH];
-  const userStructure = schema.structure.types.find((t) =>
+  const userStructure = graph[ROOT].types.find((t) =>
     t.name === "User"
   )! as TStructureInterface;
   const userAgeStructure =
@@ -33,9 +31,9 @@ Deno.test("g.User.age", () => {
 });
 
 Deno.test("g.User.group", () => {
-  const p2 = g.User.group;
+  const p2 = graph.User.group;
   const path = p2[PATH];
-  const userStructure = schema.structure.types.find((t) =>
+  const userStructure = graph[ROOT].types.find((t) =>
     t.name === "User"
   )! as TStructureInterface;
   const userGroupStructure =
@@ -44,14 +42,14 @@ Deno.test("g.User.group", () => {
 });
 
 Deno.test("g.User.group.name", () => {
-  const p3 = g.User.group.name;
+  const p3 = graph.User.group.name;
   const path = p3[PATH];
-  const userStructure = schema.structure.types.find((t) =>
+  const userStructure = graph[ROOT].types.find((t) =>
     t.name === "User"
   )! as TStructureInterface;
   const userGroupStructure =
     userStructure.properties.find((p) => p.name === "group")!.structure;
-  const groupStructure = schema.structure.types.find((t) =>
+  const groupStructure = graph[ROOT].types.find((t) =>
     t.name === "Group"
   )! as TStructureInterface;
   const groupNameStructure =
@@ -60,90 +58,101 @@ Deno.test("g.User.group.name", () => {
 });
 
 Deno.test("g.Graph.user", () => {
-  const p4 = g.Graph.user;
+  const p4 = graph.Graph.user;
   const path = p4[PATH];
   assertEquals(path.map((p) => p.key), [
-    "Graph.user",
+    "root.Graph.user",
   ]);
 });
 
 Deno.test("g.Graph.user[REF]", () => {
-  const p4 = g.Graph.user[REF];
+  const p4 = graph.Graph.user[REF];
   const path = p4[PATH];
   assertEquals(path.map((p) => p.key), [
-    "Graph.user",
-    "User",
+    "root.Graph.user",
+    "root.User",
   ]);
 });
 
 Deno.test("g.Graph.user.group", () => {
-  const p4 = g.Graph.user.group;
+  const p4 = graph.Graph.user.group;
   const path = p4[PATH];
   assertEquals(path.map((p) => p.key), [
-    "Graph.user",
-    "User.group",
+    "root.Graph.user",
+    "root.User.group",
   ]);
 });
 Deno.test("g.User.group.users.items.group", () => {
-  const p4 = g.Graph.user.group.users.items.group;
+  const p4 = graph.Graph.user.group.users.items.group;
   const path = p4[PATH];
   assertEquals(path.map((p) => p.key), [
-    "Graph.user",
-    "User.group",
-    "Group.users.items",
-    "User.group",
+    "root.Graph.user",
+    "root.User.group",
+    "root.Group.users.items",
+    "root.User.group",
   ]);
 });
 
 Deno.test("g.User.maybeGroup", () => {
-  const p = g.User.maybeGroup;
+  const p = graph.User.maybeGroup;
   const path = p[PATH];
   assertEquals(path.map((p) => p.key), [
-    "User.maybeGroup",
+    "root.User.maybeGroup",
   ]);
 });
 
 Deno.test("g.User.maybeGroup._(g.Group)", () => {
-  const p = g.User.maybeGroup.name;
+  const p = graph.User.maybeGroup.name;
   const path = p[PATH];
   assertEquals(path.map((p) => p.key), [
-    "User.maybeGroup.type",
-    "Group.name",
+    "root.User.maybeGroup.type",
+    "root.Group.name",
   ]);
 });
 
 Deno.test("g.User.maybeGroup._(g.Group).name", () => {
-  const p = g.Graph.randomItem._(g.Group).name;
+  const p = graph.Graph.randomItem._(graph.Group).name;
   const path = p[PATH];
   assertEquals(path.map((p) => p.key), [
-    "Graph.randomItem",
-    "Group.name",
+    "root.Graph.randomItem",
+    "root.Group.name",
   ]);
 });
 
 Deno.test("matrix", async (t) => {
   const CASES: { graph: TGraphBase<any>; result: string[] }[] = [
-    { graph: g.User.age, result: ["User.age"] },
-    { graph: g.User.group, result: ["User.group"] },
-    { graph: g.User.group.name, result: ["User.group", "Group.name"] },
-    { graph: g.Graph.user[REF], result: ["Graph.user", "User"] },
-    { graph: g.Graph.user.group, result: ["Graph.user", "User.group"] },
+    { graph: graph.User.age, result: ["root.User.age"] },
+    { graph: graph.User.group, result: ["root.User.group"] },
     {
-      graph: g.Graph.user.group.users.items.group,
-      result: ["Graph.user", "User.group", "Group.users.items", "User.group"],
+      graph: graph.User.group.name,
+      result: ["root.User.group", "root.Group.name"],
     },
-    { graph: g.User.maybeGroup, result: ["User.maybeGroup"] },
+    { graph: graph.Graph.user[REF], result: ["root.Graph.user", "root.User"] },
     {
-      graph: g.User.maybeGroup.name,
-      result: ["User.maybeGroup.type", "Group.name"],
+      graph: graph.Graph.user.group,
+      result: ["root.Graph.user", "root.User.group"],
     },
     {
-      graph: g.User.maybeGroup[REF],
-      result: ["User.maybeGroup.type"],
+      graph: graph.Graph.user.group.users.items.group,
+      result: [
+        "root.Graph.user",
+        "root.User.group",
+        "root.Group.users.items",
+        "root.User.group",
+      ],
+    },
+    { graph: graph.User.maybeGroup, result: ["root.User.maybeGroup"] },
+    {
+      graph: graph.User.maybeGroup.name,
+      result: ["root.User.maybeGroup.type", "root.Group.name"],
     },
     {
-      graph: g.User.maybeGroup[REF][REF],
-      result: ["User.maybeGroup.type", "Group"],
+      graph: graph.User.maybeGroup[REF],
+      result: ["root.User.maybeGroup.type"],
+    },
+    {
+      graph: graph.User.maybeGroup[REF][REF],
+      result: ["root.User.maybeGroup.type", "root.Group"],
     },
   ];
 

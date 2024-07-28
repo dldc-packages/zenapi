@@ -2,10 +2,9 @@ import { PATH, ROOT } from "./constants.ts";
 import { ApiContext } from "./context.ts";
 import type { TGraphBaseAny } from "./graph.ts";
 import { DEFAULT_OPERATORS } from "./operators.ts";
-import type { TSchemaAny } from "./parse.ts";
 import { prepare, type TPrepareFromOperator } from "./prepare.ts";
 import type { TResolver } from "./resolver.ts";
-import type { TAllStructure } from "./structure.types.ts";
+import type { TAllStructure, TRootStructure } from "./structure.types.ts";
 import type { TMiddleware } from "./types.ts";
 
 export type TExtendsContext = (
@@ -13,7 +12,7 @@ export type TExtendsContext = (
 ) => ApiContext | Promise<ApiContext>;
 
 export interface TEngine {
-  schema: TSchemaAny;
+  graph: TGraphBaseAny;
   run: (
     query: unknown,
     variables: unknown,
@@ -22,25 +21,29 @@ export interface TEngine {
 }
 
 export interface TEngineOptions {
-  schema: TSchemaAny;
+  graph: TGraphBaseAny;
   resolvers: TResolver[];
   operators?: TPrepareFromOperator[];
   entry: string;
 }
 
 export function createEngine(
-  { schema, resolvers, operators: userOperators = [], entry }: TEngineOptions,
+  {
+    graph,
+    resolvers,
+    operators: userOperators = [],
+    entry,
+  }: TEngineOptions,
 ): TEngine {
-  const rootStructure = schema.structure;
-  const graph = schema.graph;
-  const { getResolvers } = validateResolvers(schema, resolvers);
+  const rootStructure = graph[ROOT];
+  const { getResolvers } = validateResolvers(rootStructure, resolvers);
   const operators: TPrepareFromOperator[] = [
     ...userOperators,
     ...DEFAULT_OPERATORS,
   ];
 
   return {
-    schema,
+    graph,
     run,
   };
 
@@ -59,6 +62,7 @@ export function createEngine(
         rootGraph: graph,
         rootStructure,
         operators,
+
         getNextVariableIndex: () => variableCount++,
         getResolvers,
       },
@@ -92,14 +96,14 @@ export interface TGetHandlers {
 }
 
 function validateResolvers(
-  schema: TSchemaAny,
+  rootStructure: TRootStructure,
   resolvers: TResolver[],
 ): TGetHandlers {
   const resolversTree: THandlersTree = { middlewares: [], children: new Map() };
 
   for (const { middlewares, path: graph } of resolvers) {
     // make sure path come from the schema
-    if (graph[ROOT] !== schema.structure) {
+    if (graph[ROOT] !== rootStructure) {
       throw new Error(`Invalid resolver path, not using the proper schema`);
     }
     const structPath = graph[PATH].slice().reverse();

@@ -24,7 +24,7 @@ export function matchUnionType(
   }
   // try to match value
   const matchTypes = structure.types.filter((type) =>
-    matchValue(unionGraph[GET](type), value, 0)
+    matchValue(unionGraph[GET](type), value)
   );
   if (matchTypes.length > 1) {
     throw new Error(
@@ -42,14 +42,12 @@ export function matchUnionType(
 function matchValue(
   graph: TGraphBaseAny,
   value: unknown,
-  depth: number,
 ): boolean {
   const structure = graph[STRUCTURE];
   return MATCH_VALUE_BY_STRUCTURE[structure.kind](
     graph,
     structure as any,
     value,
-    depth + 1,
   );
 }
 
@@ -57,7 +55,6 @@ export type TStructureGetSchema<S extends TAllStructure> = (
   graph: TGraphBaseAny,
   stucture: S,
   value: unknown,
-  depth: number,
 ) => boolean;
 
 type TMatchValueByStructureKind = {
@@ -74,21 +71,21 @@ const MATCH_VALUE_BY_STRUCTURE: TMatchValueByStructureKind = {
     // deno-lint-ignore valid-typeof
     return typeof value === structure.type;
   },
-  nullable: (graph, _structure, value, depth) => {
+  nullable: (graph, _structure, value) => {
     const subGraph = graph[GET](REF);
-    return value === null || matchValue(subGraph, value, depth);
+    return value === null || matchValue(subGraph, value);
   },
-  array: (graph, _structure, value, depth) => {
+  array: (graph, _structure, value) => {
     if (!Array.isArray(value)) {
       return false;
     }
     const subGraph = graph[GET](REF);
-    return value.every((item) => matchValue(subGraph, item, depth));
+    return value.every((item) => matchValue(subGraph, item));
   },
   function: (_structure, _value) => {
     throw new Error("Cannot match value of function");
   },
-  object: (graph, structure, value, depth) => {
+  object: (graph, structure, value) => {
     if (typeof value !== "object" || value === null) {
       return false;
     }
@@ -99,25 +96,23 @@ const MATCH_VALUE_BY_STRUCTURE: TMatchValueByStructureKind = {
         return true;
       }
       const subGraph = graph[GET](prop.name);
-      return matchValue(subGraph, (value as any)[prop.name], depth);
+      return matchValue(subGraph, (value as any)[prop.name]);
     });
   },
-  union: (graph, structure, value, depth) => {
-    return structure.types.some((type) =>
-      matchValue(graph[GET](type), value, depth)
-    );
+  union: (graph, structure, value) => {
+    return structure.types.some((type) => matchValue(graph[GET](type), value));
   },
-  alias: (graph, _structure, value, depth) => {
+  alias: (graph, _structure, value) => {
     const subGraph = graph[GET](REF);
-    return matchValue(subGraph, value, depth);
+    return matchValue(subGraph, value);
   },
   arguments: (_structure, _value) => {
     throw new Error("Cannot match value of arguments");
   },
-  ref: (graph, _structure, value, depth) => {
-    return matchValue(graph[GET](REF), value, depth);
+  ref: (graph, _structure, value) => {
+    return matchValue(graph[GET](REF), value);
   },
-  interface: (graph, structure, value, depth) => {
+  interface: (graph, structure, value) => {
     if (typeof value !== "object" || value === null) {
       return false;
     }
@@ -128,10 +123,13 @@ const MATCH_VALUE_BY_STRUCTURE: TMatchValueByStructureKind = {
         return true;
       }
       const subGraph = graph[GET](prop.name);
-      return matchValue(subGraph, (value as any)[prop.name], depth);
+      return matchValue(subGraph, (value as any)[prop.name]);
     });
   },
   root: (_graph, _structure, _value) => {
     throw new Error("Cannot match value of root");
+  },
+  builtin: (graph, structure, value) => {
+    return structure.match(graph, structure, value);
   },
 };

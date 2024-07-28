@@ -16,6 +16,8 @@ import {
   SyntaxKind,
 } from "@ts-morph/ts-morph";
 import type { TTypesBase } from "../utils/types.ts";
+import { DEFAULT_BUILTINS_GRAPH } from "./builtin.ts";
+import { ROOT } from "./constants.ts";
 import { graph } from "./graph.ts";
 import type {
   TFunctionArgumentStructure,
@@ -27,21 +29,15 @@ import type {
   TStructureObjectProperty,
   TStructureUnion,
 } from "./structure.types.ts";
-import type { TGraphOf } from "./types.ts";
-
-export interface TSchema<Types extends TTypesBase> {
-  graph: TGraphOf<Types, never>;
-  structure: TRootStructure;
-}
-
-export type TSchemaAny = TSchema<any>;
+import type { TGraphBuiltinsAny, TGraphOf } from "./types.ts";
 
 /**
  * Pass the path to the schema file as well as the the types to be used in the schema.
  */
 export function parse<Types extends TTypesBase>(
   schemaPath: string,
-): TSchema<Types> {
+  builtins: TGraphBuiltinsAny = (DEFAULT_BUILTINS_GRAPH as any),
+): TGraphOf<Types, never> {
   const project = new Project({
     resolutionHost: ResolutionHosts.deno,
   });
@@ -49,18 +45,26 @@ export function parse<Types extends TTypesBase>(
   project.addSourceFilesAtPaths(schemaPath);
 
   const file = project.getSourceFileOrThrow(schemaPath);
+  const key = "root";
+
+  const builtinsRootStructure = builtins[ROOT];
+  if (builtinsRootStructure.mode !== "builtins") {
+    throw new Error("Builtins must be in builtins mode");
+  }
 
   const rootStructure: TRootStructure = {
     kind: "root",
-    key: "",
+    key,
     types: [],
+    builtins: builtinsRootStructure.builtins,
+    mode: "graph",
   };
 
   // find all statements in the file
   const statements = file.getStatements();
 
   for (const statement of statements) {
-    const struct = parseNode(statement, "");
+    const struct = parseNode(statement, key);
     if (struct.kind !== "interface" && struct.kind !== "alias") {
       throw new Error(
         `Only interfaces and type aliases are supported at the root level, found: ${struct.kind}`,
@@ -75,10 +79,7 @@ export function parse<Types extends TTypesBase>(
     rootStructure.types.push(struct);
   }
 
-  return {
-    graph: graph(rootStructure),
-    structure: rootStructure,
-  };
+  return graph(rootStructure);
 }
 
 function parseNode(node: Node, parentKey: string): TStructure {
@@ -278,10 +279,10 @@ function parseTypeReferenceNode(
 
 function parseTypeAliasDeclaration(
   node: TypeAliasDeclaration,
-  _parentKey: string,
+  parentKey: string,
 ): TStructureAlias {
   const name = node.getName();
-  const key = name;
+  const key = `${parentKey}.${name}`;
   const valueNode = node.getTypeNode();
   if (!valueNode) {
     throw new Error("Type alias must have a type");
@@ -306,10 +307,10 @@ function parseTypeAliasDeclaration(
 
 function parseInterfaceDeclaration(
   node: InterfaceDeclaration,
-  _parentKey: string,
+  parentKey: string,
 ): TStructureInterface {
   const name = node.getName();
-  const key = name;
+  const key = `${parentKey}.${name}`;
   const properties: TStructureObjectProperty[] = [];
   for (const property of node.getProperties()) {
     // get the declaration of the property

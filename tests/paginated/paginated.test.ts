@@ -20,23 +20,21 @@ interface AllTypes {
   PaginatedResult: PaginatedResult<unknown>;
 }
 
-const schema = parse<AllTypes>(
+const graph = parse<AllTypes>(
   resolve("./tests/paginated/graph.ts"),
 );
 
 const client = query<AllTypes>();
 
-const g = schema.graph;
-
 Deno.test("Resolve paginated", async () => {
   const engine = createEngine({
-    schema,
+    graph,
     entry: "Graph",
     resolvers: [
-      resolver(g.Namespace.listStuff.return.return, (ctx) => {
-        const [search] = ctx.getInputOrFail(g.Namespace.listStuff);
+      resolver(graph.Namespace.listStuff.return.return, (ctx) => {
+        const [search] = ctx.getInputOrFail(graph.Namespace.listStuff);
         assertEquals(search, "hello");
-        const [pageConfig] = ctx.getInputOrFail(g.Paginated);
+        const [pageConfig] = ctx.getInputOrFail(graph.Paginated);
         assertEquals(pageConfig, { page: 2 });
         return ctx.withValue({
           data: [{ data: "hello", num: 42 }],

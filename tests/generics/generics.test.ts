@@ -12,15 +12,13 @@ export interface AllTypes {
 
 const client = query<AllTypes>();
 
-const schema = parse<AllTypes>(
+const graph = parse<AllTypes>(
   resolve("./tests/generics/graph.ts"),
 );
 
-const g = schema.graph;
-
 Deno.test("Fails if no resolver", async () => {
   const engine = createEngine({
-    schema,
+    graph,
     entry: "Graph",
     resolvers: [],
   });
@@ -35,17 +33,17 @@ Deno.test("Fails if no resolver", async () => {
   const err = await assertRejects(() => engine.run(queryDef, variables));
   assertEquals(
     (err as Error).message,
-    "Value is undefined at Paginated.total",
+    "Value is undefined at root.Paginated.total",
   );
 });
 
 Deno.test("get generic results", async () => {
   const engine = createEngine({
-    schema,
+    graph,
     entry: "Graph",
     resolvers: [
       resolver(
-        g.Graph.todos,
+        graph.Graph.todos,
         (ctx) => {
           return ctx.withValue({
             total: 1,
@@ -72,11 +70,11 @@ Deno.test("get generic results", async () => {
 
 Deno.test("Resolver in generic", async () => {
   const engine = createEngine({
-    schema,
+    graph,
     entry: "Graph",
     resolvers: [
       resolver(
-        g.Paginated,
+        graph.Paginated,
         (ctx) => {
           return ctx.withValue({
             total: 0,
@@ -103,11 +101,11 @@ Deno.test("Resolver in generic", async () => {
 
 Deno.test("Fails if a property is missing", async () => {
   const engine = createEngine({
-    schema,
+    graph,
     entry: "Graph",
     resolvers: [
       resolver(
-        g.Paginated,
+        graph.Paginated,
         (ctx) => {
           return ctx.withValue({
             data: [],
@@ -127,6 +125,6 @@ Deno.test("Fails if a property is missing", async () => {
   const err = await assertRejects(() => engine.run(queryDef, variables));
   assertEquals(
     (err as Error).message,
-    "Value is undefined at Paginated.total",
+    "Value is undefined at root.Paginated.total",
   );
 });

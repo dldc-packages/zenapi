@@ -29,3 +29,9 @@ export type TGraphObject<T extends Record<string, any>, Input> =
   & { [K in keyof T]: TGraphOf<NonNullable<T[K]>, never> };
 
 export type TLocalTypes = Record<string, TStructure>;
+
+export type TGraphBuiltins<T extends Record<string, any>> =
+  & TGraphBase<null>
+  & { [K in keyof T]: TGraphBase<T[K]> };
+
+export type TGraphBuiltinsAny = TGraphBuiltins<any>;

@@ -315,6 +315,14 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   arguments: () => {
     throw new Error(`Cannot prepare arguments`);
   },
+  builtin: (_context, graph, query) => {
+    const structure = graph[STRUCTURE];
+    if (structure.kind !== "builtin") {
+      throw new Error("Invalid structure");
+    }
+    const baseMid = structure.prepare(structure, graph, query);
+    return baseMid;
+  },
 };
 
 export type TStructureGetValue = (

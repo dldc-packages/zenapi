@@ -2,11 +2,11 @@ export const snapshot = {};
 
 snapshot[`todolist snapshot structure 1`] = `
 {
-  key: "",
+  key: "root",
   kind: "root",
   types: [
     {
-      key: "PaginationParams",
+      key: "root.PaginationParams",
       kind: "interface",
       name: "PaginationParams",
       parameters: [],
@@ -15,7 +15,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "page",
           optional: true,
           structure: {
-            key: "PaginationParams.page",
+            key: "root.PaginationParams.page",
             kind: "primitive",
             type: "number",
           },
@@ -24,7 +24,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "limit",
           optional: true,
           structure: {
-            key: "PaginationParams.limit",
+            key: "root.PaginationParams.limit",
             kind: "primitive",
             type: "number",
           },
@@ -32,7 +32,7 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
-      key: "User",
+      key: "root.User",
       kind: "interface",
       name: "User",
       parameters: [],
@@ -41,7 +41,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "userName",
           optional: false,
           structure: {
-            key: "User.userName",
+            key: "root.User.userName",
             kind: "primitive",
             type: "string",
           },
@@ -50,7 +50,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "app",
           optional: false,
           structure: {
-            key: "User.app",
+            key: "root.User.app",
             kind: "ref",
             params: [],
             ref: "App",
@@ -59,7 +59,7 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
-      key: "App",
+      key: "root.App",
       kind: "interface",
       name: "App",
       parameters: [],
@@ -68,7 +68,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "appName",
           optional: false,
           structure: {
-            key: "App.appName",
+            key: "root.App.appName",
             kind: "primitive",
             type: "string",
           },
@@ -78,19 +78,19 @@ snapshot[`todolist snapshot structure 1`] = `
           optional: false,
           structure: {
             items: {
-              key: "App.todos.items",
+              key: "root.App.todos.items",
               kind: "ref",
               params: [],
               ref: "Todo",
             },
-            key: "App.todos",
+            key: "root.App.todos",
             kind: "array",
           },
         },
       ],
     },
     {
-      key: "Todo",
+      key: "root.Todo",
       kind: "interface",
       name: "Todo",
       parameters: [],
@@ -99,7 +99,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "todoName",
           optional: false,
           structure: {
-            key: "Todo.todoName",
+            key: "root.Todo.todoName",
             kind: "primitive",
             type: "string",
           },
@@ -108,7 +108,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "done",
           optional: false,
           structure: {
-            key: "Todo.done",
+            key: "root.Todo.done",
             kind: "primitive",
             type: "boolean",
           },
@@ -116,7 +116,7 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
-      key: "CoinHeads",
+      key: "root.CoinHeads",
       kind: "interface",
       name: "CoinHeads",
       parameters: [],
@@ -125,7 +125,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "foo",
           optional: false,
           structure: {
-            key: "CoinHeads.foo",
+            key: "root.CoinHeads.foo",
             kind: "primitive",
             type: "string",
           },
@@ -133,7 +133,7 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
-      key: "CoinTails",
+      key: "root.CoinTails",
       kind: "interface",
       name: "CoinTails",
       parameters: [],
@@ -142,7 +142,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "bar",
           optional: false,
           structure: {
-            key: "CoinTails.bar",
+            key: "root.CoinTails.bar",
             kind: "primitive",
             type: "string",
           },
@@ -150,7 +150,7 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
-      key: "Config",
+      key: "root.Config",
       kind: "interface",
       name: "Config",
       parameters: [],
@@ -159,14 +159,14 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "env",
           optional: false,
           structure: {
-            key: "Config.env",
+            key: "root.Config.env",
             kind: "object",
             properties: [
               {
                 name: "version",
                 optional: false,
                 structure: {
-                  key: "Config.env.version",
+                  key: "root.Config.env.version",
                   kind: "primitive",
                   type: "string",
                 },
@@ -175,7 +175,7 @@ snapshot[`todolist snapshot structure 1`] = `
                 name: "num",
                 optional: false,
                 structure: {
-                  key: "Config.env.num",
+                  key: "root.Config.env.num",
                   kind: "primitive",
                   type: "number",
                 },
@@ -184,7 +184,7 @@ snapshot[`todolist snapshot structure 1`] = `
                 name: "str",
                 optional: false,
                 structure: {
-                  key: "Config.env.str",
+                  key: "root.Config.env.str",
                   kind: "primitive",
                   type: "string",
                 },
@@ -193,7 +193,7 @@ snapshot[`todolist snapshot structure 1`] = `
                 name: "bool",
                 optional: false,
                 structure: {
-                  key: "Config.env.bool",
+                  key: "root.Config.env.bool",
                   kind: "primitive",
                   type: "boolean",
                 },
@@ -204,7 +204,7 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
-      key: "Graph",
+      key: "root.Graph",
       kind: "interface",
       name: "Graph",
       parameters: [],
@@ -213,17 +213,17 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "auth",
           optional: false,
           structure: {
-            key: "Graph.auth",
+            key: "root.Graph.auth",
             kind: "nullable",
             type: {
-              key: "Graph.auth.type",
+              key: "root.Graph.auth.type",
               kind: "object",
               properties: [
                 {
                   name: "user",
                   optional: false,
                   structure: {
-                    key: "Graph.auth.type.user",
+                    key: "root.Graph.auth.type.user",
                     kind: "ref",
                     params: [],
                     ref: "User",
@@ -237,7 +237,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "users",
           optional: false,
           structure: {
-            key: "Graph.users",
+            key: "root.Graph.users",
             kind: "object",
             properties: [
               {
@@ -250,19 +250,19 @@ snapshot[`todolist snapshot structure 1`] = `
                         name: "id",
                         optional: false,
                         structure: {
-                          key: "Graph.users.byId.arguments.id",
+                          key: "root.Graph.users.byId.arguments.id",
                           kind: "primitive",
                           type: "string",
                         },
                       },
                     ],
-                    key: "Graph.users.byId.arguments",
+                    key: "root.Graph.users.byId.arguments",
                     kind: "arguments",
                   },
-                  key: "Graph.users.byId",
+                  key: "root.Graph.users.byId",
                   kind: "function",
                   returns: {
-                    key: "Graph.users.byId.returns",
+                    key: "root.Graph.users.byId.returns",
                     kind: "ref",
                     params: [],
                     ref: "User",
@@ -276,7 +276,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "apps",
           optional: false,
           structure: {
-            key: "Graph.apps",
+            key: "root.Graph.apps",
             kind: "object",
             properties: [
               {
@@ -289,26 +289,26 @@ snapshot[`todolist snapshot structure 1`] = `
                         name: "pagination",
                         optional: true,
                         structure: {
-                          key: "Graph.apps.all.arguments.pagination",
+                          key: "root.Graph.apps.all.arguments.pagination",
                           kind: "ref",
                           params: [],
                           ref: "PaginationParams",
                         },
                       },
                     ],
-                    key: "Graph.apps.all.arguments",
+                    key: "root.Graph.apps.all.arguments",
                     kind: "arguments",
                   },
-                  key: "Graph.apps.all",
+                  key: "root.Graph.apps.all",
                   kind: "function",
                   returns: {
                     items: {
-                      key: "Graph.apps.all.returns.items",
+                      key: "root.Graph.apps.all.returns.items",
                       kind: "ref",
                       params: [],
                       ref: "App",
                     },
-                    key: "Graph.apps.all.returns",
+                    key: "root.Graph.apps.all.returns",
                     kind: "array",
                   },
                 },
@@ -323,19 +323,19 @@ snapshot[`todolist snapshot structure 1`] = `
                         name: "id",
                         optional: false,
                         structure: {
-                          key: "Graph.apps.byId.arguments.id",
+                          key: "root.Graph.apps.byId.arguments.id",
                           kind: "primitive",
                           type: "string",
                         },
                       },
                     ],
-                    key: "Graph.apps.byId.arguments",
+                    key: "root.Graph.apps.byId.arguments",
                     kind: "arguments",
                   },
-                  key: "Graph.apps.byId",
+                  key: "root.Graph.apps.byId",
                   kind: "function",
                   returns: {
-                    key: "Graph.apps.byId.returns",
+                    key: "root.Graph.apps.byId.returns",
                     kind: "ref",
                     params: [],
                     ref: "App",
@@ -349,17 +349,17 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "flip",
           optional: false,
           structure: {
-            key: "Graph.flip",
+            key: "root.Graph.flip",
             kind: "union",
             types: [
               {
-                key: "Graph.flip.0",
+                key: "root.Graph.flip.0",
                 kind: "ref",
                 params: [],
                 ref: "CoinHeads",
               },
               {
-                key: "Graph.flip.1",
+                key: "root.Graph.flip.1",
                 kind: "ref",
                 params: [],
                 ref: "CoinTails",
@@ -371,7 +371,7 @@ snapshot[`todolist snapshot structure 1`] = `
           name: "config",
           optional: false,
           structure: {
-            key: "Graph.config",
+            key: "root.Graph.config",
             kind: "ref",
             params: [],
             ref: "Config",
@@ -385,25 +385,25 @@ snapshot[`todolist snapshot structure 1`] = `
 
 snapshot[`snapshot structure 1`] = `
 {
-  key: "",
+  key: "root",
   kind: "root",
   types: [
     {
-      key: "Role",
+      key: "root.Role",
       kind: "alias",
       name: "Role",
       parameters: [],
       type: {
-        key: "Role.type",
+        key: "root.Role.type",
         kind: "union",
         types: [
           {
-            key: "Role.type.0",
+            key: "root.Role.type.0",
             kind: "literal",
             type: "admin",
           },
           {
-            key: "Role.type.1",
+            key: "root.Role.type.1",
             kind: "literal",
             type: "user",
           },
@@ -411,7 +411,7 @@ snapshot[`snapshot structure 1`] = `
       },
     },
     {
-      key: "User",
+      key: "root.User",
       kind: "interface",
       name: "User",
       parameters: [],
@@ -420,7 +420,7 @@ snapshot[`snapshot structure 1`] = `
           name: "name",
           optional: false,
           structure: {
-            key: "User.name",
+            key: "root.User.name",
             kind: "primitive",
             type: "string",
           },
@@ -429,10 +429,10 @@ snapshot[`snapshot structure 1`] = `
           name: "age",
           optional: false,
           structure: {
-            key: "User.age",
+            key: "root.User.age",
             kind: "nullable",
             type: {
-              key: "User.age.type",
+              key: "root.User.age.type",
               kind: "primitive",
               type: "number",
             },
@@ -442,7 +442,7 @@ snapshot[`snapshot structure 1`] = `
           name: "group",
           optional: false,
           structure: {
-            key: "User.group",
+            key: "root.User.group",
             kind: "ref",
             params: [],
             ref: "Group",
@@ -452,10 +452,10 @@ snapshot[`snapshot structure 1`] = `
           name: "maybeGroup",
           optional: false,
           structure: {
-            key: "User.maybeGroup",
+            key: "root.User.maybeGroup",
             kind: "nullable",
             type: {
-              key: "User.maybeGroup.type",
+              key: "root.User.maybeGroup.type",
               kind: "ref",
               params: [],
               ref: "Group",
@@ -465,7 +465,7 @@ snapshot[`snapshot structure 1`] = `
       ],
     },
     {
-      key: "Group",
+      key: "root.Group",
       kind: "interface",
       name: "Group",
       parameters: [],
@@ -474,7 +474,7 @@ snapshot[`snapshot structure 1`] = `
           name: "name",
           optional: false,
           structure: {
-            key: "Group.name",
+            key: "root.Group.name",
             kind: "primitive",
             type: "string",
           },
@@ -484,19 +484,19 @@ snapshot[`snapshot structure 1`] = `
           optional: false,
           structure: {
             items: {
-              key: "Group.users.items",
+              key: "root.Group.users.items",
               kind: "ref",
               params: [],
               ref: "User",
             },
-            key: "Group.users",
+            key: "root.Group.users",
             kind: "array",
           },
         },
       ],
     },
     {
-      key: "Graph",
+      key: "root.Graph",
       kind: "interface",
       name: "Graph",
       parameters: [],
@@ -505,7 +505,7 @@ snapshot[`snapshot structure 1`] = `
           name: "group",
           optional: false,
           structure: {
-            key: "Graph.group",
+            key: "root.Graph.group",
             kind: "ref",
             params: [],
             ref: "Group",
@@ -515,7 +515,7 @@ snapshot[`snapshot structure 1`] = `
           name: "user",
           optional: false,
           structure: {
-            key: "Graph.user",
+            key: "root.Graph.user",
             kind: "ref",
             params: [],
             ref: "User",
@@ -525,17 +525,17 @@ snapshot[`snapshot structure 1`] = `
           name: "randomItem",
           optional: false,
           structure: {
-            key: "Graph.randomItem",
+            key: "root.Graph.randomItem",
             kind: "union",
             types: [
               {
-                key: "Graph.randomItem.0",
+                key: "root.Graph.randomItem.0",
                 kind: "ref",
                 params: [],
                 ref: "User",
               },
               {
-                key: "Graph.randomItem.1",
+                key: "root.Graph.randomItem.1",
                 kind: "ref",
                 params: [],
                 ref: "Group",

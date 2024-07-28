@@ -1,3 +1,9 @@
+import type {
+  TBuiltinGetSchema,
+  TBuiltinMatch,
+  TBuiltinPrepare,
+} from "./builtin.ts";
+
 export interface TStructureObjectProperty {
   name: string;
   structure: TStructure;
@@ -93,11 +99,24 @@ export interface TStructureFunction {
   returns: TStructure;
 }
 
+export type TStructureRootMode = "graph" | "builtins";
+
 export type TRootStructure = {
   kind: "root";
   key: string;
   types: TTopLevelStructure[];
+  builtins: TBuiltinStructure[];
+  mode: TStructureRootMode;
 };
+
+export interface TBuiltinStructure {
+  kind: "builtin";
+  key: string;
+  name: string;
+  getSchema: TBuiltinGetSchema;
+  prepare: TBuiltinPrepare;
+  match: TBuiltinMatch;
+}
 
 export type TStructure =
   | TStructureObject
@@ -109,7 +128,8 @@ export type TStructure =
   | TStructureLiteral
   | TStructureNullable
   | TStructureInterface
-  | TStructureAlias;
+  | TStructureAlias
+  | TBuiltinStructure;
 
 export type TAllStructure =
   | TStructure

@@ -6,26 +6,24 @@ import type { TodoListTypes } from "./schemas/todolist.types.ts";
 
 const client = query<TodoListTypes>();
 
-const schema = parse<TodoListTypes>(
+const graph = parse<TodoListTypes>(
   resolve("./tests/schemas/todolist.ts"),
 );
 
-const g = schema.graph;
-
 const engine = createEngine({
-  schema,
+  graph,
   entry: "Graph",
   resolvers: [
     resolver(
-      g.Graph.config.env.version,
+      graph.Graph.config.env.version,
       (ctx) => {
         return ctx.withValue("1.0.0");
       },
     ),
     resolver(
-      g.Graph.apps.all,
+      graph.Graph.apps.all,
       (ctx) => {
-        const [pagination] = ctx.getInputOrFail(g.Graph.apps.all);
+        const [pagination] = ctx.getInputOrFail(graph.Graph.apps.all);
         return ctx.withValue([
           { appName: "app1", other: pagination },
           { appName: "app2" },

@@ -104,6 +104,13 @@ const SCHEMA_BY_STRUCTURE: TByStructureKind = {
     });
     return v.tuple(argsSchema);
   },
+  builtin: (context, graph) => {
+    const structure = graph[STRUCTURE];
+    if (structure.kind !== "builtin") {
+      throw new Error("Invalid structure kind");
+    }
+    return structure.getSchema(context, graph);
+  },
 };
 
 export function getStructureSchema(

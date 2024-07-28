@@ -10,17 +10,15 @@ interface AllTypes {
   StuffResult: StuffResult;
 }
 
-const schema = parse<AllTypes>(
+const graph = parse<AllTypes>(
   resolve("./tests/function/graph.ts"),
 );
 
 const client = query<AllTypes>();
 
-const g = schema.graph;
-
 Deno.test("Fails if no resolver", async () => {
   const engine = createEngine({
-    schema,
+    graph,
     entry: "Graph",
     resolvers: [],
   });
@@ -30,7 +28,7 @@ Deno.test("Fails if no resolver", async () => {
   const err = await assertRejects(() => engine.run(queryDef, variables));
   assertEquals(
     (err as Error).message,
-    "Value is undefined at StuffResult.num",
+    "Value is undefined at root.StuffResult.num",
   );
 });
 
@@ -38,13 +36,13 @@ Deno.test("get function results", async () => {
   let args: any[] = [];
 
   const engine = createEngine({
-    schema,
+    graph,
     entry: "Graph",
     resolvers: [
       resolver(
-        g.Graph.sub.doStuff,
+        graph.Graph.sub.doStuff,
         (ctx) => {
-          args = ctx.getInputOrFail(g.Graph.sub.doStuff);
+          args = ctx.getInputOrFail(graph.Graph.sub.doStuff);
           const res: StuffResult = { data: "hello", num: 42 };
           return ctx.withValue(res);
         },
@@ -63,13 +61,13 @@ Deno.test("resolve on sub namespace", async () => {
   let args: any[] = [];
 
   const engine = createEngine({
-    schema,
+    graph,
     entry: "Graph",
     resolvers: [
       resolver(
-        g.Namespace.doStuff,
+        graph.Namespace.doStuff,
         (ctx) => {
-          args = ctx.getInputOrFail(g.Namespace.doStuff);
+          args = ctx.getInputOrFail(graph.Namespace.doStuff);
           return ctx.withValue({ num: 42 });
         },
       ),
