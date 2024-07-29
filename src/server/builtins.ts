@@ -124,6 +124,8 @@ export const DEFAULT_BUILTINS: TDefaultBuiltins = {
   }),
 };
 
-export const DEFAULT_BUILTINS_GRAPH = createBuiltins<TDefaultBuiltins>(
+export const DEFAULT_BUILTINS_GRAPH: TGraphBuiltins<
+  TBuiltinsFromConfig<TDefaultBuiltins>
+> = createBuiltins<TDefaultBuiltins>(
   DEFAULT_BUILTINS,
 );
