@@ -42,7 +42,10 @@ export interface TBuiltinConfig<T> {
   match: TBuiltinMatch;
 }
 
-export type TBuiltinTypesConfig = Record<string, TBuiltinConfig<any> | null>;
+export type TBuiltinTypesConfig = Record<
+  string,
+  TBuiltinConfig<any> | null
+>;
 
 export type TBuiltinTypes = Record<string, TBuiltinStructure>;
 
@@ -92,7 +95,11 @@ export function builtin<T>(
   };
 }
 
-export const DEFAULT_BUILTINS = {
+export type TDefaultBuiltins = {
+  Date: TBuiltinConfig<Date>;
+};
+
+export const DEFAULT_BUILTINS: TDefaultBuiltins = {
   Date: builtin<Date>({
     getSchema: () => v.date(),
     prepare: (structure) => {
@@ -115,6 +122,8 @@ export const DEFAULT_BUILTINS = {
       return value instanceof Date;
     },
   }),
-} satisfies TBuiltinTypesConfig;
+};
 
-export const DEFAULT_BUILTINS_GRAPH = createBuiltins(DEFAULT_BUILTINS);
+export const DEFAULT_BUILTINS_GRAPH = createBuiltins<TDefaultBuiltins>(
+  DEFAULT_BUILTINS,
+);
