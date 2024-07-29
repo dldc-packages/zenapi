@@ -16,9 +16,9 @@ import {
   SyntaxKind,
 } from "@ts-morph/ts-morph";
 import type { TTypesBase } from "../utils/types.ts";
-import { DEFAULT_BUILTINS_GRAPH } from "./builtin.ts";
+import { DEFAULT_BUILTINS_GRAPH } from "./builtins.ts";
 import { ROOT } from "./constants.ts";
-import { graph } from "./graph.ts";
+import { graph, type TGraphBaseAny } from "./graph.ts";
 import type {
   TFunctionArgumentStructure,
   TRootStructure,
@@ -29,14 +29,14 @@ import type {
   TStructureObjectProperty,
   TStructureUnion,
 } from "./structure.types.ts";
-import type { TGraphBuiltinsAny, TGraphOf } from "./types.ts";
+import type { TGraphOf } from "./types.ts";
 
 /**
  * Pass the path to the schema file as well as the the types to be used in the schema.
  */
 export function parse<Types extends TTypesBase>(
   schemaPath: string,
-  builtins: TGraphBuiltinsAny = (DEFAULT_BUILTINS_GRAPH as any),
+  builtins: TGraphBaseAny = DEFAULT_BUILTINS_GRAPH,
 ): TGraphOf<Types, never> {
   const project = new Project({
     resolutionHost: ResolutionHosts.deno,
@@ -64,6 +64,9 @@ export function parse<Types extends TTypesBase>(
   const statements = file.getStatements();
 
   for (const statement of statements) {
+    if (Node.isImportDeclaration(statement)) {
+      continue;
+    }
     const struct = parseNode(statement, key);
     if (struct.kind !== "interface" && struct.kind !== "alias") {
       throw new Error(

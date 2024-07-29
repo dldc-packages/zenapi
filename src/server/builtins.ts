@@ -3,7 +3,11 @@ import { TYPES } from "./constants.ts";
 import { graphInternal, type TGraphBaseAny } from "./graph.ts";
 import type { TPrepareContext, TQueryUnknown } from "./prepare.ts";
 import type { TBuiltinStructure, TRootStructure } from "./structure.types.ts";
-import type { TGraphBuiltins, TMiddleware } from "./types.ts";
+import type {
+  TBuiltinsFromConfig,
+  TGraphBuiltins,
+  TMiddleware,
+} from "./types.ts";
 
 export type TBuiltinGetSchema = (
   context: TPrepareContext,
@@ -42,10 +46,6 @@ export type TBuiltinTypesConfig = Record<string, TBuiltinConfig<any> | null>;
 
 export type TBuiltinTypes = Record<string, TBuiltinStructure>;
 
-export type TBuiltinsFromConfig<Conf extends TBuiltinTypesConfig> = {
-  [K in keyof Conf]: Conf[K] extends TBuiltinConfig<infer T> ? T : never;
-};
-
 export function createBuiltins<Conf extends TBuiltinTypesConfig>(
   config: Conf,
 ): TGraphBuiltins<TBuiltinsFromConfig<Conf>> {
@@ -59,7 +59,7 @@ export function createBuiltins<Conf extends TBuiltinTypesConfig>(
       const { getSchema, prepare, match } = config;
       builtins.push({
         kind: "builtin",
-        key: name,
+        key: `builtin.${name}`,
         name,
         getSchema,
         prepare,

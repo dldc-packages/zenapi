@@ -2,7 +2,7 @@ import type {
   TBuiltinGetSchema,
   TBuiltinMatch,
   TBuiltinPrepare,
-} from "./builtin.ts";
+} from "./builtins.ts";
 
 export interface TStructureObjectProperty {
   name: string;

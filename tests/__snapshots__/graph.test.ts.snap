@@ -2,8 +2,19 @@ export const snapshot = {};
 
 snapshot[`todolist snapshot structure 1`] = `
 {
+  builtins: [
+    {
+      getSchema: [Function: getSchema],
+      key: "builtin.Date",
+      kind: "builtin",
+      match: [Function: match],
+      name: "Date",
+      prepare: [Function: prepare],
+    },
+  ],
   key: "root",
   kind: "root",
+  mode: "graph",
   types: [
     {
       key: "root.PaginationParams",
@@ -385,8 +396,19 @@ snapshot[`todolist snapshot structure 1`] = `
 
 snapshot[`snapshot structure 1`] = `
 {
+  builtins: [
+    {
+      getSchema: [Function: getSchema],
+      key: "builtin.Date",
+      kind: "builtin",
+      match: [Function: match],
+      name: "Date",
+      prepare: [Function: prepare],
+    },
+  ],
   key: "root",
   kind: "root",
+  mode: "graph",
   types: [
     {
       key: "root.Role",

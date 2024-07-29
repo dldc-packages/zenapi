@@ -1,4 +1,5 @@
 import type { Primitive } from "../utils/types.ts";
+import type { TBuiltinConfig, TBuiltinTypesConfig } from "./builtins.ts";
 import type { ApiContext } from "./context.ts";
 import type { TGraphBase } from "./graph.ts";
 import type { TStructure } from "./structure.types.ts";
@@ -34,4 +35,8 @@ export type TGraphBuiltins<T extends Record<string, any>> =
   & TGraphBase<null>
   & { [K in keyof T]: TGraphBase<T[K]> };
 
-export type TGraphBuiltinsAny = TGraphBuiltins<any>;
+export type TBuiltinsFromConfig<Conf extends TBuiltinTypesConfig> = {
+  [K in keyof Conf]: Conf[K] extends TBuiltinConfig<infer T> ? T : never;
+};
+
+export type TGraphBuiltinsAny = TGraphBuiltins<TBuiltinsFromConfig<any>>;
