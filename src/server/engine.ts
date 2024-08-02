@@ -127,7 +127,7 @@ function validateResolvers(
     let current: THandlersTree | undefined = tree;
     for (const struct of structPath) {
       if (!current) {
-        return [];
+        return middlewares;
       }
       middlewares.push(...current.middlewares);
       current = current.children.get(struct);
@@ -138,3 +138,11 @@ function validateResolvers(
     return middlewares;
   }
 }
+
+// function debugHandlerTree(tree: THandlersTree, level = 0) {
+//   console.info("  ".repeat(level), `middlewares: ${tree.middlewares.length}`);
+//   for (const [struct, child] of tree.children) {
+//     console.info("  ".repeat(level), struct.key);
+//     debugHandlerTree(child, level + 1);
+//   }
+// }

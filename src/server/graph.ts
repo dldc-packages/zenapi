@@ -19,6 +19,7 @@ export interface TGraphBase<Input> {
   [GET]: TGraphGet;
   // Shortcut to [GET](REF)
   [REF]: TGraphBaseAny;
+  [Symbol.toStringTag]: () => string;
   _<T extends TGraphBaseAny>(next: T): T;
 }
 
@@ -72,6 +73,11 @@ export function graphInternal(
     {},
     {
       get(_, prop) {
+        if (prop === Symbol.toStringTag) {
+          return () => {
+            return path.map((s) => s.key).join("/");
+          };
+        }
         if (prop === PATH) {
           return path;
         }
