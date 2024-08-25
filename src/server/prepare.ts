@@ -50,7 +50,7 @@ export function prepare(
       return mid;
     }
   }
-  throw new Error(`Invalid query: ${JSON.stringify(query)}`);
+  throw new Error(`Invalid query at ${structure.key}`);
 }
 
 export type TStructureGetSchema<TStruct extends TAllStructure> = (
@@ -100,7 +100,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
           return resolved.withValue({});
         }
         if (typeof value !== "object") {
-          throw new Error("Expected object");
+          throw new Error(`Expected object at ${graph[STRUCTURE].key}`);
         }
         return resolved;
       },
@@ -109,7 +109,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   alias: (context, graph, query) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "alias") {
-      throw new Error("Invalid structure");
+      throw new Error(`Invalid structure at ${structure.key}`);
     }
     const subGraph = graph[GET](REF);
     const userResolvers = context.getResolvers(graph);
@@ -123,7 +123,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   ref: (context, graph, query) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "ref") {
-      throw new Error("Invalid structure");
+      throw new Error(`Invalid structure at ${structure.key}`);
     }
     const subGraph = graph[GET](REF);
     const userResolvers = context.getResolvers(graph);
@@ -146,7 +146,9 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
           return resolved.withValue({});
         }
         if (typeof value !== "object") {
-          throw new Error("Expected object");
+          throw new Error(
+            `Expected object at ${graph[STRUCTURE].key}, got ${value}`,
+          );
         }
         return resolved;
       },
@@ -160,7 +162,9 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
         return res.withValue([]);
       }
       if (!Array.isArray(value)) {
-        throw new Error("Expected array");
+        throw new Error(
+          `Expected array at ${graph[STRUCTURE].key}, got ${value}`,
+        );
       }
       return res;
     };
@@ -181,12 +185,12 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
     };
   },
   primitive: (context, graph, query) => {
-    if (query.length > 0) {
-      throw new Error("Invalid query for primitive");
-    }
     const structure = graph[STRUCTURE];
+    if (query.length > 0) {
+      throw new Error(`Invalid query for primitive at ${structure.key}`);
+    }
     if (structure.kind !== "primitive") {
-      throw new Error("Invalid structure");
+      throw new Error(`Invalid structure at ${structure.key}`);
     }
     const baseMid: TMiddleware = async (ctx, next) => {
       const res = await next(ctx);
@@ -204,12 +208,12 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
     return compose(baseMid, ...userResolvers);
   },
   literal: (context, graph, query) => {
-    if (query.length > 0) {
-      throw new Error("Invalid query for primitive");
-    }
     const structure = graph[STRUCTURE];
+    if (query.length > 0) {
+      throw new Error(`Invalid query for primitive at ${structure.key}`);
+    }
     if (structure.kind !== "literal") {
-      throw new Error("Invalid structure");
+      throw new Error(`Invalid structure at ${structure.key}`);
     }
     const baseMid: TMiddleware = async (ctx, next) => {
       const res = await next(ctx);
@@ -218,7 +222,9 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
         throw new Error(`Value is undefined at ${structure.key}`);
       }
       if (value !== structure.type) {
-        throw new Error(`Expected ${structure.type}, got ${value}`);
+        throw new Error(
+          `Expected ${structure.type}, got ${value} at ${structure.key}`,
+        );
       }
       return res;
     };
@@ -228,7 +234,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   nullable: (context, graph, query) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "nullable") {
-      throw new Error("Invalid structure");
+      throw new Error(`Invalid structure at ${structure.key}`);
     }
     const baseMid: TMiddleware = async (ctx, next) => {
       const res = await next(ctx);
@@ -254,7 +260,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   union: (context, graph, query) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "union") {
-      throw new Error("Invalid structure");
+      throw new Error(`Invalid structure at ${structure.key}`);
     }
     const userResolvers = context.getResolvers(graph);
     const mid = compose(...userResolvers);
@@ -278,7 +284,11 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       );
       const sub = subs.find((sub) => sub.graph === subGraph);
       if (!sub) {
-        throw new Error("Unexpected: missing sub middleware for resolved type");
+        throw new Error(
+          `Unexpected: missing sub middleware for resolved type ${
+            subGraph[STRUCTURE].key
+          }`,
+        );
       }
       return sub.mid(res, next);
     };
@@ -318,7 +328,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   builtin: (_context, graph, query) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "builtin") {
-      throw new Error("Invalid structure");
+      throw new Error(`Invalid structure at ${structure.key}`);
     }
     const baseMid = structure.prepare(structure, graph, query);
     return baseMid;
