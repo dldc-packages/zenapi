@@ -64,6 +64,7 @@ export type TQueryOfNested<
 
 export type TQueryOf<T, Nullable extends boolean> = T extends Primitive
   ? TQueryBase<Nullable extends true ? T | null : T>
+  : T extends Date ? TQueryBase<Nullable extends true ? Date | null : Date>
   : T extends (...args: any) => any
     ? (...args: Parameters<T>) => TQueryOfNested<ReturnType<T>, Nullable>
   : T extends Array<infer U> ? TQueryOfArray<U, Nullable>

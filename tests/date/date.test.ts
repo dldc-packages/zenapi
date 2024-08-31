@@ -1,7 +1,9 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
-import { query, queryToJson } from "../../client.ts";
+import type { IsExact } from "@std/testing/types";
+import { query, queryToJson, type TQueryBase } from "../../client.ts";
 import { createEngine, parse, resolver } from "../../server.ts";
+import { assertType } from "../utils/assertType.ts";
 import type { Graph, Namespace } from "./graph.ts";
 
 interface AllTypes {
@@ -45,6 +47,7 @@ Deno.test("Fail if output is not a date", async () => {
   });
 
   const query = client.Graph.sub.now;
+  assertType<IsExact<typeof query, TQueryBase<Date>>>(true);
   const [queryDef, variables] = queryToJson(query);
   const err = await assertRejects(() => engine.run(queryDef, variables));
   assertEquals(
