@@ -76,7 +76,7 @@ const SCHEMA_BY_STRUCTURE: TByStructureKind = {
   },
   nullable: (context, graph) => {
     const subSchema = getStructureSchema(context, graph[GET](REF));
-    return v.optional(subSchema);
+    return v.nullable(subSchema);
   },
   union: (context, graph) => {
     const structure = graph[STRUCTURE];
