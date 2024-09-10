@@ -27,12 +27,12 @@ export type TQueryOfObject<
   T extends Record<string, any>,
   ParentNullable extends boolean,
 > =
-  & TQueryBase<null>
+  & TQueryBase<T>
   & { [K in keyof T]-?: TQueryOfNested<T[K], ParentNullable> }
   & { _: TQueryOfObjectSelectFn<T, ParentNullable> };
 
 export interface TQueryOfArray<T, ParentNullable extends boolean>
-  extends TQueryBase<null> {
+  extends TQueryBase<T[]> {
   _: TQueryArraySelectFn<T, ParentNullable>;
 }
 
