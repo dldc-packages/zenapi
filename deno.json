@@ -1,6 +1,6 @@
 {
   "name": "@dldc/zenapi",
-  "version": "5.0.5",
+  "version": "5.1.0",
   "exports": {
     "./client": "./client.ts",
     "./server": "./server.ts"
@@ -31,6 +31,8 @@
     }
   },
   "fmt": {
-    "exclude": ["coverage"]
+    "exclude": [
+      "coverage"
+    ]
   }
 }
