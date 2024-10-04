@@ -35,7 +35,7 @@ export class ApiContext extends Stack {
     );
   }
 
-  protected instantiate(stackCore: TStackCoreValue): this {
+  protected override instantiate(stackCore: TStackCoreValue): this {
     return new ApiContext(stackCore) as any;
   }
 
