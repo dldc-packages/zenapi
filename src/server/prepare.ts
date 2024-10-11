@@ -100,7 +100,11 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
           return resolved.withValue({});
         }
         if (typeof value !== "object") {
-          throw new Error(`Expected object at ${graph[STRUCTURE].key}`);
+          throw new Error(
+            `Expected object at ${
+              graph[STRUCTURE].key
+            } received ${typeof value}`,
+          );
         }
         return resolved;
       },

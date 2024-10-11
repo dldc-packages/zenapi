@@ -35,6 +35,10 @@ export class ApiContext extends Stack {
     );
   }
 
+  static empty(): ApiContext {
+    return new ApiContext();
+  }
+
   protected override instantiate(stackCore: TStackCoreValue): this {
     return new ApiContext(stackCore) as any;
   }
@@ -78,6 +82,9 @@ export class ApiContext extends Stack {
   }
 
   withValue<T = unknown>(value: T): this {
+    if (value instanceof ApiContext) {
+      return this.merge(value);
+    }
     return this.with(ValueKey.Provider(value));
   }
 
