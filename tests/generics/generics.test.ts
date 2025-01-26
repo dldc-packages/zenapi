@@ -33,7 +33,7 @@ Deno.test("Fails if no resolver", async () => {
   const err = await assertRejects(() => engine.run(queryDef, variables));
   assertEquals(
     (err as Error).message,
-    "Value is undefined at root.Paginated.total",
+    "Invalid resolved value for root.Paginated.total (expected: number, received: undefined)",
   );
 });
 
@@ -125,6 +125,6 @@ Deno.test("Fails if a property is missing", async () => {
   const err = await assertRejects(() => engine.run(queryDef, variables));
   assertEquals(
     (err as Error).message,
-    "Value is undefined at root.Paginated.total",
+    "Invalid resolved value for root.Paginated.total (expected: number, received: undefined)",
   );
 });

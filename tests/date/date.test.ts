@@ -83,7 +83,7 @@ Deno.test("Date input", async (t) => {
     const err = await assertRejects(() => engine.run(queryDef, variables));
     assertEquals(
       (err as Error).message,
-      "Invalid type: Expected Date but received 42",
+      "Invalid arguments passed to root.Namespace.doStuff",
     );
   });
 });

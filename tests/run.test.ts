@@ -60,7 +60,7 @@ Deno.test("call query with invalid params should throw", async () => {
   );
   assertEquals(
     (err as Error).message,
-    "Invalid type: Expected never but received true",
+    "Invalid arguments passed to root.Graph.apps.all",
   );
 });
 
@@ -72,7 +72,10 @@ Deno.test("should throw when query does not target entry", async () => {
       await engine.run(queryDef, variables);
     },
   );
-  assertEquals((err as Error).message, "Invalid entry point: Config");
+  assertEquals(
+    (err as Error).message,
+    "Invalid entry, all queries should start from Graph (requested: Config)",
+  );
 });
 
 Deno.test("run query with top level object", async () => {

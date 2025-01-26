@@ -28,7 +28,7 @@ Deno.test("Fails if no resolver", async () => {
   const err = await assertRejects(() => engine.run(queryDef, variables));
   assertEquals(
     (err as Error).message,
-    "Value is undefined at root.StuffResult.num",
+    "Invalid resolved value for root.StuffResult.num (expected: number, received: undefined)",
   );
 });
 

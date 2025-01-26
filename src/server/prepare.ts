@@ -7,6 +7,16 @@ import * as v from "@valibot/valibot";
 import { compose } from "./compose.ts";
 import { GET, REF, STRUCTURE } from "./constants.ts";
 import { ApiContext, type TInputItem } from "./context.ts";
+import {
+  createArgsValidationFailed,
+  createCannotPrepareArguments,
+  createInvalidEntry,
+  createInvalidQuery,
+  createInvalidResolvedValue,
+  createInvalidStructure,
+  createInvalidUnionTypeQuery,
+  createUnknownStructureKind,
+} from "./erreur.ts";
 import { matchUnionType } from "./match.ts";
 import { getStructureSchema } from "./schema.ts";
 import type { TAllStructure, TStructureKind } from "./structure.types.ts";
@@ -37,7 +47,7 @@ export function prepare(
   const structure = graph[STRUCTURE];
   const prepare = PREPARE_BY_STRUCTURE[structure.kind];
   if (!prepare) {
-    throw new Error(`No prepare function for ${structure.kind}`);
+    throw createUnknownStructureKind(graph, structure.kind);
   }
   const prepared = prepare(context, graph, query);
   if (prepared) {
@@ -50,7 +60,7 @@ export function prepare(
       return mid;
     }
   }
-  throw new Error(`Invalid query at ${structure.key}`);
+  throw createInvalidQuery(graph, query);
 }
 
 export type TStructureGetSchema<TStruct extends TAllStructure> = (
@@ -58,6 +68,10 @@ export type TStructureGetSchema<TStruct extends TAllStructure> = (
   structure: TStruct,
 ) => v.BaseSchema<any, any, any>;
 
+/**
+ * Given a graph and a query return a middleware to handle the query
+ * Can return null if the query is not what is expected, defering the handling to operators
+ */
 export type TPrepareStructure = (
   context: TPrepareContext,
   graph: TGraphBaseAny,
@@ -84,7 +98,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       return null;
     }
     if (queryItem !== context.entry) {
-      throw new Error(`Invalid entry point: ${queryItem}`);
+      throw createInvalidEntry(graph, context.entry, queryItem);
     }
     return prepareObjectLike(context, graph, query, identity);
   },
@@ -100,11 +114,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
           return resolved.withValue({});
         }
         if (typeof value !== "object") {
-          throw new Error(
-            `Expected object at ${
-              graph[STRUCTURE].key
-            } received ${typeof value}`,
-          );
+          throw createInvalidResolvedValue(graph, value, "object");
         }
         return resolved;
       },
@@ -113,7 +123,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   alias: (context, graph, query) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "alias") {
-      throw new Error(`Invalid structure at ${structure.key}`);
+      throw createInvalidStructure(graph, "alias", structure.kind);
     }
     const subGraph = graph[GET](REF);
     const userResolvers = context.getResolvers(graph);
@@ -127,7 +137,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   ref: (context, graph, query) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "ref") {
-      throw new Error(`Invalid structure at ${structure.key}`);
+      throw createInvalidStructure(graph, "ref", structure.kind);
     }
     const subGraph = graph[GET](REF);
     const userResolvers = context.getResolvers(graph);
@@ -150,9 +160,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
           return resolved.withValue({});
         }
         if (typeof value !== "object") {
-          throw new Error(
-            `Expected object at ${graph[STRUCTURE].key}, got ${value}`,
-          );
+          throw createInvalidResolvedValue(graph, value, "object");
         }
         return resolved;
       },
@@ -166,9 +174,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
         return res.withValue([]);
       }
       if (!Array.isArray(value)) {
-        throw new Error(
-          `Expected array at ${graph[STRUCTURE].key}, got ${value}`,
-        );
+        throw createInvalidResolvedValue(graph, value, "array");
       }
       return res;
     };
@@ -190,21 +196,21 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   },
   primitive: (context, graph, query) => {
     const structure = graph[STRUCTURE];
-    if (query.length > 0) {
-      throw new Error(`Invalid query for primitive at ${structure.key}`);
-    }
     if (structure.kind !== "primitive") {
-      throw new Error(`Invalid structure at ${structure.key}`);
+      throw createInvalidStructure(graph, "primitive", structure.kind);
+    }
+    if (query.length > 0) {
+      throw createInvalidQuery(graph, query, structure.type);
     }
     const baseMid: TMiddleware = async (ctx, next) => {
       const res = await next(ctx);
       const value = res.value;
       if (value === undefined) {
-        throw new Error(`Value is undefined at ${structure.key}`);
+        throw createInvalidResolvedValue(graph, value, structure.type);
       }
       // deno-lint-ignore valid-typeof
       if (typeof value !== structure.type) {
-        throw new Error(`Expected ${structure.type}, got ${typeof value}`);
+        throw createInvalidResolvedValue(graph, value, structure.type);
       }
       return res;
     };
@@ -213,22 +219,20 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   },
   literal: (context, graph, query) => {
     const structure = graph[STRUCTURE];
-    if (query.length > 0) {
-      throw new Error(`Invalid query for primitive at ${structure.key}`);
-    }
     if (structure.kind !== "literal") {
-      throw new Error(`Invalid structure at ${structure.key}`);
+      throw createInvalidStructure(graph, "literal", structure.kind);
+    }
+    if (query.length > 0) {
+      throw createInvalidQuery(graph, query, String(structure.type));
     }
     const baseMid: TMiddleware = async (ctx, next) => {
       const res = await next(ctx);
       const value = res.value;
       if (value === undefined) {
-        throw new Error(`Value is undefined at ${structure.key}`);
+        throw createInvalidResolvedValue(graph, value, String(structure.type));
       }
       if (value !== structure.type) {
-        throw new Error(
-          `Expected ${structure.type}, got ${value} at ${structure.key}`,
-        );
+        throw createInvalidResolvedValue(graph, value, String(structure.type));
       }
       return res;
     };
@@ -238,7 +242,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   nullable: (context, graph, query) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "nullable") {
-      throw new Error(`Invalid structure at ${structure.key}`);
+      throw createInvalidStructure(graph, "nullable", structure.kind);
     }
     const baseMid: TMiddleware = async (ctx, next) => {
       const res = await next(ctx);
@@ -264,7 +268,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
   union: (context, graph, query) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "union") {
-      throw new Error(`Invalid structure at ${structure.key}`);
+      throw createInvalidStructure(graph, "union", structure.kind);
     }
     const userResolvers = context.getResolvers(graph);
     const mid = compose(...userResolvers);
@@ -288,11 +292,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       );
       const sub = subs.find((sub) => sub.graph === subGraph);
       if (!sub) {
-        throw new Error(
-          `Unexpected: missing sub middleware for resolved type ${
-            subGraph[STRUCTURE].key
-          }`,
-        );
+        throw createInvalidUnionTypeQuery(graph, query);
       }
       return sub.mid(res, next);
     };
@@ -313,7 +313,11 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       const baseValue = ctx.value;
       const variables = ctx.getOrFail(ApiContext.VariablesKey.Consumer);
       const args = variables[variableIndex];
-      const parsed = v.parse(argsSchema, args);
+      const parseResult = v.safeParse(argsSchema, args);
+      if (parseResult.success === false) {
+        throw createArgsValidationFailed(graph, parseResult.issues);
+      }
+      const parsed = parseResult.output;
       const prevInputs = ctx.getOrFail(ApiContext.InputsKey.Consumer);
       const inputs: TInputItem[] = [...prevInputs, {
         path: graph,
@@ -326,13 +330,13 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       return sub(parentRes, (ctx) => Promise.resolve(ctx));
     };
   },
-  arguments: () => {
-    throw new Error(`Cannot prepare arguments`);
+  arguments: (_context, graph) => {
+    throw createCannotPrepareArguments(graph);
   },
   builtin: (_context, graph, query) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "builtin") {
-      throw new Error(`Invalid structure at ${structure.key}`);
+      throw createInvalidStructure(graph, "builtin", structure.kind);
     }
     const baseMid = structure.prepare(structure, graph, query);
     return baseMid;

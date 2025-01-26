@@ -112,7 +112,7 @@ Deno.test("MyBuiltin input", async (t) => {
     const err = await assertRejects(() => engine.run(queryDef, variables));
     assertEquals(
       (err as Error).message,
-      "Invalid type: Expected string but received 42",
+      "Invalid arguments passed to root.Graph.doStuff",
     );
   });
 });

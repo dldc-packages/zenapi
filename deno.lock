@@ -108,6 +108,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@dldc/compose@^6.0.2",
+      "jsr:@dldc/erreur@^7.1.1",
       "jsr:@dldc/stack@^6.1.0",
       "jsr:@std/assert@^1.0.6",
       "jsr:@std/path@^1.0.6",
