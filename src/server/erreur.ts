@@ -1,4 +1,4 @@
-import { createErreurStore } from "@dldc/erreur";
+import { createErreurStore, type TReadonlyErreurStore } from "@dldc/erreur";
 import type * as v from "@valibot/valibot";
 import { STRUCTURE } from "./constants.ts";
 import type { TGraphBaseAny } from "./graph.ts";
@@ -29,7 +29,8 @@ export type TGraphClientErreurData = {
 };
 
 const GraphClientErreurPrivate = createErreurStore<TGraphClientErreurData>();
-export const GraphClientErreur = GraphClientErreurPrivate.asReadonly;
+export const GraphClientErreur: TReadonlyErreurStore<TGraphClientErreurData> =
+  GraphClientErreurPrivate.asReadonly;
 
 export function createArgsValidationFailed(
   graph: TGraphBaseAny,
@@ -94,7 +95,8 @@ export type TGraphServerErreurData = {
 };
 
 const GraphServerErreurPrivate = createErreurStore<TGraphServerErreurData>();
-export const GraphServerErreur = GraphServerErreurPrivate.asReadonly;
+export const GraphServerErreur: TReadonlyErreurStore<TGraphServerErreurData> =
+  GraphServerErreurPrivate.asReadonly;
 
 export function createInvalidResolvedValue(
   graph: TGraphBaseAny,
@@ -131,7 +133,9 @@ export type TGraphInternalErreurData =
 const GraphInternalErreurPrivate = createErreurStore<
   TGraphInternalErreurData
 >();
-export const GraphInternalErreur = GraphInternalErreurPrivate.asReadonly;
+export const GraphInternalErreur: TReadonlyErreurStore<
+  TGraphInternalErreurData
+> = GraphInternalErreurPrivate.asReadonly;
 
 export function createCannotPrepareArguments(graph: TGraphBaseAny) {
   return GraphInternalErreurPrivate.setAndReturn(
