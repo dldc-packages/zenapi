@@ -163,3 +163,67 @@ Deno.test("matrix", async (t) => {
     });
   }
 });
+
+Deno.test("Deno.inspect matrix", async (t) => {
+  const CASES: { graph: TGraphBase<any>; path: string; name: string }[] = [
+    {
+      graph: graph.User.age,
+      path: "Graph(root.User.age)",
+      name: "root.User.age",
+    },
+    {
+      graph: graph.User.group,
+      path: "Graph(root.User.group)",
+      name: "root.User.group",
+    },
+    {
+      graph: graph.User.group.name,
+      path: "Graph(root.User.group/root.Group.name)",
+      name: "root.Group.name",
+    },
+    {
+      graph: graph.Graph.user[REF],
+      path: "Graph(root.Graph.user/root.User)",
+      name: "root.User",
+    },
+    {
+      graph: graph.Graph.user.group,
+      path: "Graph(root.Graph.user/root.User.group)",
+      name: "root.User.group",
+    },
+    {
+      graph: graph.Graph.user.group.users.items.group,
+      path:
+        "Graph(root.Graph.user/root.User.group/root.Group.users.items/root.User.group)",
+      name: "root.User.group",
+    },
+    {
+      graph: graph.User.maybeGroup,
+      path: "Graph(root.User.maybeGroup)",
+      name: "root.User.maybeGroup",
+    },
+    {
+      graph: graph.User.maybeGroup.name,
+      path: "Graph(root.User.maybeGroup.type/root.Group.name)",
+      name: "root.Group.name",
+    },
+    {
+      graph: graph.User.maybeGroup[REF],
+      path: "Graph(root.User.maybeGroup.type)",
+      name: "root.User.maybeGroup.type",
+    },
+    {
+      graph: graph.User.maybeGroup[REF][REF],
+      path: "Graph(root.User.maybeGroup.type/root.Group)",
+      name: "root.Group",
+    },
+  ];
+
+  for (const { graph, name, path } of CASES) {
+    await t.step(path, () => {
+      assertEquals(Deno.inspect(graph), path);
+      assertEquals("" + graph, name);
+      assertEquals(`${graph}`, name);
+    });
+  }
+});

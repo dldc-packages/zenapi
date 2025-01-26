@@ -70,13 +70,22 @@ export function graphInternal(
   }
 
   return new Proxy(
-    {},
     {
-      get(_, prop) {
-        if (prop === Symbol.toStringTag) {
-          return () => {
-            return path.map((s) => s.key).join("/");
-          };
+      [Symbol.for("Deno.customInspect")]() {
+        return `Graph(${path.map((p) => p.key).join("/")})`;
+      },
+      [Symbol.toStringTag]() {
+        return structure.key;
+      },
+      [Symbol.toPrimitive]() {
+        return structure.key;
+      },
+    } as any,
+    {
+      get(target, prop, receiver) {
+        const targetProps = Reflect.get(target, prop, receiver);
+        if (targetProps) {
+          return targetProps;
         }
         if (prop === PATH) {
           return path;
@@ -106,11 +115,6 @@ export function graphInternal(
             // for (const prop of rest) {
             //   result = result[GET](prop, true);
             // }
-          };
-        }
-        if (prop === Symbol.toPrimitive) {
-          return () => {
-            return structure.key;
           };
         }
         return get(prop);
