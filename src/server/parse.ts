@@ -332,7 +332,7 @@ function parseInterfaceDeclaration(
   const methods = node.getMethods();
   if (methods.length > 0) {
     throw new Error(
-      "Methods are not supported yet, pleaseuse property: () => void; instead.",
+      "Methods are not supported yet, please use `property: () => void;` instead.",
     );
   }
   const parameters = node.getTypeParameters().map((param) => {

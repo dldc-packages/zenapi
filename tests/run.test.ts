@@ -74,7 +74,7 @@ Deno.test("should throw when query does not target entry", async () => {
   );
   assertEquals(
     (err as Error).message,
-    "Invalid entry, all queries should start from Graph (requested: Config)",
+    `Invalid entry, all queries should start from "Graph" (requested: "Config")`,
   );
 });
 

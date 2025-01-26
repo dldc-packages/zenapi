@@ -50,8 +50,8 @@ export function createInvalidQuery(
   return GraphClientErreurPrivate.setAndReturn(
     new Error(
       `Invalid query for ${structure.key}(${structure.kind}), received: ${
-        String(query)
-      }${expected ? `, expected: ${expected}` : ""}`,
+        printValue(query)
+      }${expected ? `, expected: ${printValue(expected)}` : ""}`,
     ),
     { graph, kind: "InvalidQuery", query, expected },
   );
@@ -64,7 +64,9 @@ export function createInvalidEntry(
 ) {
   return GraphClientErreurPrivate.setAndReturn(
     new Error(
-      `Invalid entry, all queries should start from ${entry} (requested: ${requested})`,
+      `Invalid entry, all queries should start from ${
+        printValue(entry)
+      } (requested: ${printValue(requested)})`,
     ),
     { graph, kind: "InvalidEntry", entry, requested },
   );
@@ -103,7 +105,7 @@ export function createInvalidResolvedValue(
     new Error(
       `Invalid resolved value for ${
         graph[STRUCTURE].key
-      } (expected: ${expected}, received: ${String(resolved)})`,
+      } (expected: ${expected}, received: ${printValue(resolved)})`,
     ),
     { graph, kind: "InvalidResolvedValue", resolved, expected },
   );
@@ -157,4 +159,20 @@ export function createUnknownStructureKind(
     new Error(`Unknown structure kind for ${graph[STRUCTURE].key}`),
     { graph, kind: "UnkonwnStructureKind", strucrureKind: structureKind },
   );
+}
+
+function printValue(value: unknown): string {
+  if (value === undefined) {
+    return "undefined";
+  }
+  if (value === null) {
+    return "null";
+  }
+  if (typeof value === "string") {
+    return `"${value}"`;
+  }
+  if (typeof value === "object" && value !== null) {
+    return JSON.stringify(value);
+  }
+  return String(value);
 }

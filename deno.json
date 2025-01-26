@@ -22,7 +22,8 @@
     "test:update-snapshots": "deno test -A -- --update",
     "bump": "deno run -A jsr:@mys/bump@1",
     "check-deps": "deno run -A jsr:@check/deps",
-    "check": "deno fmt --check . && deno lint . && deno task test:run"
+    "check": "deno fmt --check . && deno lint . && deno task test:run",
+    "example:family-planner": "deno run -A examples/family-planner/main.ts"
   },
   "lint": {
     "rules": {
