@@ -35,7 +35,7 @@ export const GraphClientErreur: TReadonlyErreurStore<TGraphClientErreurData> =
 export function createArgsValidationFailed(
   graph: TGraphBaseAny,
   issues: v.BaseIssue<any>[],
-) {
+): Error {
   return GraphClientErreurPrivate.setAndReturn(
     new Error(`Invalid arguments passed to ${graph[STRUCTURE].key}`),
     { graph, kind: "ArgsValidationFailed", issues },
@@ -46,7 +46,7 @@ export function createInvalidQuery(
   graph: TGraphBaseAny,
   query: TQueryUnknown,
   expected?: string,
-) {
+): Error {
   const structure = graph[STRUCTURE];
   return GraphClientErreurPrivate.setAndReturn(
     new Error(
@@ -62,7 +62,7 @@ export function createInvalidEntry(
   graph: TGraphBaseAny,
   entry: string,
   requested: string,
-) {
+): Error {
   return GraphClientErreurPrivate.setAndReturn(
     new Error(
       `Invalid entry, all queries should start from ${
@@ -76,7 +76,7 @@ export function createInvalidEntry(
 export function createInvalidUnionTypeQuery(
   graph: TGraphBaseAny,
   query: TQueryUnknown,
-) {
+): Error {
   return GraphClientErreurPrivate.setAndReturn(
     new Error(`Invalid query for Union type at ${graph[STRUCTURE].key}`),
     { graph, kind: "InvalidUnionTypeQuery", query },
@@ -102,7 +102,7 @@ export function createInvalidResolvedValue(
   graph: TGraphBaseAny,
   resolved: any,
   expected: string,
-) {
+): Error {
   return GraphServerErreurPrivate.setAndReturn(
     new Error(
       `Invalid resolved value for ${
@@ -137,7 +137,7 @@ export const GraphInternalErreur: TReadonlyErreurStore<
   TGraphInternalErreurData
 > = GraphInternalErreurPrivate.asReadonly;
 
-export function createCannotPrepareArguments(graph: TGraphBaseAny) {
+export function createCannotPrepareArguments(graph: TGraphBaseAny): Error {
   return GraphInternalErreurPrivate.setAndReturn(
     new Error(`Cannot prepare arguments for ${graph[STRUCTURE].key}`),
     { graph, kind: "CannotPrepareArguments" },
@@ -148,7 +148,7 @@ export function createInvalidStructure(
   graph: TGraphBaseAny,
   expected: TStructureKind,
   received: TStructureKind,
-) {
+): Error {
   return GraphInternalErreurPrivate.setAndReturn(
     new Error(`Invalid structure for ${graph[STRUCTURE].key}`),
     { graph, kind: "InvalidStructure", expected, received },
@@ -158,7 +158,7 @@ export function createInvalidStructure(
 export function createUnknownStructureKind(
   graph: TGraphBaseAny,
   structureKind: string,
-) {
+): Error {
   return GraphInternalErreurPrivate.setAndReturn(
     new Error(`Unknown structure kind for ${graph[STRUCTURE].key}`),
     { graph, kind: "UnkonwnStructureKind", strucrureKind: structureKind },
