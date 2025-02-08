@@ -20,7 +20,7 @@ export type TGraphClientErreurData = {
 } | {
   kind: "InvalidEntry";
   graph: TGraphBaseAny;
-  entry: string;
+  entries: string[];
   requested: string;
 } | {
   kind: "InvalidUnionTypeQuery";
@@ -60,16 +60,20 @@ export function createInvalidQuery(
 
 export function createInvalidEntry(
   graph: TGraphBaseAny,
-  entry: string,
+  entries: string[],
   requested: string,
 ): Error {
+  const entryMessage = entries.length === 1
+    ? printValue(entries[0])
+    : `one of ${printValue(entries)}`;
+
   return GraphClientErreurPrivate.setAndReturn(
     new Error(
-      `Invalid entry, all queries should start from ${
-        printValue(entry)
-      } (requested: ${printValue(requested)})`,
+      `Invalid entry, all queries should start from ${entryMessage} (requested: ${
+        printValue(requested)
+      })`,
     ),
-    { graph, kind: "InvalidEntry", entry, requested },
+    { graph, kind: "InvalidEntry", entries, requested },
   );
 }
 

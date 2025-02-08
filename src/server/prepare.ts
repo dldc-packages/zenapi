@@ -31,7 +31,7 @@ export type TPrepareFromOperator = (
 ) => TMiddleware | null;
 
 export interface TPrepareContext {
-  entry: string;
+  entries: string[];
   rootGraph: TGraphBaseAny;
   rootStructure: TRootStructure;
   operators: TPrepareFromOperator[];
@@ -97,8 +97,8 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
     if (typeof queryItem !== "string") {
       return null;
     }
-    if (queryItem !== context.entry) {
-      throw createInvalidEntry(graph, context.entry, queryItem);
+    if (!context.entries.includes(queryItem)) {
+      throw createInvalidEntry(graph, context.entries, queryItem);
     }
     return prepareObjectLike(context, graph, query, identity);
   },

@@ -24,7 +24,7 @@ export interface TEngineOptions {
   graph: TGraphBaseAny;
   resolvers: TResolver[];
   operators?: TPrepareFromOperator[];
-  entry: string;
+  entry: string | string[]; // TODO: use graph object instead ?
 }
 
 export function createEngine(
@@ -35,6 +35,10 @@ export function createEngine(
     entry,
   }: TEngineOptions,
 ): TEngine {
+  const entries = Array.isArray(entry) ? entry : [entry];
+  if (entries.length === 0) {
+    throw new Error("You must provide at least one entry point");
+  }
   const rootStructure = graph[ROOT];
   const { getResolvers } = validateResolvers(rootStructure, resolvers);
   const operators: TPrepareFromOperator[] = [
@@ -58,7 +62,7 @@ export function createEngine(
     let variableCount = 0;
     const mid = prepare(
       {
-        entry,
+        entries,
         rootGraph: graph,
         rootStructure,
         operators,
