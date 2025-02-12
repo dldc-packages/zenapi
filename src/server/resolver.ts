@@ -1,6 +1,6 @@
 import { STRUCTURE } from "./constants.ts";
 import type { TGraphBaseAny } from "./graph.ts";
-import { TAllStructure } from "./structure.types.ts";
+import type { TAllStructure } from "./structure.types.ts";
 import type { TMiddleware } from "./types.ts";
 
 export interface TResolver {
