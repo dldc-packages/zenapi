@@ -103,9 +103,10 @@ function validateResolvers(
   rootStructure: TRootStructure,
   resolvers: TResolver[],
 ): TGetHandlers {
+  const resolversReversed = [...resolvers].reverse();
   const resolversTree: THandlersTree = { middlewares: [], children: new Map() };
 
-  for (const { middlewares, path: graph } of resolvers) {
+  for (const { middlewares, path: graph } of resolversReversed) {
     // make sure path come from the schema
     if (graph[ROOT] !== rootStructure) {
       throw new Error(`Invalid resolver path, not using the proper schema`);
