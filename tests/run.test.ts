@@ -1,7 +1,7 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { obj, query, queryToJson } from "../client.ts";
-import { createEngine, parse, resolver } from "../server.ts";
+import { createEngine, defaultResolver, parse, resolver } from "../server.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
 
 const client = query<TodoListTypes>();
@@ -14,6 +14,12 @@ const engine = createEngine({
   graph,
   entry: "Graph",
   resolvers: [
+    ...defaultResolver(
+      graph.Graph,
+      graph.Config,
+      graph.Config.env,
+      graph.Graph.apps,
+    ),
     resolver(
       graph.Graph.config.env.version,
       (ctx) => {

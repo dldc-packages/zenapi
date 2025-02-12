@@ -1,7 +1,13 @@
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { obj, query, queryToJson } from "../../client.ts";
-import { ApiContext, createEngine, parse, resolver } from "../../server.ts";
+import {
+  ApiContext,
+  createEngine,
+  defaultResolver,
+  parse,
+  resolver,
+} from "../../server.ts";
 import { createCache } from "../utils/graphCache.ts";
 import { createMemoryDb } from "../utils/memoryDb.ts";
 import type { Family, Graph, Member } from "./graph.ts";
@@ -60,7 +66,10 @@ Deno.test("Resolve basic list", async () => {
   const engine = createEngine({
     graph,
     entry: "Graph",
-    resolvers: [membersResolver],
+    resolvers: [
+      ...defaultResolver(graph.Graph),
+      membersResolver,
+    ],
   });
 
   const query = client.Graph.members._(({ id, name }) => obj({ id, name }));
@@ -101,7 +110,11 @@ Deno.test("Resolve computed property", async () => {
   const engine = createEngine({
     graph,
     entry: "Graph",
-    resolvers: [membersResolver, memberNameUpperResolver],
+    resolvers: [
+      ...defaultResolver(graph.Graph),
+      membersResolver,
+      memberNameUpperResolver,
+    ],
   });
 
   db.clearOps();
@@ -146,7 +159,11 @@ Deno.test("Resolve computed property using getter", async () => {
   const engine = createEngine({
     graph,
     entry: "Graph",
-    resolvers: [membersResolver, memberNameUpperResolver],
+    resolvers: [
+      ...defaultResolver(graph.Graph),
+      membersResolver,
+      memberNameUpperResolver,
+    ],
   });
 
   db.clearOps();
@@ -204,7 +221,12 @@ Deno.test("Resolve family of member", async () => {
   const engine = createEngine({
     graph,
     entry: "Graph",
-    resolvers: [membersResolver, memberFamilyResolver, familyResolver],
+    resolvers: [
+      ...defaultResolver(graph.Graph),
+      membersResolver,
+      memberFamilyResolver,
+      familyResolver,
+    ],
   });
 
   db.clearOps();
@@ -286,6 +308,7 @@ Deno.test("Resolve member -> family -> member", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph),
       membersResolver,
       memberFamilyResolver,
       familyResolver,

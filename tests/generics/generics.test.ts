@@ -1,7 +1,12 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { obj, query, queryToJson } from "../../client.ts";
-import { createEngine, parse, resolver } from "../../server.ts";
+import {
+  createEngine,
+  defaultResolver,
+  parse,
+  resolver,
+} from "../../server.ts";
 import type { Graph, Paginated, TodoItem } from "./graph.ts";
 
 export interface AllTypes {
@@ -20,7 +25,9 @@ Deno.test("Fails if no resolver", async () => {
   const engine = createEngine({
     graph,
     entry: "Graph",
-    resolvers: [],
+    resolvers: [
+      ...defaultResolver(graph.Graph, graph.Paginated),
+    ],
   });
 
   const query = client.Graph.todos._(({ total, data }) =>
@@ -42,6 +49,7 @@ Deno.test("get generic results", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph),
       resolver(
         graph.Graph.todos,
         (ctx) => {
@@ -73,6 +81,7 @@ Deno.test("Resolver in generic", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph),
       resolver(
         graph.Paginated,
         (ctx) => {
@@ -104,6 +113,7 @@ Deno.test("Fails if a property is missing", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph),
       resolver(
         graph.Paginated,
         (ctx) => {

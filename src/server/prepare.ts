@@ -110,10 +110,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       async (ctx, next) => {
         const resolved = await next(ctx);
         const value = resolved.value;
-        if (value === undefined) {
-          return resolved.withValue({});
-        }
-        if (typeof value !== "object") {
+        if (value === undefined || typeof value !== "object") {
           throw createInvalidResolvedValue(graph, value, "object");
         }
         return resolved;
@@ -156,10 +153,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       async (ctx, next) => {
         const resolved = await next(ctx);
         const value = resolved.value;
-        if (value === undefined) {
-          return resolved.withValue({});
-        }
-        if (typeof value !== "object") {
+        if (value === undefined || typeof value !== "object") {
           throw createInvalidResolvedValue(graph, value, "object");
         }
         return resolved;
@@ -170,10 +164,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
     const baseMid: TMiddleware = async (ctx, next) => {
       const res = await next(ctx);
       const value = res.value;
-      if (value === undefined) {
-        return res.withValue([]);
-      }
-      if (!Array.isArray(value)) {
+      if (value === undefined || !Array.isArray(value)) {
         throw createInvalidResolvedValue(graph, value, "array");
       }
       return res;
@@ -248,7 +239,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       const res = await next(ctx);
       const value = res.value;
       if (value === undefined) {
-        return res.withValue(null);
+        throw createInvalidResolvedValue(graph, value, "nullable");
       }
       return res;
     };
@@ -288,7 +279,7 @@ const PREPARE_BY_STRUCTURE: TByStructureKind = {
       const subGraph = matchUnionType(
         graph,
         res.value,
-        res.get(ApiContext.ValueTypeKey.Consumer),
+        res.get(ApiContext.ValueTypeKey.Consumer) ?? null,
       );
       const sub = subs.find((sub) => sub.graph === subGraph);
       if (!sub) {

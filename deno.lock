@@ -1,27 +1,25 @@
 {
   "version": "4",
   "specifiers": {
-    "jsr:@david/code-block-writer@13": "13.0.2",
+    "jsr:@david/code-block-writer@13": "13.0.3",
     "jsr:@dldc/compose@^6.0.2": "6.0.2",
     "jsr:@dldc/erreur@^7.1.1": "7.1.1",
-    "jsr:@dldc/stack@^6.1.0": "6.1.0",
-    "jsr:@std/assert@0.226": "0.226.0",
+    "jsr:@dldc/stack@7": "7.0.0",
     "jsr:@std/assert@^1.0.6": "1.0.6",
     "jsr:@std/data-structures@^1.0.4": "1.0.4",
+    "jsr:@std/fs@1": "1.0.4",
     "jsr:@std/fs@^1.0.4": "1.0.4",
-    "jsr:@std/fs@~0.229.3": "0.229.3",
     "jsr:@std/internal@^1.0.4": "1.0.4",
-    "jsr:@std/path@1.0.0-rc.1": "1.0.0-rc.1",
+    "jsr:@std/path@1": "1.0.6",
     "jsr:@std/path@^1.0.6": "1.0.6",
-    "jsr:@std/path@~0.225.2": "0.225.2",
     "jsr:@std/testing@^1.0.3": "1.0.3",
-    "jsr:@ts-morph/common@0.24": "0.24.0",
-    "jsr:@ts-morph/ts-morph@23": "23.0.0",
+    "jsr:@ts-morph/common@~0.26.1": "0.26.1",
+    "jsr:@ts-morph/ts-morph@^25.0.1": "25.0.1",
     "jsr:@valibot/valibot@~0.42.1": "0.42.1"
   },
   "jsr": {
-    "@david/code-block-writer@13.0.2": {
-      "integrity": "14dd3baaafa3a2dea8bf7dfbcddeccaa13e583da2d21d666c01dc6d681cd74ad"
+    "@david/code-block-writer@13.0.3": {
+      "integrity": "f98c77d320f5957899a61bfb7a9bead7c6d83ad1515daee92dbacc861e13bb7f"
     },
     "@dldc/compose@6.0.2": {
       "integrity": "c6bad297fbbe0dece7fa350667390d470f5b686dc74a834ad9b7191b7c021ab3",
@@ -32,14 +30,11 @@
     "@dldc/erreur@7.1.1": {
       "integrity": "9ba954ae0654e4ed003959c77aaa009fdf6c64f60bf4cfec33b134556ab0d6da"
     },
-    "@dldc/stack@6.1.0": {
-      "integrity": "2a72c7e5cbfb7fac4c1e967c5d479a453a2c9da336877e1f8b3ee79957452e3c",
+    "@dldc/stack@7.0.0": {
+      "integrity": "cf418349e3846ce162837e4d5332f70b8c3a5f2072bb4129c3c2299caf2f27ee",
       "dependencies": [
         "jsr:@dldc/erreur"
       ]
-    },
-    "@std/assert@0.226.0": {
-      "integrity": "0dfb5f7c7723c18cec118e080fec76ce15b4c31154b15ad2bd74822603ef75b3"
     },
     "@std/assert@1.0.6": {
       "integrity": "1904c05806a25d94fe791d6d883b685c9e2dcd60e4f9fc30f4fc5cf010c72207",
@@ -50,12 +45,6 @@
     "@std/data-structures@1.0.4": {
       "integrity": "fa0e20c11eb9ba673417450915c750a0001405a784e2a4e0c3725031681684a0"
     },
-    "@std/fs@0.229.3": {
-      "integrity": "783bca21f24da92e04c3893c9e79653227ab016c48e96b3078377ebd5222e6eb",
-      "dependencies": [
-        "jsr:@std/path@1.0.0-rc.1"
-      ]
-    },
     "@std/fs@1.0.4": {
       "integrity": "2907d32d8d1d9e540588fd5fe0ec21ee638134bd51df327ad4e443aaef07123c",
       "dependencies": [
@@ -65,37 +54,28 @@
     "@std/internal@1.0.4": {
       "integrity": "62e8e4911527e5e4f307741a795c0b0a9e6958d0b3790716ae71ce085f755422"
     },
-    "@std/path@0.225.2": {
-      "integrity": "0f2db41d36b50ef048dcb0399aac720a5348638dd3cb5bf80685bf2a745aa506",
-      "dependencies": [
-        "jsr:@std/assert@0.226"
-      ]
-    },
-    "@std/path@1.0.0-rc.1": {
-      "integrity": "b8c00ae2f19106a6bb7cbf1ab9be52aa70de1605daeb2dbdc4f87a7cbaf10ff6"
-    },
     "@std/path@1.0.6": {
       "integrity": "ab2c55f902b380cf28e0eec501b4906e4c1960d13f00e11cfbcd21de15f18fed"
     },
     "@std/testing@1.0.3": {
       "integrity": "f98c2bee53860a5916727d7e7d3abe920dd6f9edace022e2d059f00d05c2cf42",
       "dependencies": [
-        "jsr:@std/assert@^1.0.6",
+        "jsr:@std/assert",
         "jsr:@std/data-structures",
         "jsr:@std/fs@^1.0.4",
         "jsr:@std/internal",
         "jsr:@std/path@^1.0.6"
       ]
     },
-    "@ts-morph/common@0.24.0": {
-      "integrity": "12b625b8e562446ba658cdbe9ad77774b4bd96b992ae8bd34c60dbf24d06c1f3",
+    "@ts-morph/common@0.26.1": {
+      "integrity": "8deffc275026525ecd84beac30a3ae33e4e522a043ebdf7ea7b9c5f7ea952803",
       "dependencies": [
-        "jsr:@std/fs@~0.229.3",
-        "jsr:@std/path@~0.225.2"
+        "jsr:@std/fs@1",
+        "jsr:@std/path@1"
       ]
     },
-    "@ts-morph/ts-morph@23.0.0": {
-      "integrity": "5c5bf3187fc3d696ca0cc295e9e024e9c8d52051852cfea67f8e932cfbde0810",
+    "@ts-morph/ts-morph@25.0.1": {
+      "integrity": "0f73cf2fe833eab7d491560eb59c89125d7bc8bf0380c37a88f529b2a8cf6f87",
       "dependencies": [
         "jsr:@david/code-block-writer",
         "jsr:@ts-morph/common"
@@ -109,11 +89,11 @@
     "dependencies": [
       "jsr:@dldc/compose@^6.0.2",
       "jsr:@dldc/erreur@^7.1.1",
-      "jsr:@dldc/stack@^6.1.0",
+      "jsr:@dldc/stack@7",
       "jsr:@std/assert@^1.0.6",
       "jsr:@std/path@^1.0.6",
       "jsr:@std/testing@^1.0.3",
-      "jsr:@ts-morph/ts-morph@23",
+      "jsr:@ts-morph/ts-morph@^25.0.1",
       "jsr:@valibot/valibot@~0.42.1"
     ]
   }

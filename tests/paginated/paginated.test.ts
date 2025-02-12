@@ -1,7 +1,12 @@
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { obj, query, queryToJson } from "../../client.ts";
-import { createEngine, parse, resolver } from "../../server.ts";
+import {
+  createEngine,
+  defaultResolver,
+  parse,
+  resolver,
+} from "../../server.ts";
 import type {
   Graph,
   Namespace,
@@ -31,6 +36,7 @@ Deno.test("Resolve paginated", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph, graph.Namespace),
       resolver(graph.Namespace.listStuff.return.return, (ctx) => {
         const [search] = ctx.getInputOrFail(graph.Namespace.listStuff);
         assertEquals(search, "hello");
@@ -57,6 +63,7 @@ Deno.test("Resolve paginated items", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph, graph.Namespace),
       resolver(graph.Namespace.listStuff.return.return, (ctx) => {
         const [search] = ctx.getInputOrFail(graph.Namespace.listStuff);
         assertEquals(search, "hello");

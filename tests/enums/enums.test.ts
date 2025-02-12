@@ -1,7 +1,12 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToJson } from "../../client.ts";
-import { createEngine, parse, resolver } from "../../server.ts";
+import {
+  createEngine,
+  defaultResolver,
+  parse,
+  resolver,
+} from "../../server.ts";
 import { ROOT } from "../../src/server/constants.ts";
 import type { Graph, UserRole } from "./graph.ts";
 
@@ -40,7 +45,10 @@ Deno.test("Resolve enum union", async () => {
   const engine = createEngine({
     graph,
     entry: "Graph",
-    resolvers: [resolver(graph.Graph.role, (ctx) => ctx.withValue("admin"))],
+    resolvers: [
+      ...defaultResolver(graph.Graph),
+      resolver(graph.Graph.role, (ctx) => ctx.withValue("admin")),
+    ],
   });
 
   const query = client.Graph.role;
@@ -53,7 +61,10 @@ Deno.test("Fail with invalid value", async () => {
   const engine = createEngine({
     graph,
     entry: "Graph",
-    resolvers: [resolver(graph.Graph.role, (ctx) => ctx.withValue("yolo"))],
+    resolvers: [
+      ...defaultResolver(graph.Graph),
+      resolver(graph.Graph.role, (ctx) => ctx.withValue("yolo")),
+    ],
   });
 
   const query = client.Graph.role;

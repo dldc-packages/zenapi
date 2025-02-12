@@ -1,7 +1,12 @@
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToJson } from "../../client.ts";
-import { createEngine, parse, resolver } from "../../server.ts";
+import {
+  createEngine,
+  defaultResolver,
+  parse,
+  resolver,
+} from "../../server.ts";
 import type {
   Graph,
   Namespace,
@@ -29,6 +34,7 @@ Deno.test("Nullable input", async (t) => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph, graph.Namespace),
       resolver(graph.Namespace.execWithParams.return, (ctx) => {
         const [params] = ctx.getInputOrFail(graph.Namespace.execWithParams);
         return ctx.withValue<string>(JSON.stringify([

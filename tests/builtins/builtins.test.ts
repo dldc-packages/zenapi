@@ -8,6 +8,7 @@ import {
   createBuiltins,
   createEngine,
   DEFAULT_BUILTINS,
+  defaultResolver,
   parse,
   resolver,
   ROOT,
@@ -53,6 +54,7 @@ Deno.test("Properly parse MyBuiltin", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph),
       resolver(graph.Graph.now, (ctx) => {
         return ctx.withValue("Hello");
       }),
@@ -70,6 +72,7 @@ Deno.test("Fail if output is not a string", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph),
       resolver(graph.Graph.now, (ctx) => {
         return ctx.withValue(42);
       }),
@@ -90,6 +93,7 @@ Deno.test("MyBuiltin input", async (t) => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph),
       resolver(graph.Graph.doStuff.return, (ctx) => {
         const [builtin] = ctx.getInputOrFail(graph.Graph.doStuff);
         return ctx.withValue<string>(builtin);

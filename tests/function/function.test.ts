@@ -1,7 +1,12 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToJson } from "../../client.ts";
-import { createEngine, parse, resolver } from "../../server.ts";
+import {
+  createEngine,
+  defaultResolver,
+  parse,
+  resolver,
+} from "../../server.ts";
 import type { Graph, Namespace, StuffResult } from "./graph.ts";
 
 interface AllTypes {
@@ -28,7 +33,7 @@ Deno.test("Fails if no resolver", async () => {
   const err = await assertRejects(() => engine.run(queryDef, variables));
   assertEquals(
     (err as Error).message,
-    "Invalid resolved value for root.StuffResult.num (expected: number, received: undefined)",
+    "Invalid resolved value for root.Graph (expected: object, received: undefined)",
   );
 });
 
@@ -39,6 +44,7 @@ Deno.test("get function results", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph, graph.Namespace),
       resolver(
         graph.Graph.sub.doStuff,
         (ctx) => {
@@ -64,6 +70,7 @@ Deno.test("resolve on sub namespace", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph, graph.Namespace),
       resolver(
         graph.Namespace.doStuff,
         (ctx) => {

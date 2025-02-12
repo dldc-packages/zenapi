@@ -2,7 +2,12 @@ import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import type { IsExact } from "@std/testing/types";
 import { query, queryToJson, type TQueryBase } from "../../client.ts";
-import { createEngine, parse, resolver } from "../../server.ts";
+import {
+  createEngine,
+  defaultResolver,
+  parse,
+  resolver,
+} from "../../server.ts";
 import { assertType } from "../utils/assertType.ts";
 import type { Graph, Namespace } from "./graph.ts";
 
@@ -22,6 +27,7 @@ Deno.test("Properly parse Date", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph, graph.Namespace),
       resolver(graph.Namespace.now, (ctx) => {
         return ctx.withValue(new Date("2021-01-01T00:00:00.000Z"));
       }),
@@ -40,6 +46,7 @@ Deno.test("Fail if output is not a date", async () => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph, graph.Namespace),
       resolver(graph.Namespace.now, (ctx) => {
         return ctx.withValue(42);
       }),
@@ -61,6 +68,7 @@ Deno.test("Date input", async (t) => {
     graph,
     entry: "Graph",
     resolvers: [
+      ...defaultResolver(graph.Graph, graph.Namespace),
       resolver(graph.Namespace.doStuff.return, (ctx) => {
         const [date] = ctx.getInputOrFail(graph.Namespace.doStuff);
         return ctx.withValue<string>(date.toISOString());
