@@ -1,4 +1,9 @@
-import { ApiContext, createKey, resolver } from "../../server.ts";
+import {
+  ApiContext,
+  createKey,
+  defaultResolver,
+  resolver,
+} from "../../server.ts";
 import * as db from "./database.ts";
 import { graph } from "./graph.ts";
 
@@ -76,6 +81,13 @@ const eventMemberResolver = resolver(
 );
 
 export const resolvers = [
+  ...defaultResolver(
+    graph.Graph,
+    graph.EventsNamespace,
+    graph.EventNamespace,
+    graph.MembersNamespace,
+    graph.MemberNamespace,
+  ),
   membersListResolver,
   createMemberResolver,
   listEventsResolver,
