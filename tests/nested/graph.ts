@@ -3,6 +3,7 @@ export interface Member {
   name: string;
   nameUpper: string;
   family: Family;
+  emails: string[];
 }
 
 export interface Family {

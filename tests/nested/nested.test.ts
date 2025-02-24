@@ -134,6 +134,38 @@ Deno.test("Resolve computed property", async () => {
   assertEquals(db.ops(), ["list member"]);
 });
 
+Deno.test("Resolve array property", async () => {
+  const memberResolver = resolver(
+    graph.Graph.member,
+    (ctx) => {
+      return ctx.withValue({
+        id: "m1",
+        name: "John",
+        emails: ["john@example.com"],
+      });
+    },
+  );
+
+  const engine = createEngine({
+    graph,
+    entry: "Graph",
+    resolvers: [
+      ...defaultResolver(graph.Graph),
+      memberResolver,
+    ],
+  });
+
+  const query = client.Graph.member._(({ id, name, emails }) =>
+    obj({ id, name, emails })
+  );
+  const [queryDef, variables] = queryToJson(query);
+  const result = await engine.run(queryDef, variables);
+  assertEquals(
+    result,
+    { id: "m1", name: "John", emails: ["john@example.com"] },
+  );
+});
+
 Deno.test("Resolve computed property using getter", async () => {
   const membersResolver = resolver(
     graph.Graph.members,
